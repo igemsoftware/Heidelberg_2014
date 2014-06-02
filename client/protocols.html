@@ -1,0 +1,54 @@
+<template name="protocolList">
+	<ul id="protocols">
+		{{#each protocols}}
+			{{> protocolListItem}}
+		{{/each}}
+	</ul>
+</template>
+
+<template name="protocolListItem">
+	<li><a href="">{{name}}</a></li>
+</template>
+
+<template name="newProtocol">
+	<h1>Enter new protocol</h1>
+	<h2 id="protocolName" contenteditable="true">Name of the protocol</h2>
+	<h3>Dependencies</h3>
+	<ul>
+		{{#each deps}}
+			<li>
+				<select>
+					{{#each classes}}
+						<option>{{name}}</option>
+					{{/each}}
+				</select>
+				<input type="checkbox" /> multiple
+			</li>
+		{{/each}}
+		<li><a href="" id="addDependency">+</a></li>
+	</ul>
+
+	<h3>Steps</h3>
+	<button id="addTextInput">txt</button>
+	<div id="protocolStepsWrapper">
+		<ol id="protocolSteps" contenteditable="true"><li>teststuff</li></ol>
+	</div>
+
+	<h3>Results</h3>
+	<ul>
+		{{#each results}}
+			<li>
+				Name: <input type="text" />
+				Has the following type(s):
+				<select multiple="true" size="3">
+					{{#each classes}}
+						<option>{{name}}</option>
+					{{/each}}
+				</select>
+			</li>
+		{{/each}}
+		<li><a href="" id="addResult">+</a></li>
+	</ul>
+
+	<button id="submitProtocol">Save</button>
+</template>

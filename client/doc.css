@@ -1,0 +1,9 @@
+/* CSS declarations go here */
+
+*[contenteditable=true] {
+	outline: 1px dotted #a0a0a0;
+}
+
+*[contenteditable=true]:focus {
+	outline: 1px dashed gray;
+}
