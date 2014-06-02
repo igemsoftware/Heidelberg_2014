@@ -5,10 +5,23 @@ UI.registerHelper('protocols', function () {
 });
 
 Session.setDefault('newProtocolDeps', []);
+Session.setDefault('newProtocolSteps', []);
 Session.setDefault('newProtocolResults', []);
 
 Template.newProtocol.deps = function () {
 	return Session.get('newProtocolDeps');
+};
+
+Template.newProtocol.isSelected = function (type) {
+	return type === this._id;
+};
+
+Template.newProtocol.isChecked = function () {
+	return this.multi;
+};
+
+Template.newProtocol.steps = function () {
+	return Session.get('newProtocolSteps');
 };
 
 Template.newProtocol.results = function () {
@@ -18,12 +31,48 @@ Template.newProtocol.results = function () {
 Template.newProtocol.events({
 	'click #addDependency': function () {
 		var deps = Session.get('newProtocolDeps');
-		deps.push({});
+		var obj = { multi: false, idx: deps.length, nameChanged: false };
+		deps.push(obj);
 		Session.set('newProtocolDeps', deps);
+		Deps.flush();
+		// ugly!
+		var select = $('#protocolDependencies li select')[deps.length - 1];
+		obj.type = select.value;
+		obj.name = $(select.options[select.selectedIndex]).text();
+		Session.set('newProtocolDeps', deps);
+	},
+	'change #protocolDependencies select': function (ev, tmpl) {
+		this.type = ev.target.value;
+		var txt = tmpl.find('.dependencyName');
+		if (!this.nameChanged) {
+			this.name = txt.value = $(ev.target.options[ev.target.selectedIndex]).text();
+		}
+		var deps = Session.get('newProtocolDeps');
+		deps[this.idx] = this;
+		Session.set('newProtocolDeps', deps);
+	},
+	'input #protocolDependencies input.dependencyName': function (ev, tmpl) {
+		this.name = ev.target.value;
+		this.nameChanged = true;
+		var deps = Session.get('newProtocolDeps');
+		deps[this.idx] = this;
+		Session.set('newProtocolDeps', deps);
+	},
+	'change #protocolDependencies input.dependencyMulti': function (ev) {
+		this.multi = ev.target.checked;
+		var deps = Session.get('newProtocolDeps');
+		deps[this.idx] = this;
+		Session.set('newProtocolDeps', deps);
+	},
+
+	'click #addStep': function () {
+		var steps = Session.get('newProtocolSteps');
+		steps.push({ });
+		Session.set('newProtocolSteps', steps);
 	},
 	'click #addResult': function () {
 		var results = Session.get('newProtocolResults');
-		results.push({});
+		results.push({ });
 		Session.set('newProtocolResults', results);
 	},
 	'click button#addTextInput': function (ev) {

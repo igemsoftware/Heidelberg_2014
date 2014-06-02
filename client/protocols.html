@@ -12,17 +12,18 @@
 
 <template name="newProtocol">
 	<h1>Enter new protocol</h1>
-	<h2 id="protocolName" contenteditable="true">Name of the protocol</h2>
+	<h2 id="protocolName" class="editable" contenteditable="true">Name of the protocol</h2>
 	<h3>Dependencies</h3>
-	<ul>
+	<ul id="protocolDependencies">
 		{{#each deps}}
 			<li>
 				<select>
 					{{#each classes}}
-						<option>{{name}}</option>
+						<option value={{_id}} selected={{isSelected ../type}}>{{name}}</option>
 					{{/each}}
 				</select>
-				<input type="checkbox" /> multiple
+				<input type="text" class="dependencyName" value={{name}} />
+				<input type="checkbox" class="dependencyMulti" checked={{isChecked}} /> multiple
 			</li>
 		{{/each}}
 		<li><a href="" id="addDependency">+</a></li>
@@ -30,12 +31,20 @@
 
 	<h3>Steps</h3>
 	<button id="addTextInput">txt</button>
-	<div id="protocolStepsWrapper">
-		<ol id="protocolSteps" contenteditable="true"><li>teststuff</li></ol>
-	</div>
+	<ol id="protocolSteps" class="editable">
+		{{#each steps}}
+			<li>
+				<div class="stepDesc" contenteditable="true">Enter description of the step</div>
+				<div class="substeps">
+					<input type="checkbox" class="stepHasSubsteps" />
+				</div>
+			</li>
+		{{/each}}
+		<li><a href="" id="addStep">+</a></li>
+	</ol>
 
 	<h3>Results</h3>
-	<ul>
+	<ul id="protocolResults">
 		{{#each results}}
 			<li>
 				Name: <input type="text" />
