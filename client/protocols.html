@@ -12,52 +12,67 @@
 
 <template name="newProtocol">
 	<h1>Enter new protocol</h1>
-	<h2 id="protocolName" class="editable" contenteditable="true">Name of the protocol</h2>
-	<h3>Dependencies</h3>
-	<ul id="protocolDependencies">
-		{{#each deps}}
+	<div id="newProtocol">
+		<h2 id="protocolName">Name: <input type="text" data-bind="value: name" /></h2>
+		<h3>Parameters <a href="" data-bind="click: addParam">+</a></h3>
+		<ul id="protocolParameters" data-bind="foreach: params">
 			<li>
-				<select>
-					{{#each classes}}
-						<option value={{_id}} selected={{isSelected ../type}}>{{name}}</option>
-					{{/each}}
-				</select>
-				<input type="text" class="dependencyName" value={{name}} />
-				<input type="checkbox" class="dependencyMulti" checked={{isChecked}} /> multiple
+				<select data-bind="value: type, options: classes(), optionsText: 'name'"></select>
+				<input type="text" data-bind="value: name, valueUpdate: 'input', event: { change: nameChanged }" />
+				<input type="checkbox" data-bind="checked: multi" /> multiple
+				<a href="" data-bind="click: $parent.removeParam.bind($parent)">-</a>
 			</li>
-		{{/each}}
-		<li><a href="" id="addDependency">+</a></li>
-	</ul>
+		</ul>
 
-	<h3>Steps</h3>
-	<button id="addTextInput">txt</button>
-	<ol id="protocolSteps" class="editable">
-		{{#each steps}}
+		<h3>Steps <a href="" data-bind="click: addStep">+</a></h3>
+		<ol id="protocolSteps" data-bind="foreach: steps">
 			<li>
-				<div class="stepDesc" contenteditable="true">Enter description of the step</div>
-				<div class="substeps">
-					<input type="checkbox" class="stepHasSubsteps" />
+				<div class="stepDesc">
+					Description: <input type="text" data-bind="value: desc" />
+					<a href="" data-bind="click: $parent.removeStep.bind($parent)">-</a>
+				</div>
+				<div class="stepUserInputs">
+					User input fields: <a href="" data-bind="click: addInput">+</a>
+					<ul data-bind="foreach: inputs">
+						<li>
+							<input type="text" data-bind="value: desc" />
+							Type: <select data-bind="value: type, options: types, optionsText: 'desc'"></select>
+							<a href="" data-bind="click: $parent.removeInput.bind($parent)">-</a>
+						</li>
+					</ul>
+				</div>
+				<div class="substep">
+					<input type="checkbox" data-bind="checked: substep" /> Repeat the following for every <select data-bind="enable: substep, value: substepParam, options: $parent.multiParams, optionsText: 'name'"></select>:
+					<ol data-bind="visible: substep">
+						<li>
+							<div class="stepDesc">Description: <input type="text" data-bind="value: substepDesc" /></div>
+							<div class="stepUserInputs">
+								User input fields: <a href="" data-bind="click: addSubInput">+</a>
+								<ul data-bind="foreach: substepInputs">
+									<li>
+										<input type="text" data-bind="value: desc" /> 
+										Type: <select data-bind="value: type, options: types, optionsText: 'desc'"></select>
+										<a href="" data-bind="click: $parent.removeSubInput.bind($parent)">-</a>
+									</li>
+								</ul>
+							</div>
+						</li>
+					</ol>
 				</div>
 			</li>
-		{{/each}}
-		<li><a href="" id="addStep">+</a></li>
-	</ol>
+		</ol>
 
-	<h3>Results</h3>
-	<ul id="protocolResults">
-		{{#each results}}
+		<h3>Products <a href="" data-bind="click: addProduct">+</a></h3>
+		<ul id="protocolProducts" data-bind="foreach: products">
 			<li>
-				Name: <input type="text" />
+				Name: <input type="text" data-bind="value: name" />
+				<a href="" data-bind="click: $parent.removeProduct.bind($parent)">-</a>
+				<br />
 				Has the following type(s):
-				<select multiple="true" size="3">
-					{{#each classes}}
-						<option>{{name}}</option>
-					{{/each}}
-				</select>
+				<select multiple="true" size="3" data-bind="options: allClasses(), optionsText: 'name', selectedOptions: classes"></select>
 			</li>
-		{{/each}}
-		<li><a href="" id="addResult">+</a></li>
-	</ul>
+		</ul>		
 
-	<button id="submitProtocol">Save</button>
+		<button data-bind="click: save">Save</button>
+	</div>
 </template>

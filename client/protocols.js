@@ -1,15 +1,179 @@
 'use strict';
 
+var newProtocolVM = function () {
+	var self = this;
+	self.name = ko.observable('Enter the name of the new protocol here');
+	self.params = ko.observableArray();
+	self.multiParams = ko.computed(function () {
+		return _.filter(self.params(), function (param) {
+			return param.multi();
+		});
+	});
+	self.steps = ko.observableArray();
+	self.products = ko.observableArray();
+};
+
+newProtocolVM.prototype.addParam = function () {
+	this.params.push(new newProtocolParamVM());
+};
+
+newProtocolVM.prototype.removeParam = function (param) {
+	this.params.remove(param);
+};
+
+newProtocolVM.prototype.addStep = function () {
+	this.steps.push(new newProtocolStepVM());
+};
+
+newProtocolVM.prototype.removeStep = function (step) {
+	this.steps.remove(step);
+};
+
+newProtocolVM.prototype.addProduct = function () {
+	this.products.push(new newProtocolProductVM());
+};
+
+newProtocolVM.prototype.removeProduct = function (product) {
+	this.products.remove(product);
+};
+
+newProtocolVM.prototype.flatten = function () {
+	return {
+		name: this.name(),
+		params: _.map(this.params(), function (param) {
+			return param.flatten();
+		}),
+		steps: _.map(this.steps(), function (step) {
+			return step.flatten();
+		}),
+		products: _.map(this.products(), function (product) {
+			return product.flatten();
+		})
+	};
+};
+
+newProtocolVM.prototype.save = function () {
+	Protocols.insert(this.flatten());
+};
+
+var newProtocolParamVM = function () {
+	var self = this;
+	self.type = ko.observable();
+	self.type.subscribe(function (newValue) {
+		if (!self.nameWasChanged) self.name(newValue.name);
+	});
+	self.name = ko.observable();
+	self.multi = ko.observable(false);
+	self.nameWasChanged = false;
+};
+
+newProtocolParamVM.prototype.classes = function () {
+	return Classes.find().fetch();
+};
+
+newProtocolParamVM.prototype.nameChanged = function (data) {
+	data.nameWasChanged = true;
+};
+
+newProtocolParamVM.prototype.flatten = function () {
+	return {
+		type: this.type()._id,
+		name: this.name(),
+		multi: this.multi()
+	};
+};
+
+var newProtocolStepVM = function () {
+	var self = this;
+	self.desc = ko.observable('Enter description of the step');
+	self.inputs = ko.observableArray();
+	self.substep = ko.observable(false);
+	self.substepParam = ko.observable();
+	self.substepDesc = ko.observable('Enter description of the repeating sub-step');
+	self.substepInputs = ko.observableArray();
+};
+
+newProtocolStepVM.prototype.addInput = function () {
+	this.inputs.push(new newProtocolStepInputVM());
+};
+
+newProtocolStepVM.prototype.removeInput = function (input) {
+	this.inputs.remove(input);
+};
+
+newProtocolStepVM.prototype.addSubInput = function () {
+	this.substepInputs.push(new newProtocolStepInputVM());
+};
+
+newProtocolStepVM.prototype.removeSubInput = function (input) {
+	this.substepInputs.remove(input);
+};
+
+newProtocolStepVM.prototype.flatten = function () {
+	var obj = {
+		desc: this.desc(),
+		inputs: _.map(this.inputs(), function (input) {
+			return input.flatten();
+		}),
+		substep: this.substep()
+	};
+
+	if (this.substep()) {
+		obj = _.extend(obj, {
+			substepParam: this.substepParam().name(),
+			substepDesc: this.substepDesc(),
+			substepInputs: _.map(this.substepInputs(), function (input) {
+				return input.flatten();
+			})
+		});
+	};
+
+	return obj;
+};
+
+var newProtocolStepInputVM = function () {
+	var self = this;
+	self.desc = ko.observable('Enter description of the input field here');
+	self.type = ko.observable();
+};
+
+newProtocolStepInputVM.prototype.types = [ { id: 'text', desc: 'Text' }, { id: 'uint', desc: 'Positive integer' }, { id: 'int', desc: 'Integer' }, { id: 'ufloat', desc: 'Positive real number' }, { id: 'float', desc: 'Real number' } ];
+
+newProtocolStepInputVM.prototype.flatten = function () {
+	return {
+		desc: this.desc(),
+		type: this.type().id
+	};
+};
+
+var newProtocolProductVM = function () {
+	var self = this;
+	self.name = ko.observable('Enter name of the product here');
+	self.classes = ko.observableArray();
+};
+
+newProtocolProductVM.prototype.allClasses = function () {
+	return Classes.find().fetch();
+};
+newProtocolProductVM.prototype.flatten = function () {
+	return {
+		name: this.name(),
+		classes: _.map(this.classes(), function (xlass) {
+			return xlass._id;
+		})
+	};
+};
+
 UI.registerHelper('protocols', function () {
 	return Protocols.find();
 });
 
-Session.setDefault('newProtocolDeps', []);
-Session.setDefault('newProtocolSteps', []);
-Session.setDefault('newProtocolResults', []);
-
-Template.newProtocol.deps = function () {
-	return Session.get('newProtocolDeps');
+Template.newProtocol.rendered = function () {
+	var node = this.firstNode;
+	this.vm = new newProtocolVM();
+	do {
+		if (node.nodeType == Node.ELEMENT_NODE) ko.applyBindings(this.vm, node);
+	} while (node = node.nextSibling);
 };
 
 Template.newProtocol.isSelected = function (type) {
@@ -27,137 +191,3 @@ Template.newProtocol.steps = function () {
 Template.newProtocol.results = function () {
 	return Session.get('newProtocolResults');
 };
-
-Template.newProtocol.events({
-	'click #addDependency': function () {
-		var deps = Session.get('newProtocolDeps');
-		var obj = { multi: false, idx: deps.length, nameChanged: false };
-		deps.push(obj);
-		Session.set('newProtocolDeps', deps);
-		Deps.flush();
-		// ugly!
-		var select = $('#protocolDependencies li select')[deps.length - 1];
-		obj.type = select.value;
-		obj.name = $(select.options[select.selectedIndex]).text();
-		Session.set('newProtocolDeps', deps);
-	},
-	'change #protocolDependencies select': function (ev, tmpl) {
-		this.type = ev.target.value;
-		var txt = tmpl.find('.dependencyName');
-		if (!this.nameChanged) {
-			this.name = txt.value = $(ev.target.options[ev.target.selectedIndex]).text();
-		}
-		var deps = Session.get('newProtocolDeps');
-		deps[this.idx] = this;
-		Session.set('newProtocolDeps', deps);
-	},
-	'input #protocolDependencies input.dependencyName': function (ev, tmpl) {
-		this.name = ev.target.value;
-		this.nameChanged = true;
-		var deps = Session.get('newProtocolDeps');
-		deps[this.idx] = this;
-		Session.set('newProtocolDeps', deps);
-	},
-	'change #protocolDependencies input.dependencyMulti': function (ev) {
-		this.multi = ev.target.checked;
-		var deps = Session.get('newProtocolDeps');
-		deps[this.idx] = this;
-		Session.set('newProtocolDeps', deps);
-	},
-
-	'click #addStep': function () {
-		var steps = Session.get('newProtocolSteps');
-		steps.push({ });
-		Session.set('newProtocolSteps', steps);
-	},
-	'click #addResult': function () {
-		var results = Session.get('newProtocolResults');
-		results.push({ });
-		Session.set('newProtocolResults', results);
-	},
-	'click button#addTextInput': function (ev) {
-		var sel = window.getSelection();
-		if (!sel) return false;
-
-		var steps = document.getElementById('protocolSteps');
-		if (!steps.contains(sel.anchorNode)) return false;
-
-		var focus = sel.focusNode;
-		var focusOffset = sel.focusOffset;
-
-		sel.deleteFromDocument();
-
-		var input = document.createElement('input');
-		switch (focus.nodeType) {
-			case Node.ELEMENT_NODE:
-				if (focus.childNodes.length > focusOffset) {
-					focus.insertBefore(input, focus.childNodes[focusOffset]);
-				} else {
-					focus.appendChild(input);
-				}
-				break;
-			case Node.TEXT_NODE:
-				var txt = document.createTextNode(focus.nodeValue.substr(focusOffset));
-				focus.nodeValue = focus.nodeValue.substr(0, focusOffset);
-				focus.parentNode.insertBefore(txt, focus.nextSibling);
-				focus.parentNode.insertBefore(input, txt);
-				break;
-			default:
-				// Should not happen
-		}
-
-		sel.removeAllRanges();
-		var range = document.createRange();
-		range.setStartAfter(input);
-		range.setEndAfter(input);
-		sel.addRange(range);
-		steps.focus();
-	},
-	'input ol#protocolSteps': function (ev) {
-		ev.preventDefault();
-		var steps = document.getElementById('protocolSteps');
-		if (!steps.hasChildNodes()) {
-			var emptyLi = document.createElement('li');
-			document.getElementById('protocolSteps').appendChild(emptyLi);
-
-			// Set the focus inside the <li />
-			var sel = window.getSelection();
-			sel.removeAllRanges();
-			var range = document.createRange();
-			range.selectNodeContents(emptyLi);
-			sel.addRange(range);
-		} else if (steps.childNodes.length == 1
-		           && steps.childNodes[0].childNodes.length == 1
-		           && steps.childNodes[0].childNodes[0].nodeName.toLowerCase() == 'br'
-		           && steps.childNodes[0].childNodes[0].getAttribute('type') == '_moz') {
-			// Firefox bug inserts <br />s before ol; delete them
-			$('#protocolStepsWrapper > br').remove();
-		}
-	},
-	'click button#submitProtocol': function () {
-		var steps = document.getElementById('protocolSteps');
-		Protocols.insert({
-			name: $('#protocolName').text(),
-			steps: _.map(steps.childNodes, function (li) {
-				return _.reduce(li.childNodes, function (memo, node) {
-					switch (node.nodeName.toLowerCase()) {
-						case '#text':
-							if (node.nodeValue != '') memo.push({ type: 'text', text: node.nodeValue });
-							break;
-						case 'br':
-							// Firefox inserts a <br type="moz" /> at the end; ignore it
-							if (node.getAttribute('type') != '_moz') memo.push({ type: 'br' });
-							break;
-						case 'input':
-							memo.push({ type: 'input' });
-							break;
-						default:
-							// Should not happen
-							console.log('ERROR: cannot handle node', node);
-					}
-					return memo;
-				}, []);
-			})
-		});
-	}
-});
