@@ -31,7 +31,7 @@
 		</tr>
 		<tr><th data-bind="attr: { colspan: colspan }"><h3>Steps</h3></th></tr>
 		<!-- ko foreach: protocol.steps -->
-			<tr><th data-bind="text: name, attr: { colspan: $parent.colspan }"></th></tr>
+			<tr><th data-bind="text: desc, attr: { colspan: $parent.colspan }"></th></tr>
 			<!-- ko foreach: inputs -->
 				<tr>
 					<th data-bind="text: desc"></th>
