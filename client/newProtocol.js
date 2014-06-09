@@ -1,6 +1,6 @@
 'use strict';
 
-var newProtocolVM = function () {
+function newProtocolVM() {
 	var self = this;
 	self.name = ko.observable('Enter the name of the new protocol here');
 	self.params = ko.observableArray();
@@ -11,7 +11,7 @@ var newProtocolVM = function () {
 	});
 	self.steps = ko.observableArray();
 	self.products = ko.observableArray();
-};
+}
 
 newProtocolVM.prototype.addParam = function () {
 	this.params.push(new newProtocolParamVM());
@@ -30,7 +30,7 @@ newProtocolVM.prototype.removeStep = function (step) {
 };
 
 newProtocolVM.prototype.addProduct = function () {
-	this.products.push(new newProtocolProductVM());
+	this.products.push(new newProtocolProductVM(this));
 };
 
 newProtocolVM.prototype.removeProduct = function (product) {
@@ -56,34 +56,32 @@ newProtocolVM.prototype.save = function () {
 	Protocols.insert(this.flatten());
 };
 
-var newProtocolParamVM = function () {
+function newProtocolParamVM() {
 	var self = this;
 	self.type = ko.observable();
 	self.type.subscribe(function (newValue) {
-		if (!self.nameWasChanged) self.name(newValue.name);
+		if (!self.nameWasChanged) self.name(newValue.name());
 	});
 	self.name = ko.observable();
 	self.multi = ko.observable(false);
 	self.nameWasChanged = false;
-};
+}
 
-newProtocolParamVM.prototype.classes = function () {
-	return Classes.find().fetch();
-};
+newProtocolParamVM.prototype.types = ko.meteor.find(Types, { });
 
-newProtocolParamVM.prototype.nameChanged = function (data) {
-	data.nameWasChanged = true;
+newProtocolParamVM.prototype.nameChanged = function () {
+	this.nameWasChanged = true;
 };
 
 newProtocolParamVM.prototype.flatten = function () {
 	return {
-		type: this.type()._id,
+		type: this.type()._id(),
 		name: this.name(),
 		multi: this.multi()
 	};
 };
 
-var newProtocolStepVM = function () {
+function newProtocolStepVM() {
 	var self = this;
 	self.desc = ko.observable('Enter description of the step');
 	self.inputs = ko.observableArray();
@@ -91,7 +89,7 @@ var newProtocolStepVM = function () {
 	self.substepParam = ko.observable();
 	self.substepDesc = ko.observable('Enter description of the repeating sub-step');
 	self.substepInputs = ko.observableArray();
-};
+}
 
 newProtocolStepVM.prototype.addInput = function () {
 	this.inputs.push(new newProtocolStepInputVM());
@@ -131,11 +129,10 @@ newProtocolStepVM.prototype.flatten = function () {
 	return obj;
 };
 
-var newProtocolStepInputVM = function () {
-	var self = this;
-	self.desc = ko.observable('Enter description of the input field here');
-	self.type = ko.observable();
-};
+function newProtocolStepInputVM() {
+	this.desc = ko.observable('Enter description of the input field here');
+	this.type = ko.observable();
+}
 
 newProtocolStepInputVM.prototype.types = [ { id: 'text', desc: 'Text' }, { id: 'uint', desc: 'Positive integer' }, { id: 'int', desc: 'Integer' }, { id: 'ufloat', desc: 'Positive real number' }, { id: 'float', desc: 'Real number' } ];
 
@@ -146,48 +143,123 @@ newProtocolStepInputVM.prototype.flatten = function () {
 	};
 };
 
-var newProtocolProductVM = function () {
+function newProtocolProductVM(parent) {
 	var self = this;
+	self.parent = parent;
 	self.name = ko.observable('Enter name of the product here');
-	self.classes = ko.observableArray();
-};
+	self.types = ko.observableArray();
 
-newProtocolProductVM.prototype.allClasses = function () {
-	return Classes.find().fetch();
-};
+	self.allTypes = ko.computed(function () {
+		var map = { };
+
+		_.each(self.types(), function (type) {
+			map[type._id()] = type;
+			_.each(type.baseTypes(), function (baseType) {
+				map[baseType._id()] = baseType;
+			});
+		});
+
+		return _.values(map);
+	});
+
+	self.propertyBindings = ko.computed(function () {
+		var arr = [ ];
+		var map = { };
+
+		_.each(self.types(), function (type) {
+			var usedTypes = { };
+
+			_.each(type.allProperties(), function (property) {
+				property = _.clone(property);
+				if (!property.from) property.from = type;
+
+				if (map[property.from._id()] != 1) {
+					arr.push({
+						property: property,
+						source: ko.observable(),
+						possibleSources: ko.computed(function () {
+							var arr = [ ];
+
+							_.each(parent.params(), function (param) {
+								if (!param.multi()) {
+									_.each(param.type().allProperties(), function (paramProperty) {
+										if (paramProperty.type() == property.type()) {
+											arr.push({
+												type: 'paramProperty',
+												text: ko.computed(function () {
+													return 'Property ' + paramProperty.name() + ' of parameter ' + param.name();
+												}),
+												paramProperty: paramProperty
+											});
+										}
+									});
+								}
+							});
+
+							_.each(parent.steps(), function (step) {
+								_.each(step.inputs(), function (input) {
+									if (input.type().id == property.type()) {
+										arr.push({
+											type: 'input',
+											text: ko.computed(function () {
+												return 'Input field ' + input.desc() + ' of step "' + step.desc() + '"';
+											}),
+											input: input.flatten()
+										});
+									}
+								});
+							});
+
+							return arr;
+						})
+					});
+					usedTypes[property.from._id()] = 1;
+				}
+			});
+
+			_.extend(map, usedTypes);
+		});
+
+		return arr;
+	});
+}
+
+newProtocolProductVM.prototype.possibleTypes = ko.meteor.find(Types, { });
+
 newProtocolProductVM.prototype.flatten = function () {
 	return {
 		name: this.name(),
-		classes: _.map(this.classes(), function (xlass) {
-			return xlass._id;
-		})
+		types: ko.toJS(_.map(this.types(), function (type) {
+			return _.pick(type, '_id', 'name');
+		})),
+		allTypes: ko.toJS(_.map(this.allTypes(), function (type) {
+			return _.pick(type, '_id', 'name');
+		})),
+		propertyBindings: ko.toJS(_.map(this.propertyBindings(), function (binding) {
+			return {
+				property: _.pick(binding.property, 'from', 'name'),
+				source: _.omit(binding.source(), 'text')
+			};
+		}))
 	};
 };
 
-UI.registerHelper('protocols', function () {
-	return Protocols.find();
-});
-
 Template.newProtocol.rendered = function () {
+	console.log('newProtocol.rendered', this);
 	var node = this.firstNode;
 	this.vm = new newProtocolVM();
 	do {
+		// apply bindings to each direct child element of the template
+		// this does not apply to comments, i. e. containerless binding syntax!
+		// to enable both, we'd need to parse the comments ourselves
 		if (node.nodeType == Node.ELEMENT_NODE) ko.applyBindings(this.vm, node);
 	} while (node = node.nextSibling);
 };
 
-Template.newProtocol.isSelected = function (type) {
-	return type === this._id;
-};
-
-Template.newProtocol.isChecked = function () {
-	return this.multi;
-};
-
-Template.newProtocol.steps = function () {
-	return Session.get('newProtocolSteps');
-};
-
-Template.newProtocol.results = function () {
-	return Session.get('newProtocolResults');
+Template.newProtocol.destroyed = function () {
+	console.log('newProtocol.destroyed', this);
+	var node = this.firstNode;
+	do {
+		if (node.nodeType == Node.ELEMENT_NODE) ko.cleanNode(node);
+	} while (node = node.nextSibling);
 };

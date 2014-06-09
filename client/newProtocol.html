@@ -1,15 +1,3 @@
-<template name="protocolList">
-	<ul id="protocols">
-		{{#each protocols}}
-			{{> protocolListItem}}
-		{{/each}}
-	</ul>
-</template>
-
-<template name="protocolListItem">
-	<li><a href="">{{name}}</a></li>
-</template>
-
 <template name="newProtocol">
 	<h1>Enter new protocol</h1>
 	<div id="newProtocol">
@@ -17,7 +5,7 @@
 		<h3>Parameters <a href="" data-bind="click: addParam">+</a></h3>
 		<ul id="protocolParameters" data-bind="foreach: params">
 			<li>
-				<select data-bind="value: type, options: classes(), optionsText: 'name'"></select>
+				<select data-bind="value: type, options: types(), optionsText: 'name'"></select>
 				<input type="text" data-bind="value: name, valueUpdate: 'input', event: { change: nameChanged }" />
 				<input type="checkbox" data-bind="checked: multi" /> multiple
 				<a href="" data-bind="click: $parent.removeParam.bind($parent)">-</a>
@@ -69,7 +57,15 @@
 				<a href="" data-bind="click: $parent.removeProduct.bind($parent)">-</a>
 				<br />
 				Has the following type(s):
-				<select multiple="true" size="3" data-bind="options: allClasses(), optionsText: 'name', selectedOptions: classes"></select>
+				<select multiple="true" size="5" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select>
+				<br />
+				Property bindings:
+				<ul data-bind="foreach: propertyBindings">
+					<li>
+						<span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type"></span>):
+						<select data-bind="value: source, options: possibleSources, optionsText: 'text'"></select>
+					</li>
+				</ul>
 			</li>
 		</ul>		
 

@@ -1,0 +1,11 @@
+<template name="protocolList">
+	<ul id="protocols">
+		{{#each protocols}}
+			{{> protocolListItem}}
+		{{/each}}
+	</ul>
+</template>
+
+<template name="protocolListItem">
+	<li><a href="{{pathFor 'performProtocolWrapper' id=_id}}">{{name}}</a></li>
+</template>

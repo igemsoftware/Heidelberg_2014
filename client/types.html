@@ -1,0 +1,38 @@
+<template name="typeList">
+	<ul id="types">
+		{{#each types}}
+			{{> type}}
+		{{/each}}
+	</ul>
+</template>
+
+<template name="type">
+	<li><a href="">{{name}}</a></li>
+</template>
+
+<template name="newType">
+	<h1>Enter new type</h1>
+	<div id="newType">
+		<h2 id="typeName">Name: <input type="text" data-bind="value: name" /></h2>
+		<h3>Base types (everything of this type also has these types)</h3>
+		<select multiple="true" size="8" data-bind="options: types, optionsText: 'name', selectedOptions: baseTypes"></select>
+
+		<h3>Properties <a href="" data-bind="click: addProperty">+</a></h3>
+		<ul id="typeProperties" data-bind="foreach: properties">
+			<li>
+				<input type="text" data-bind="value: name" />
+				<select data-bind="value: type, options: types, optionsText: 'desc'"></select>
+				<a href="" data-bind="click: $parent.removeProperty.bind($parent)">-</a>
+			</li>
+		</ul>
+
+		<h4>Inherited properties</h4>
+		<ul id="typeInheritedProperties" data-bind="foreach: inheritedProperties">
+			<li>
+				<span data-bind="text: name"></span> (<span data-bind="text: type"></span>, from <span data-bind="text: from.name"></span>)
+			</li>
+		</ul>
+
+		<button data-bind="click: save">Save</button>
+	</div>
+</template>
