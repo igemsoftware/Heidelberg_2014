@@ -14,7 +14,7 @@ performProtocolVM.prototype.addExperiment = function () {
 };
 
 performProtocolVM.prototype.removeExperiment = function (experiment) {
-	this.experiments.remove(experiments);
+	this.experiments.remove(experiment);
 };
 
 performProtocolVM.prototype.save = function () {
@@ -28,33 +28,70 @@ function performProtocolExperimentVM(protocol) {
 	self.protocol = protocol;
 	self.params = { };
 	self.values = { };
+	self.possibleSourcesCache = { };
+}
+
+function resolvePropertyReference(product, property, sourceExperiment) {
+	var source = product.propertyBindings[property].source;
+	switch (ko.utils.unwrapObservable(source.type)) {
+		case 'input':
+			return ko.utils.unwrapObservable(sourceExperiment.values[ko.utils.unwrapObservable(source.input.step)][ko.utils.unwrapObservable(source.input.input)]);
+		case 'paramProperty':
+			var sourceSourceExperiment = Experiments.findOne(ko.utils.unwrapObservable(sourceExperiment.params[ko.utils.unwrapObservable(source.param)].experiment));
+			var sourceSourceProtocol = Protocols.findOne(sourceSourceExperiment.protocol);
+			var sourceProducts = { };
+			_.each(sourceSourceProtocol.products, function (sourceProduct) {
+				sourceProducts[sourceProduct.name] = sourceProduct;
+			});
+			return resolvePropertyReference(sourceProducts[ko.utils.unwrapObservable(sourceExperiment.params[ko.utils.unwrapObservable(source.param)].product)], ko.utils.unwrapObservable(source.paramProperty.name), sourceSourceExperiment);
+	}
 }
 
 performProtocolExperimentVM.prototype.possibleSources = function (param) {
-	return ko.computed(function () {
-		var ps = ko.meteor.find(Protocols, { 'products.allTypes._id': param.type });
-		var pproducts = { };
-		_.each(ps(), function (sourceProtocol) {
-			pproducts[sourceProtocol._id()] = { name: sourceProtocol.name, products: [ ] };
-			_.each(sourceProtocol.products(), function (product) {
-				if (_.contains(ko.toJS(_.pluck(product.allTypes(), '_id')), param.type)) {
-					pproducts[sourceProtocol._id()].products.push(product);
-				}
+	if (!this.possibleSourcesCache[param.name]) {
+		this.possibleSourcesCache[param.name] = ko.computed(function () {
+			var ps = ko.meteor.find(Protocols, { 'products.allTypes._id': param.type });
+			var pproducts = { };
+			_.each(ps(), function (sourceProtocol) {
+				pproducts[sourceProtocol._id()] = { name: sourceProtocol.name, products: [] };
+				_.each(sourceProtocol.products(), function (product) {
+					if (_.contains(ko.toJS(_.pluck(product.allTypes(), '_id')), param.type)) {
+						pproducts[sourceProtocol._id()].products.push(product);
+					}
+				});
 			});
+
+			var xs = ko.meteor.find(Experiments, { protocol: { $in: _.keys(pproducts) } });
+
+			return _.flatten(_.map(xs(), function (sourceExperiment) {
+				return _.map(pproducts[sourceExperiment.protocol()].products, function (product) {
+					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol()].name() + ' performed on ' + sourceExperiment.date/*()*/;
+
+					var paramType = Types.findOne(param.type);
+
+					var text = '';
+					_.each(paramType.text, function (part) {
+						switch (part.type) {
+							case 'text':
+								text = text + part.text;
+								break;
+							case 'propertyReference':
+								text = text + resolvePropertyReference(product, part.property, sourceExperiment);
+						}
+					});
+
+					text = text ? text + ' (' + origin + ')' : origin;
+
+					return {
+						experiment: sourceExperiment,
+						product: product,
+						text: text
+					};
+				});
+			}));
 		});
-
-		var xs = ko.meteor.find(Experiments, { protocol: { $in: _.keys(pproducts) } });
-
-		return _.flatten(_.map(xs(), function (experiment) {
-			return _.map(pproducts[experiment.protocol()].products, function (product) {
-				return {
-					experiment: experiment,
-					product: product,
-					text: product.name() + ' from ' + pproducts[experiment.protocol()].name() + ' performed on ' + experiment.date/*()*/
-				};
-			});
-		}));
-	});
+	}
+	return this.possibleSourcesCache[param.name];
 };
 
 performProtocolExperimentVM.prototype.singleParam = function (param) {

@@ -1,9 +1,19 @@
 /* CSS declarations go here */
 
-.editable {
+.editor {
+	padding: 5px;
 	outline: 1px dotted #a0a0a0;
 }
 
-.editable:focus {
+.editor:focus {
 	outline: 1px dashed gray;
+}
+
+.editorReference {
+	display: inline-block;
+	border: 1px solid blue;
+	white-space: nowrap;
+	background-color: lightblue;
+	padding: 2px;
+	margin: 1px;
 }

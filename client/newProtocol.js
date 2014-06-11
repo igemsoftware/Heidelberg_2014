@@ -189,6 +189,7 @@ function newProtocolProductVM(parent) {
 												text: ko.computed(function () {
 													return 'Property ' + paramProperty.name() + ' of parameter ' + param.name();
 												}),
+												param: param.name(),
 												paramProperty: paramProperty
 											});
 										}
@@ -196,15 +197,18 @@ function newProtocolProductVM(parent) {
 								}
 							});
 
-							_.each(parent.steps(), function (step) {
-								_.each(step.inputs(), function (input) {
+							_.each(parent.steps(), function (step, stepIndex) {
+								_.each(step.inputs(), function (input, inputIndex) {
 									if (input.type().id == property.type()) {
 										arr.push({
 											type: 'input',
 											text: ko.computed(function () {
 												return 'Input field ' + input.desc() + ' of step "' + step.desc() + '"';
 											}),
-											input: input.flatten()
+											input: {
+												step: stepIndex,
+												input: inputIndex
+											}
 										});
 									}
 								});
@@ -235,12 +239,13 @@ newProtocolProductVM.prototype.flatten = function () {
 		allTypes: ko.toJS(_.map(this.allTypes(), function (type) {
 			return _.pick(type, '_id', 'name');
 		})),
-		propertyBindings: ko.toJS(_.map(this.propertyBindings(), function (binding) {
-			return {
-				property: _.pick(binding.property, 'from', 'name'),
+		propertyBindings: ko.toJS(_.reduce(this.propertyBindings(), function (memo, binding) {
+			memo[binding.property.name()] = {
+				from: binding.property.from,
 				source: _.omit(binding.source(), 'text')
 			};
-		}))
+			return memo;
+		}, { }))
 	};
 };
 
