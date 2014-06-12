@@ -67,25 +67,27 @@ performProtocolExperimentVM.prototype.possibleSources = function (param) {
 				return _.map(pproducts[sourceExperiment.protocol()].products, function (product) {
 					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol()].name() + ' performed on ' + sourceExperiment.date/*()*/;
 
-					var paramType = Types.findOne(param.type);
+					var texts = [];
+					_.each(product.types(), function (productType) {
+						productType = Types.findOne(productType._id());
+						var text = '';
+						_.each(productType.text, function (part) {
+							switch (part.type) {
+								case 'text':
+									text = text + part.text;
+									break;
+								case 'propertyReference':
+									text = text + resolvePropertyReference(product, part.property, sourceExperiment);
+							}
+						});
 
-					var text = '';
-					_.each(paramType.text, function (part) {
-						switch (part.type) {
-							case 'text':
-								text = text + part.text;
-								break;
-							case 'propertyReference':
-								text = text + resolvePropertyReference(product, part.property, sourceExperiment);
-						}
+						if (text) texts.push(text);
 					});
-
-					text = text ? text + ' (' + origin + ')' : origin;
 
 					return {
 						experiment: sourceExperiment,
 						product: product,
-						text: text
+						text: texts.length ? texts.join('/') + ' (' + origin + ')' : origin
 					};
 				});
 			}));
@@ -147,6 +149,7 @@ Template.performProtocol.destroyed = function () {
 	console.log('performProtocol.destroyed', this);
 	var node = this.firstNode;
 	do {
+		console.log(node);
 		if (node.nodeType == Node.ELEMENT_NODE) ko.cleanNode(node);
 	} while (node = node.nextSibling);
 };
