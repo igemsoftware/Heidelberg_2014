@@ -16,19 +16,21 @@
 			<!-- /ko -->
 		</tr>
 		<tr><th data-bind="attr: { colspan: colspan }"><h3>Parameters</h3></th></tr>
-		<tr data-bind="foreach: protocol.params">
-			<th><span data-bind="text: name"></span>:</th>
-			<!-- ko if: multi -->
-				<!--ko foreach: $root.experiments -->
-					<td>Multi, TODO!</td>
+		<!-- ko foreach: protocol.params -->
+			<tr>
+				<th><span data-bind="text: name"></span>:</th>
+				<!-- ko if: multi -->
+					<!--ko foreach: $root.experiments -->
+						<td>Multi, TODO!</td>
+					<!-- /ko -->
 				<!-- /ko -->
-			<!-- /ko -->
-			<!-- ko ifnot: multi -->
-				<!--ko foreach: $root.experiments -->
-					<td><select data-bind="value: singleParam($parent), options: possibleSources($parent), optionsText: 'text'"></select></td>
+				<!-- ko ifnot: multi -->
+					<!--ko foreach: $root.experiments -->
+						<td><select data-bind="value: singleParam($parent), options: possibleSources($parent), optionsText: 'text'"></select></td>
+					<!-- /ko -->
 				<!-- /ko -->
-			<!-- /ko -->
-		</tr>
+			</tr>
+		<!-- /ko -->
 		<tr><th data-bind="attr: { colspan: colspan }"><h3>Steps</h3></th></tr>
 		<!-- ko foreach: protocol.steps -->
 			<tr><th data-bind="text: desc, attr: { colspan: $parent.colspan }"></th></tr>
