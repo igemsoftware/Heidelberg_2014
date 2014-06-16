@@ -1,0 +1,7 @@
+<template name="experimentList">
+	<ul id="experiments">
+		{{#each experiments}}
+			<li><a href="{{pathFor 'viewExperiment' id=_id}}">{{protocol.name}}</a></li>
+		{{/each}}
+	</ul>
+</template>

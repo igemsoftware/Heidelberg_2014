@@ -4,11 +4,15 @@ UI.registerHelper('types', function () {
 	return Types.find();
 });
 
-function newTypeVM(textEditor) {
+function typeVM(textEditor, type) {
 	var self = this;
-	self.name = ko.observable('Enter the name of the new type here');
-	self.baseTypes = ko.observableArray();
+	self.editMode = ko.observable(!type);
+	self.id = type && type._id;
+	self.name = ko.observable(type ? type.name : 'Enter the name of the new type here');
 
+	self.baseTypes = ko.observableArray(type && _.filter(this.types(), function (ptype) {
+		return _.contains(_.pluck(type.baseTypes, '_id'), ptype._id());
+	}));
 	self.allBaseTypes = ko.computed(function () {
 		var allBaseTypes = { };
 
@@ -22,7 +26,9 @@ function newTypeVM(textEditor) {
 		return _.values(allBaseTypes);
 	});
 
-	self.properties = ko.observableArray();
+	self.properties = ko.observableArray(type ? _.map(type.properties, function (property) {
+		return new typePropertyVM(property);
+	}) : []);
 	self.inheritedProperties = ko.computed(function () {
 		var arr = [];
 		var map = { };
@@ -44,7 +50,6 @@ function newTypeVM(textEditor) {
 
 		return arr;
 	});
-
 	self.allProperties = ko.computed(function () {
 		var arr = _.clone(self.properties());
 		Array.prototype.push.apply(arr, self.inheritedProperties());
@@ -55,17 +60,17 @@ function newTypeVM(textEditor) {
 	self.propertyToRef = ko.observable();
 }
 
-newTypeVM.prototype.types = ko.meteor.find(Types, { });
+typeVM.prototype.types = ko.meteor.find(Types, { });
 
-newTypeVM.prototype.addProperty = function () {
-	this.properties.push(new newTypePropertyVM());
+typeVM.prototype.addProperty = function () {
+	this.properties.push(new typePropertyVM());
 };
 
-newTypeVM.prototype.removeProperty = function (property) {
+typeVM.prototype.removeProperty = function (property) {
 	this.properties.remove(property);
 };
 
-newTypeVM.prototype.addRef = function () {
+typeVM.prototype.addRef = function () {
 	var sel = window.getSelection();
 	var ranges = [];
 	for (var ii = 0; ii < sel.rangeCount; ii++) {
@@ -73,13 +78,9 @@ newTypeVM.prototype.addRef = function () {
 		if (this.textEditor.contains(range.commonAncestorContainer)) {
 			range.deleteContents();
 
-			var block = document.createElement('span');
-			block.setAttribute('contenteditable', 'false');
-			block.className = 'editorSpecial editorReference';
-			block.setAttribute('data-bind', 'text: name');
+			var block = typeVM.createRefBlock(this.propertyToRef());
 			range.insertNode(block);
-			console.log(this.propertyToRef());
-			ko.applyBindings(this.propertyToRef(), block);
+			// TODO: <template instance>.nodesToClean.push(block);
 
 			range = document.createRange();
 			range.setStartAfter(block);
@@ -98,7 +99,16 @@ newTypeVM.prototype.addRef = function () {
 	})
 };
 
-newTypeVM.prototype.flatten = function () {
+typeVM.createRefBlock = function (vm) {
+	var block = document.createElement('span');
+	block.setAttribute('contenteditable', 'false');
+	block.className = 'editorSpecial editorReference';
+	block.setAttribute('data-bind', 'text: name');
+	ko.applyBindings(vm, block);
+	return block;
+};
+
+typeVM.prototype.flatten = function () {
 	var flattened = {
 		name: this.name(),
 		baseTypes: ko.toJS(_.map(this.baseTypes(), function (baseType) {
@@ -132,48 +142,72 @@ newTypeVM.prototype.flatten = function () {
 	return flattened;
 };
 
-newTypeVM.prototype.save = function () {
-	Types.insert(this.flatten());
+typeVM.prototype.save = function () {
+	if (!this.id) this.id = Types.insert(this.flatten());
+	this.editMode(false);
 };
 
-function newTypePropertyVM() {
-	this.name = ko.observable('Enter the name of the property here');
-	this.type = ko.observable();
+function typePropertyVM(property) {
+	this.name = ko.observable(property ? property.name : 'Enter the name of the property here');
+	this.type = ko.observable(property && _.find(this.types, function (ptype) {
+		return ptype.id == property.type;
+	}));
 }
 
-newTypePropertyVM.prototype.types = [ { id: 'text', desc: 'Text' }, { id: 'uint', desc: 'Positive integer' }, { id: 'int', desc: 'Integer' }, { id: 'ufloat', desc: 'Positive real number' }, { id: 'float', desc: 'Real number' } ];
+typePropertyVM.prototype.types = [ { id: 'text', desc: 'Text' }, { id: 'uint', desc: 'Positive integer' }, { id: 'int', desc: 'Integer' }, { id: 'ufloat', desc: 'Positive real number' }, { id: 'float', desc: 'Real number' }, { id: '%', desc: 'Percentage' } ];
 
-newTypePropertyVM.prototype.flatten = function () {
+typePropertyVM.prototype.flatten = function () {
 	return {
 		name: this.name(),
 		type: this.type().id
 	};
 };
 
-Template.newType.rendered = function () {
-	console.log('newType.rendered', this);
-	var node = this.firstNode;
-	this.vm = new newTypeVM(this.find('#textEditor'));
+Template.type.rendered = function () {
+	var self = this;
+	var editor = self.find('#textEditor');
+	self.vm = new typeVM(editor, self.data);
 
-	do {
-		// apply bindings to each direct child element of the template
-		// this does not apply to comments, i. e. containerless binding syntax!
-		// to enable both, we'd need to parse the comments ourselves
-		if (node.nodeType == Node.ELEMENT_NODE) ko.applyBindings(this.vm, node);
-	} while (node = node.nextSibling);
+	setTimeout(function () {
+		self.nodesToClean = [];
+		for (var node = self.firstNode; node; node = node.nextSibling) {
+			// apply bindings to each direct child element of the template
+			// this does not apply to comments, i. e. containerless binding syntax!
+			// to enable both, we'd need to parse the comments ourselves
+			if (node.nodeType == Node.ELEMENT_NODE) {
+				ko.applyBindings(self.vm, node);
+				self.nodesToClean.push(node);
+			}
+		}
+
+		if (self.data) {
+			_.each(self.data.text, function (part) {
+				switch (part.type) {
+					case 'text':
+						editor.appendChild(document.createTextNode(part.text));
+						break;
+					case 'propertyReference':
+						var block = typeVM.createRefBlock(_.find(self.vm.allProperties(), function (property) {
+							return property.name() == part.property;
+						}));
+						editor.appendChild(block);
+						self.nodesToClean.push(block);
+						break;
+				}
+			});
+		}
+		editor.appendChild(document.createElement('br'));
+	}, 0);
 };
 
-Template.newType.destroyed = function () {
-	console.log('newType.destroyed', this);
-	var node = this.firstNode;
-	do {
-		if (node.nodeType == Node.ELEMENT_NODE) ko.cleanNode(node);
-	} while (node = node.nextSibling);
+Template.type.destroyed = function () {
+	_.each(this.nodesToClean, function (node) {
+		ko.cleanNode(node);
+	});
 };
 
-Template.newType.events({
+Template.type.events({
 	'input [contenteditable=true]': function (ev, tmpl) {
-		//tmpl.vm.text.removeAll();
 		for (var ii = 0; ii < ev.target.childNodes.length;) {
 			var node = ev.target.childNodes[ii];
 			if (node.nodeType == Node.ELEMENT_NODE && !node.classList.contains('editorSpecial')) {

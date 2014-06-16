@@ -1,0 +1,78 @@
+<template name="protocol">
+	<h1 data-bind="text: $root.editMode() ? id ? 'Edit protocol' : 'New protocol' : 'View protocol'"></h1>
+	<div id="protocol">
+		<h2 id="protocolName"><span data-bind="visible: !$root.editMode(), text: name"></span><input type="text" data-bind="visible: $root.editMode, value: name" /></h2>
+		<h3>Parameters <a href="" data-bind="visible: $root.editMode, click: addParam">+</a></h3>
+		<ul id="protocolParameters" data-bind="foreach: params">
+			<li>
+				<span data-bind="ifnot: $root.editMode">
+					<a data-bind="text: type().name, attr: { href: '/t/' + type()._id() }"></a>:
+					<span data-bind="text: name"></span>
+					<span data-bind="if: multi">(multiple)</span>
+				</span>
+				<span data-bind="if: $root.editMode">
+					<select data-bind="visible: $root.editMode, value: type, options: types(), optionsText: 'name'"></select>
+					<input type="text" data-bind="value: name, valueUpdate: 'input', event: { change: nameChanged }" />
+					<input type="checkbox" data-bind="checked: multi" /> multiple
+					<a href="" data-bind="click: $parent.removeParam.bind($parent)">-</a>
+				</span>
+			</li>
+		</ul>
+
+		<h3>Steps <a href="" data-bind="visible: $root.editMode, click: addStep">+</a></h3>
+		<ol id="protocolSteps" data-bind="foreach: steps">
+			<li>
+				<div class="stepDesc">
+					<div data-bind="visible: !$root.editMode(), text: desc"></div>
+					<div data-bind="if: $root.editMode">
+						<input type="text" data-bind="value: desc" />
+						<a href="" data-bind="click: $parent.removeStep.bind($parent)">-</a>
+					</div>
+				</div>
+				<div class="stepUserInputs">
+					User input fields: <a href="" data-bind="click: addInput">+</a>
+					<ul data-bind="foreach: inputs">
+						<li>
+							<div data-bind="ifnot: $root.editMode">
+								<span data-bind="text: desc"></span> (<span data-bind="text: type().desc"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
+							</div>
+							<div data-bind="if: $root.editMode">
+								<input type="text" data-bind="value: desc" />
+								Type: <select data-bind="value: type, options: types, optionsText: 'desc'"></select>
+								<input type="checkbox" data-bind="checked: multi" /> prompt for every <select data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
+								<a href="" data-bind="click: $parent.removeInput.bind($parent)">-</a>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</li>
+		</ol>
+
+		<h3>Products <a href="" data-bind="visible: $root.editMode, click: addProduct">+</a></h3>
+		<ul id="protocolProducts" data-bind="foreach: products">
+			<li>
+				Name: <span data-bind="visible: !$root.editMode(), text: name"></span><input type="text" data-bind="visible: $root.editMode, value: name" />
+				<a href="" data-bind="visible: $root.editMode, click: $parent.removeProduct.bind($parent)">-</a>
+				<br />
+				Has the following type(s):
+				<div data-bind="ifnot: $root.editMode">
+					<ul data-bind="foreach: types">
+						<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
+					</ul>
+				</div>
+				<select multiple="true" size="5" data-bind="visible: $root.editMode, options: possibleTypes, optionsText: 'name', selectedOptions: types"></select>
+				<br />
+				Property bindings:
+				<ul data-bind="foreach: propertyBindings">
+					<li>
+						<span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type"></span>):
+						<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span><select data-bind="visible: $root.editMode, value: source, options: possibleSources, optionsText: 'text'"></select>
+					</li>
+				</ul>
+			</li>
+		</ul>
+
+		<button data-bind="visible: $root.editMode, click: save">Save</button>
+		<div data-bind="ifnot: $root.editMode"><a data-bind="attr: { href: '/perform/' + id }">Perform this protocol</a></div>
+	</div>
+</template>

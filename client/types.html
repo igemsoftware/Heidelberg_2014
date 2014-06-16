@@ -1,28 +1,31 @@
 <template name="typeList">
 	<ul id="types">
 		{{#each types}}
-			{{> type}}
+			<li><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a></li>
 		{{/each}}
 	</ul>
+	<a href="{{pathFor 'newType'}}">Create new type</a>
 </template>
 
 <template name="type">
-	<li><a href="">{{name}}</a></li>
-</template>
+	<div id="type">
+		<h1 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h1>
+		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" /></h2>
 
-<template name="newType">
-	<h1>Enter new type</h1>
-	<div id="newType">
-		<h2 id="typeName">Name: <input type="text" data-bind="value: name" /></h2>
 		<h3>Base types (everything of this type also has these types)</h3>
-		<select multiple="true" size="8" data-bind="options: types, optionsText: 'name', selectedOptions: baseTypes"></select>
+		<div data-bind="if: $root.editMode"><select multiple="true" size="8" data-bind="options: types, optionsText: 'name', selectedOptions: baseTypes"></select></div>
+		<div data-bind="ifnot: $root.editMode">
+			<ul data-bind="foreach: baseTypes">
+				<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
+			</ul>
+		</div>
 
-		<h3>Properties <a href="" data-bind="click: addProperty">+</a></h3>
+		<h3>Properties <a href="" data-bind="visible: $root.editMode, click: addProperty">+</a></h3>
 		<ul id="typeProperties" data-bind="foreach: properties">
 			<li>
 				<input type="text" data-bind="value: name" />
 				<select data-bind="value: type, options: types, optionsText: 'desc'"></select>
-				<a href="" data-bind="click: $parent.removeProperty.bind($parent)">-</a>
+				<a href="" data-bind="visible: $root.editMode, click: $parent.removeProperty.bind($parent)">-</a>
 			</li>
 		</ul>
 
@@ -34,10 +37,10 @@
 		</ul>
 
 		<h3>Textual representation</h3>
-		<div id="textEditor" class="editor" contenteditable="true"><br /></div>
-		<button data-bind="click: addRef">Add reference to property</button>
-		<select data-bind="value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
+		<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
+		<button data-bind="visible: $root.editMode, click: addRef">Add reference to property</button>
+		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
 
-		<button data-bind="click: save">Save</button>
+		<button data-bind="visible: $root.editMode, click: save">Save</button>
 	</div>
 </template>
