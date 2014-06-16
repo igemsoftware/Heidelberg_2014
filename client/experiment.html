@@ -19,7 +19,7 @@
 							<ul data-bind="foreach: getParam($parent, true)">
 								<li>
 									<div data-bind="ifnot: $root.editMode">
-										<span data-bind="text: paramValue().text"></span>
+										<a data-bind="text: paramValue().text, attr: { href: '/x/' + paramValue().experiment._id() }"></a>
 									</div>
 									<div data-bind="if: $root.editMode">
 										<select data-bind="value: paramValue, options: $parent.possibleSources.bind($parent)($parents[1]), optionsText: 'text'"></select>
@@ -33,7 +33,7 @@
 				<!-- ko ifnot: multi -->
 					<!--ko foreach: $root.experiments -->
 						<td>
-							<span data-bind="visible: !$root.editMode(), text: getParam($parent)().text"></span>
+							<a data-bind="visible: !$root.editMode(), text: getParam($parent)().text, attr: { href: '/x/' + getParam($parent)().experiment._id() }"></a>
 							<select data-bind="visible: $root.editMode, value: getParam($parent), options: possibleSources($parent), optionsText: 'text'"></select>
 						</td>
 					<!-- /ko -->
@@ -42,7 +42,7 @@
 		<!-- /ko -->
 		<tr><th class="section" data-bind="attr: { colspan: colspan }"><h3>Steps</h3></th></tr>
 		<!-- ko foreach: protocol.steps -->
-			<tr><th class="ol"><div class="li" data-bind="text: desc, attr: { colspan: $parent.colspan }"></div></th></tr>
+			<tr><th class="ol" data-bind="attr: { colspan: $parent.colspan }"><div class="li" data-bind="text: desc"></div></th></tr>
 			<!-- ko foreach: inputs -->
 				<tr>
 					<th class="ul indent1"><div class="li" data-bind="text: desc"></div></th>

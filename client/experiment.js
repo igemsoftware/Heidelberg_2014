@@ -214,10 +214,13 @@ experimentMultiParamVM.prototype.flatten = function () {
 
 Template.experiment.rendered = function () {
 	var self = this;
-	setTimeout(function () {
-	self.vm = new experimentsVM(self.data);
+	self.vm = ko.computed(function () {
+		console.log('vm', self.data);
+		return new experimentsVM(self.data());
+	});
 
-		self.nodesToClean = [];
+	self.nodesToClean = [];
+	setTimeout(function () {
 		for (var node = self.firstNode; node; node = node.nextSibling) {
 			// apply bindings to each direct child element of the template
 			// this does not apply to comments, i. e. containerless binding syntax!
@@ -234,4 +237,5 @@ Template.experiment.destroyed = function () {
 	_.each(this.nodesToClean, function (node) {
 		ko.cleanNode(node);
 	});
+	this.vm.dispose();
 };

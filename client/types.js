@@ -166,10 +166,12 @@ typePropertyVM.prototype.flatten = function () {
 Template.type.rendered = function () {
 	var self = this;
 	var editor = self.find('#textEditor');
-	self.vm = new typeVM(editor, self.data);
+	self.vm = ko.computed(function () {
+		return new typeVM(editor, self.data());
+	});
 
+	self.nodesToClean = [];
 	setTimeout(function () {
-		self.nodesToClean = [];
 		for (var node = self.firstNode; node; node = node.nextSibling) {
 			// apply bindings to each direct child element of the template
 			// this does not apply to comments, i. e. containerless binding syntax!
@@ -180,8 +182,8 @@ Template.type.rendered = function () {
 			}
 		}
 
-		if (self.data) {
-			_.each(self.data.text, function (part) {
+		if (self.data()) {
+			_.each(self.data().text, function (part) {
 				switch (part.type) {
 					case 'text':
 						editor.appendChild(document.createTextNode(part.text));
@@ -204,6 +206,7 @@ Template.type.destroyed = function () {
 	_.each(this.nodesToClean, function (node) {
 		ko.cleanNode(node);
 	});
+	this.vm.dispose();
 };
 
 Template.type.events({

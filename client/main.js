@@ -1,17 +1,26 @@
 'use strict';
 
 Router.map(function() {
+	var type = ko.observable();
+	var protocol = ko.observable();
+	var experiment = ko.observable();
+
 	this.route('home', { path: '/' });
 	this.route('typeList', { path: '/t' });
 	this.route('newType', {
 		path: '/newType',
-		template: 'type'
+		template: 'type',
+		data: function () {
+			type(null);
+			return type;
+		},
 	});
 	this.route('viewType', {
 		path: '/t/:id',
 		template: 'type',
 		data: function () {
-			return Types.findOne(this.params.id);
+			type(Types.findOne(this.params.id));
+			return type;
 		},
 		waitOn: function () {
 			var self = this;
@@ -23,13 +32,18 @@ Router.map(function() {
 	this.route('protocolList', { path: '/p' });
 	this.route('newProtocol', {
 		path: '/newProtocol',
-		template: 'protocol'
+		template: 'protocol',
+		data: function () {
+			protocol(null);
+			return protocol;
+		}
 	});
 	this.route('viewProtocol', {
 		path: '/p/:id',
 		template: 'protocol',
 		data: function () {
-			return Protocols.findOne(this.params.id);
+			protocol(Protocols.findOne(this.params.id));
+			return protocol;
 		},
 		waitOn: function () {
 			var self = this;
@@ -42,7 +56,10 @@ Router.map(function() {
 		path: '/perform/:id',
 		template: 'experiment',
 		data: function () {
-			return { protocol: Protocols.findOne(this.params.id) };
+			experiment({
+				protocol: Protocols.findOne(this.params.id)
+			});
+			return experiment;
 		},
 		waitOn: function () {
 			var self = this;
@@ -56,16 +73,18 @@ Router.map(function() {
 		path: '/x/:id',
 		template: 'experiment',
 		data: function () {
-			var data = { experiment: Experiments.findOne(this.params.id) };
+			var data = {
+				experiment: Experiments.findOne(this.params.id)
+			};
 			data.protocol = Protocols.findOne(data.experiment.protocol._id);
-			return data;
+			experiment(data);
+			return experiment;
 		},
 		waitOn: function () {
 			var self = this;
 			// TODO: just return Meteor.subscribe('experiment', this.params.id); or so once autopublish is removed
 			return { ready: function () { return Experiments.findOne(self.params.id) != undefined; } };
-		},
-		loadingTemplate: 'loading'
+		}
 	});
 });
 

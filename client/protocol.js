@@ -262,10 +262,12 @@ protocolProductVM.prototype.flatten = function () {
 
 Template.protocol.rendered = function () {
 	var self = this;
-	self.vm = new protocolVM(self.data);
+	self.vm = ko.computed(function () {
+		return new protocolVM(self.data());
+	});
 
+	self.nodesToClean = [];
 	setTimeout(function () {
-		self.nodesToClean = [];
 		for (var node = self.firstNode; node; node = node.nextSibling) {
 			// apply bindings to each direct child element of the template
 			// this does not apply to comments, i. e. containerless binding syntax!
@@ -282,4 +284,5 @@ Template.protocol.destroyed = function () {
 	_.each(this.nodesToClean, function (node) {
 		ko.cleanNode(node);
 	});
+	this.vm.dispose();
 };
