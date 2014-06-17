@@ -99,9 +99,9 @@ function protocolStepVM(protocolVM, step) {
 	var self = this;
 	self.protocolVM = protocolVM;
 	self.desc = ko.observable(step ? step.desc : 'Enter description of the step');
-	self.inputs = ko.observableArray(step && _.map(step.inputs, function (input) {
+	self.inputs = ko.observableArray(step ? _.map(step.inputs, function (input) {
 		return new protocolStepInputVM(protocolVM, input);
-	}));
+	}) : []);
 }
 
 protocolStepVM.prototype.addInput = function () {
@@ -147,9 +147,9 @@ protocolStepInputVM.prototype.flatten = function () {
 function protocolProductVM(protocolVM, product) {
 	var self = this;
 	self.name = ko.observable(product ? product.name : 'Enter name of the product here');
-	self.types = ko.observableArray(product && _.filter(self.possibleTypes(), function (ptype) {
+	self.types = ko.observableArray(product ? _.filter(self.possibleTypes(), function (ptype) {
 		return _.contains(_.pluck(product.types, '_id'), ptype._id());
-	}));
+	}) : []);
 
 	self.allTypes = ko.computed(function () {
 		var map = { };

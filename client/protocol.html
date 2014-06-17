@@ -25,12 +25,12 @@
 				<div class="stepDesc">
 					<div data-bind="visible: !$root.editMode(), text: desc"></div>
 					<div data-bind="if: $root.editMode">
-						<input type="text" data-bind="value: desc" />
+						<input type="text" class="form-input" data-bind="value: desc" />
 						<a href="" data-bind="click: $parent.removeStep.bind($parent)">-</a>
 					</div>
 				</div>
 				<div class="stepUserInputs">
-					User input fields: <a href="" data-bind="click: addInput">+</a>
+					User input fields: <a href="" data-bind="visible: $root.editMode, click: addInput">+</a>
 					<ul data-bind="foreach: inputs">
 						<li>
 							<div data-bind="ifnot: $root.editMode">
