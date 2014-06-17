@@ -1,6 +1,7 @@
 {
   "packages": {
     "iron-router": {},
-    "knockout": {}
+    "knockout": {},
+    "bootstrap-3": {}
   }
 }

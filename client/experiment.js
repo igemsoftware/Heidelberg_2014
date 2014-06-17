@@ -9,6 +9,7 @@ function experimentsVM(data) {
 		self.editMode = ko.observable(true);
 		self.newMode = ko.observable(true);
 	}
+	self.performer = ko.observable(data.experiment && data.experiment.performer);
 	self.protocol = data.protocol;
 	self.experiments = ko.observableArray([ new experimentVM(data) ]);
 	self.colspan = ko.computed(function () {
@@ -25,10 +26,11 @@ experimentsVM.prototype.removeExperiment = function (experiment) {
 };
 
 experimentsVM.prototype.save = function () {
+	var self = this;
 	_.each(this.experiments(), function (experiment) {
-		experiment.save();
+		experiment.save(self.performer);
 	});
-	this.editMode(false);
+	self.editMode(false);
 };
 
 function experimentVM(data) {
@@ -54,6 +56,13 @@ function experimentVM(data) {
 	});
 
 	self.values = data.experiment ? ko.mapping.fromJS(data.experiment.values) : { };
+
+	self.finishDate = ko.observable(data.experiment ? data.experiment.finishDate : new Date());
+	self.finishDateUpdate = !data.experiment && setInterval(function () {
+		self.finishDate(new Date());
+	}, 1000);
+
+	self.notes = ko.observable(data.experiment && data.experiment.notes);
 }
 
 function resolvePropertyReference(product, property, sourceExperiment) {
@@ -149,7 +158,7 @@ experimentVM.prototype.input = function (step, input) {
 	return this.values[step][input];
 };
 
-experimentVM.prototype.flatten = function () {
+experimentVM.prototype.flatten = function (performer) {
 	var params = { };
 	_.each(this.params, function (paramValue, paramName) {
 		if (paramValue.push) {
@@ -175,12 +184,15 @@ experimentVM.prototype.flatten = function () {
 	return {
 		protocol: _.pick(this.protocol, '_id', 'name'),
 		values: values,
-		params: params
+		params: params,
+		finishDate: this.finishDate(),
+		notes: this.notes(),
+		performer: performer()
 	};
 };
 
-experimentVM.prototype.save = function () {
-	if (!this.id) this.id = Experiments.insert(this.flatten());
+experimentVM.prototype.save = function (performer) {
+	if (!this.id) this.id = Experiments.insert(this.flatten(performer));
 }
 
 function experimentMultiParamVM(multiParam) {
@@ -215,7 +227,6 @@ experimentMultiParamVM.prototype.flatten = function () {
 Template.experiment.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		console.log('vm', self.data);
 		return new experimentsVM(self.data());
 	});
 

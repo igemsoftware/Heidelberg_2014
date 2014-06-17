@@ -84,7 +84,8 @@ Router.map(function() {
 			var self = this;
 			// TODO: just return Meteor.subscribe('experiment', this.params.id); or so once autopublish is removed
 			return { ready: function () { return Experiments.findOne(self.params.id) != undefined; } };
-		}
+		},
+		loadingTemplate: 'loading'
 	});
 });
 

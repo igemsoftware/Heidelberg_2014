@@ -84,3 +84,12 @@
 .hierarchical .li {
 	display: list-item;
 }
+
+.datetime {
+	display: table;
+}
+
+.datetime .datetime-date, .datetime .datetime-time {
+	display: table-cell;
+	padding: 0 .3em;
+}
