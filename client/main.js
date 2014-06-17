@@ -90,3 +90,4 @@ Router.map(function() {
 });
 
 Router.onBeforeAction('loading');
+Router.configure({layoutTemplate: 'masterTemplate'});
