@@ -25,7 +25,7 @@
 				<div class="stepDesc">
 					<div data-bind="visible: !$root.editMode(), text: desc"></div>
 					<div data-bind="if: $root.editMode">
-						<input type="text" data-bind="value: desc" />
+						<input type="text" class="form-input" data-bind="value: desc" />
 						<a href="" data-bind="click: $parent.removeStep.bind($parent)">-</a>
 					</div>
 				</div>

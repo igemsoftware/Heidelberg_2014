@@ -18,7 +18,7 @@ function experimentsVM(data) {
 }
 
 experimentsVM.prototype.addExperiment = function () {
-	this.experiments.push(new experimentVM(this.protocol));
+	this.experiments.push(new experimentVM({ protocol: this.protocol }));
 };
 
 experimentsVM.prototype.removeExperiment = function (experiment) {
@@ -95,11 +95,11 @@ experimentVM.prototype.possibleSources = function (param) {
 				});
 			});
 
-			var xs = ko.meteor.find(Experiments, { 'protocol._id': { $in: _.keys(pproducts) } });
+			var xs = ko.meteor.find(Experiments, { 'protocol._id': { $in: _.keys(pproducts) } }, { sort: { finishDate: -1 } });
 
 			return _.flatten(_.map(xs(), function (sourceExperiment) {
 				return _.map(pproducts[sourceExperiment.protocol._id()].products, function (product) {
-					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol._id()].name() + ' performed on ' + sourceExperiment.date/*()*/;
+					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol._id()].name() + ' performed on ' + sourceExperiment.finishDate();
 
 					var texts = [];
 					_.each(product.types(), function (productType) {
