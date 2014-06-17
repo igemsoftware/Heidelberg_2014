@@ -10,9 +10,9 @@ function typeVM(textEditor, type) {
 	self.id = type && type._id;
 	self.name = ko.observable(type ? type.name : 'Enter the name of the new type here');
 
-	self.baseTypes = ko.observableArray(type && _.filter(this.types(), function (ptype) {
+	self.baseTypes = ko.observableArray(type ? _.filter(this.types(), function (ptype) {
 		return _.contains(_.pluck(type.baseTypes, '_id'), ptype._id());
-	}));
+	}) : []);
 	self.allBaseTypes = ko.computed(function () {
 		var allBaseTypes = { };
 

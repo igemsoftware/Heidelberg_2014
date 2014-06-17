@@ -30,7 +30,7 @@
 					</div>
 				</div>
 				<div class="stepUserInputs">
-					User input fields: <a href="" data-bind="click: addInput">+</a>
+					User input fields: <a href="" data-bind="visible: $root.editMode, click: addInput">+</a>
 					<ul data-bind="foreach: inputs">
 						<li>
 							<div data-bind="ifnot: $root.editMode">
