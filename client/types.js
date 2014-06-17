@@ -189,7 +189,7 @@ Template.type.rendered = function () {
 						editor.appendChild(document.createTextNode(part.text));
 						break;
 					case 'propertyReference':
-						var block = typeVM.createRefBlock(_.find(self.vm.allProperties(), function (property) {
+						var block = typeVM.createRefBlock(_.find(self.vm().allProperties(), function (property) {
 							return property.name() == part.property;
 						}));
 						editor.appendChild(block);

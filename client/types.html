@@ -23,9 +23,14 @@
 		<h3>Properties <a href="" data-bind="visible: $root.editMode, click: addProperty">+</a></h3>
 		<ul id="typeProperties" data-bind="foreach: properties">
 			<li>
-				<input type="text" data-bind="value: name" />
-				<select data-bind="value: type, options: types, optionsText: 'desc'"></select>
-				<a href="" data-bind="visible: $root.editMode, click: $parent.removeProperty.bind($parent)">-</a>
+				<div data-bind="ifnot: $root.editMode">
+					<span data-bind="visible: !$root.editMode(), text: name"></span> (<span data-bind="visible: !$root.editMode(), text: type().desc"></span>)
+				</div>
+				<div data-bind="if: $root.editMode">
+					<input type="text" data-bind="value: name" />
+					<select data-bind="value: type, options: types, optionsText: 'desc'"></select>
+					<a href="" data-bind="click: $parent.removeProperty.bind($parent)">-</a>
+				</div>
 			</li>
 		</ul>
 
