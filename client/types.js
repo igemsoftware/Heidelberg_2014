@@ -42,6 +42,7 @@ function typeVM(textEditor, type) {
 					property = _.clone(property);
 					property.from = property.from || _.pick(type, '_id', 'name');
 					arr.push(property);
+					usedTypes[typeid] = 1;
 				}
 			});
 
