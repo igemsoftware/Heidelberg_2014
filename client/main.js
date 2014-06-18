@@ -2,6 +2,7 @@
 
 Router.map(function() {
 	var type = ko.observable();
+	var supply = ko.observable();
 	var protocol = ko.observable();
 	var experiment = ko.observable();
 
@@ -26,6 +27,29 @@ Router.map(function() {
 			var self = this;
 			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
 			return { ready: function () { return Types.findOne(self.params.id) != undefined; } };
+		},
+		loadingTemplate: 'loading'
+	});
+	this.route('suppliesList', { path: '/s' });
+	this.route('obtainSupply', {
+		path: '/obtainSupply',
+		template: 'supply',
+		data: function () {
+			supply(null);
+			return supply;
+		},
+	});
+	this.route('viewSupply', {
+		path: '/s/:id',
+		template: 'supply',
+		data: function () {
+			supply(Supplies.findOne(this.params.id));
+			return supply;
+		},
+		waitOn: function () {
+			var self = this;
+			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
+			return { ready: function () { return Supplies.findOne(self.params.id) != undefined; } };
 		},
 		loadingTemplate: 'loading'
 	});

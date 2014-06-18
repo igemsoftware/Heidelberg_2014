@@ -123,14 +123,17 @@ typeVM.prototype.flatten = function () {
 		text: []
 	};
 
-	flattened.allProperties = _.map(flattened.properties, _.clone);
+	flattened.allProperties = _.clone(flattened.properties);
 	Array.prototype.push.apply(flattened.allProperties, ko.toJS(this.inheritedProperties));
 
 	_.each(this.textEditor.childNodes, function (child) {
 		switch (child.nodeType) {
 			case Node.ELEMENT_NODE:
 				if (child.classList.contains('editorReference')) {
-					flattened.text.push({ type: 'propertyReference', property: ko.dataFor(child).name() });
+					flattened.text.push({
+						type: 'propertyReference',
+						property: ko.toJS(_.pick(ko.dataFor(child), 'name', 'from'))
+					});
 				}
 				break;
 			case Node.TEXT_NODE:
@@ -190,7 +193,7 @@ Template.type.rendered = function () {
 						break;
 					case 'propertyReference':
 						var block = typeVM.createRefBlock(_.find(self.vm().allProperties(), function (property) {
-							return property.name() == part.property;
+							return property.name() == part.property.name;
 						}));
 						editor.appendChild(block);
 						self.nodesToClean.push(block);

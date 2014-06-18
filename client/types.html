@@ -31,7 +31,7 @@
 			<ul class="list-group" id="typeProperties" data-bind="foreach: properties">
 				<li class="list-group-item">
 					<div data-bind="ifnot: $root.editMode">
-						<span data-bind="visible: !$root.editMode(), text: name"></span> (<span data-bind="visible: !$root.editMode(), text: type().desc"></span>)
+						<span data-bind="text: name"></span> (<span data-bind="text: type().desc"></span>)
 					</div>
 					<div class="input-group" data-bind="if: $root.editMode">
 						<input style="width:50%;" class="form-control" type="text" data-bind="value: name" />

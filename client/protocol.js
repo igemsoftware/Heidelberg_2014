@@ -220,12 +220,14 @@ function protocolProductVM(protocolVM, product) {
 						})
 					};
 
-					if (product && product.propertyBindings[property.name()]) obj.source(_.find(obj.possibleSources(), function (psource) {
-						// Meteor 0.8 ships with underscore 1.5.2, which does not yet implement _.matches, so we'll have to do it ourselves
-						return _.every(product.propertyBindings[property.name()].source, function (value, key) {
-							return _.isEqual(ko.toJS(psource[key]), value);
-						});
-					}));
+					if (product && product.propertyBindings[property.from._id()][CryptoJS.MD5(property.name()).toString()]) {
+						obj.source(_.find(obj.possibleSources(), function (psource) {
+							// Meteor 0.8 ships with underscore 1.5.2, which does not yet implement _.matches, so we'll have to do it ourselves
+							return _.every(product.propertyBindings[property.from._id()][CryptoJS.MD5(property.name()).toString()].source, function (value, key) {
+								return _.isEqual(ko.toJS(psource[key]), value);
+							});
+						}));
+					}
 
 					arr.push(obj);
 					usedTypes[property.from._id()] = 1;
@@ -242,6 +244,18 @@ function protocolProductVM(protocolVM, product) {
 protocolProductVM.prototype.possibleTypes = ko.meteor.find(Types, { });
 
 protocolProductVM.prototype.flatten = function () {
+	var propertyBindings = { };
+	_.each(this.propertyBindings(), function (binding) {
+		if (!propertyBindings[binding.property.from._id()]) propertyBindings[binding.property.from._id()] = { };
+		propertyBindings[binding.property.from._id()][CryptoJS.MD5(binding.property.name()).toString()] = {
+			property: {
+				name: binding.property.name,
+				from: _.pick(binding.property.from, '_id', 'name')
+			},
+			source: _.omit(binding.source(), 'text')
+		}
+	});
+
 	return {
 		name: this.name(),
 		types: ko.toJS(_.map(this.types(), function (type) {
@@ -250,13 +264,7 @@ protocolProductVM.prototype.flatten = function () {
 		allTypes: ko.toJS(_.map(this.allTypes(), function (type) {
 			return _.pick(type, '_id', 'name');
 		})),
-		propertyBindings: ko.toJS(_.reduce(this.propertyBindings(), function (memo, binding) {
-			memo[binding.property.name()] = {
-				from: _.pick(binding.property.from, '_id', 'name'),
-				source: _.omit(binding.source(), 'text')
-			};
-			return memo;
-		}, { }))
+		propertyBindings: ko.toJS(propertyBindings)
 	};
 };
 
