@@ -114,24 +114,11 @@ experimentVM.prototype.possibleSources = function (param) {
 			var experiments = _.flatten(_.map(xs(), function (sourceExperiment) {
 				return _.map(pproducts[sourceExperiment.protocol._id()].products, function (product, pid) {
 					var productNameHash = CryptoJS.MD5(product.name()).toString();
-					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol._id()].name() + ' performed on ' + sourceExperiment.finishDate();
+					var origin = product.name() + ' from ' + sourceExperiment.protocol.name() + ' performed on ' + sourceExperiment.finishDate();
 
 					var texts = [];
 					_.each(product.types(), function (productType) {
-						productType = Types.findOne(productType._id());
-						var text = '';
-						_.each(productType.text, function (part) {
-							switch (part.type) {
-								case 'text':
-									text = text + part.text;
-									break;
-								case 'propertyReference':
-									var value = sourceExperiment.products[productNameHash][(part.property.from || productType)._id].properties[CryptoJS.MD5(part.property.name).toString()];
-									if (value) text = text + value();
-									break;
-							}
-						});
-
+						var text = sourceExperiment.products[productNameHash][productType._id()].text();
 						if (text) texts.push(text);
 					});
 
@@ -243,15 +230,33 @@ experimentVM.prototype.flatten = function (performer) {
 						});
 						switch (param().type) {
 							case 'supply':
-								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().supply.properties[propertyTypeId][propertyNameHash].value);
+								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().supply.properties[(binding.source.paramProperty.from || paramDef.type)._id][CryptoJS.MD5(binding.source.paramProperty.name).toString()].value);
 								break;
 							case 'experiment':
-								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().experiment.products[CryptoJS.MD5(param().product.name()).toString()][(binding.source.paramProperty.from || paramDef.type)._id].properties[CryptoJS.MD5(binding.property.name).toString()]);
+								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().experiment.products[CryptoJS.MD5(param().product.name()).toString()][(binding.source.paramProperty.from || paramDef.type)._id].properties[CryptoJS.MD5(binding.source.paramProperty.name).toString()]);
 								break;
 						};
 						break;
 				}
 			});
+
+			var text = '';
+			_.each(type.text, function (part) {
+				switch (part.type) {
+					case 'text':
+						text = text + part.text;
+						break;
+					case 'propertyReference':
+						var value = products[productNameHash][(part.property.from || type)._id].properties[CryptoJS.MD5(part.property.name).toString()];
+						if (value) text = text + value;
+						break;
+				}
+			});
+
+			if (text) {
+				if (!products[productNameHash][type._id]) products[productNameHash][type._id] = { };
+				products[productNameHash][type._id].text = text;
+			}
 		});
 	});
 
