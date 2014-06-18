@@ -30,7 +30,7 @@ ko.bindingHandlers.datepicker = {
 ko.bindingHandlers.clockpicker = {
 	init: function (element, valueAccessor, allBindings) {
 		var modelValue = valueAccessor();
-		var options = { };
+		var options = { placement: 'top' };
 		if (typeof modelValue == 'object') {
 			_.extend(options, modelValue.options);
 			modelValue = modelValue.date;

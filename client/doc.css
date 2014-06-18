@@ -19,6 +19,9 @@ text-decoration: none;
   background-color: #f5f5f5;
 }
 
+.clickable:hover {
+	cursor: pointer;
+}
 
 .editor {
 	padding: 5px;
