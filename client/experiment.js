@@ -40,17 +40,31 @@ function experimentVM(data) {
 	self.params = { };
 	self.possibleSourcesCache = { };
 	if (data.experiment) _.each(data.protocol.params, function (param) {
+		var sourceParam = data.experiment.params[CryptoJS.MD5(param.name).toString()]
 		if (param.multi) {
-			self.params[param.name] = ko.observableArray(_.map(data.experiment.params[param.name], function (multiParam) {
+			self.params[param.name] = ko.observableArray(_.map(sourceParam, function (multiParam) {
 				var obj = new experimentMultiParamVM(multiParam);
 				obj.paramValue(_.find(self.possibleSources(param)(), function (psource) {
+					if (psource.type != multiParam.paramValue.type) return false;
+					switch (psource.type) {
+						case 'supply':
+							return psource.supply._id() == multiParam.paramValue.supply;
+						case 'experiment':
+							return psource.experiment._id() == multiParam.paramValue.experiment && psource.product.name() == multiParam.paramValue.product;
+					}
 					return psource.experiment._id() == multiParam.paramValue.experiment && psource.product.name() == multiParam.paramValue.product;
 				}));
 				return obj;
 			}));
 		} else {
 			self.params[param.name] = ko.observable(_.find(self.possibleSources(param)(), function (psource) {
-				return psource.experiment._id() == data.experiment.params[param.name].experiment && psource.product.name() == data.experiment.params[param.name].product;
+				if (psource.type != sourceParam.type) return false;
+				switch (psource.type) {
+					case 'supply':
+						return psource.supply._id() == sourceParam.supply;
+					case 'experiment':
+						return psource.experiment._id() == sourceParam.experiment && psource.product.name() == sourceParam.product;
+				}
 			}));
 		}
 	});
@@ -63,22 +77,6 @@ function experimentVM(data) {
 	}, 1000);
 
 	self.notes = ko.observable(data.experiment && data.experiment.notes);
-}
-
-function resolvePropertyReference(product, property, sourceExperiment) {
-	var source = product.propertyBindings[property].source;
-	switch (ko.utils.unwrapObservable(source.type)) {
-		case 'input':
-			return ko.utils.unwrapObservable(sourceExperiment.values[ko.utils.unwrapObservable(source.input.step)][ko.utils.unwrapObservable(source.input.input)]);
-		case 'paramProperty':
-			var sourceSourceExperiment = Experiments.findOne(ko.utils.unwrapObservable(sourceExperiment.params[ko.utils.unwrapObservable(source.param)].experiment));
-			var sourceSourceProtocol = Protocols.findOne(sourceSourceExperiment.protocol);
-			var sourceProducts = { };
-			_.each(sourceSourceProtocol.products, function (sourceProduct) {
-				sourceProducts[sourceProduct.name] = sourceProduct;
-			});
-			return resolvePropertyReference(sourceProducts[ko.utils.unwrapObservable(sourceExperiment.params[ko.utils.unwrapObservable(source.param)].product)], ko.utils.unwrapObservable(source.paramProperty.name), sourceSourceExperiment);
-	}
 }
 
 experimentVM.prototype.possibleSources = function (param) {
@@ -97,8 +95,25 @@ experimentVM.prototype.possibleSources = function (param) {
 
 			var xs = ko.meteor.find(Experiments, { 'protocol._id': { $in: _.keys(pproducts) } }, { sort: { finishDate: -1 } });
 
-			return _.flatten(_.map(xs(), function (sourceExperiment) {
-				return _.map(pproducts[sourceExperiment.protocol._id()].products, function (product) {
+			var ss = ko.meteor.find(Supplies, { 'allTypes._id': param.type._id });
+			var supplies = _.map(ss(), function (supply) {
+				var origin = 'obtained on ' + supply.date();
+
+				var texts = [];
+				_.each(supply.types(), function (supplyType) {
+					if (supplyType.text()) texts.push(supplyType.text());
+				});
+
+				return {
+					type: 'supply',
+					supply: supply,
+					text: texts.length ? texts.join('/') + ' (' + origin + ')' : origin
+				};
+			});
+
+			var experiments = _.flatten(_.map(xs(), function (sourceExperiment) {
+				return _.map(pproducts[sourceExperiment.protocol._id()].products, function (product, pid) {
+					var productNameHash = CryptoJS.MD5(product.name()).toString();
 					var origin = product.name() + ' from ' + pproducts[sourceExperiment.protocol._id()].name() + ' performed on ' + sourceExperiment.finishDate();
 
 					var texts = [];
@@ -111,7 +126,8 @@ experimentVM.prototype.possibleSources = function (param) {
 									text = text + part.text;
 									break;
 								case 'propertyReference':
-									text = text + resolvePropertyReference(product, part.property, sourceExperiment);
+									var value = sourceExperiment.products[productNameHash][(part.property.from || productType)._id].properties[CryptoJS.MD5(part.property.name).toString()];
+									if (value) text = text + value();
 									break;
 							}
 						});
@@ -120,12 +136,27 @@ experimentVM.prototype.possibleSources = function (param) {
 					});
 
 					return {
+						type: 'experiment',
 						experiment: sourceExperiment,
 						product: product,
 						text: texts.length ? texts.join('/') + ' (' + origin + ')' : origin
 					};
 				});
 			}));
+
+			var merged = [];
+			while (supplies.length && experiments.length) {
+				if (supplies[0].supply.date() > experiments[0].experiment.finishDate()) {
+					merged.push(supplies[0]);
+					supplies.shift();
+				} else {
+					merged.push(experiments[0]);
+					experiments.shift();
+				}
+			}
+			Array.prototype.push.apply(merged, supplies);
+			Array.prototype.push.apply(merged, experiments);
+			return merged;
 		});
 	}
 	return this.possibleSourcesCache[param.name];
@@ -159,39 +190,84 @@ experimentVM.prototype.input = function (step, input) {
 };
 
 experimentVM.prototype.flatten = function (performer) {
+	var self = this;
+
 	var params = { };
-	_.each(this.params, function (paramValue, paramName) {
+	_.each(self.params, function (paramValue, paramName) {
+		var paramNameHash = CryptoJS.MD5(paramName).toString();
 		if (paramValue.push) {
-			params[paramName] = _.map(paramValue(), function (multiParamVM) {
+			params[paramNameHash] = _.map(paramValue(), function (multiParamVM) {
 				return multiParamVM.flatten();
 			});
 		} else {
-			params[paramName] = {
-				experiment: paramValue().experiment._id(),
-				product: paramValue().product.name(),
-			};
+			switch (paramValue().type) {
+				case 'supply':
+					params[paramNameHash] = {
+						type: 'supply',
+						supply: paramValue().supply._id()
+					};
+					break;
+				case 'experiment':
+					params[paramNameHash] = {
+						type: 'experiment',
+						experiment: paramValue().experiment._id(),
+						product: paramValue().product.name(),
+					};
+					break;
+			}
+			
 		}
 	});
 
-	var values = { };
-	_.each(this.values, function (stepValues, stepKey) {
-		values[stepKey] = { };
-		_.each(stepValues, function (input, inputKey) {
-			values[stepKey][inputKey] = input();
+	var products = { };
+	_.each(self.protocol.products, function (product) {
+		var productNameHash = CryptoJS.MD5(product.name).toString()
+		products[productNameHash] = { };
+
+		_.each(product.types, function (type) {
+			type = Types.findOne(type._id);
+			_.each(type.allProperties, function (property) {
+				var propertyNameHash = CryptoJS.MD5(property.name).toString();
+				var propertyTypeId = (property.from || type)._id;
+				if (!products[productNameHash][propertyTypeId]) products[productNameHash][propertyTypeId] = { properties: { } };
+
+				var binding = product.propertyBindings[propertyTypeId][propertyNameHash];
+				switch (binding.source.type) {
+					case 'input':
+						products[productNameHash][propertyTypeId].properties[propertyNameHash] = self.values[binding.source.input.step][binding.source.input.input]();
+						break;
+					case 'paramProperty':
+						var param = self.params[binding.source.param];
+						var paramDef = _.find(self.protocol.params, function (pparam) {
+							return pparam.name == binding.source.param;
+						});
+						switch (param().type) {
+							case 'supply':
+								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().supply.properties[propertyTypeId][propertyNameHash].value);
+								break;
+							case 'experiment':
+								products[productNameHash][propertyTypeId].properties[propertyNameHash] = ko.utils.unwrapObservable(param().experiment.products[CryptoJS.MD5(param().product.name()).toString()][(binding.source.paramProperty.from || paramDef.type)._id].properties[CryptoJS.MD5(binding.property.name).toString()]);
+								break;
+						};
+						break;
+				}
+			});
 		});
 	});
 
 	return {
-		protocol: _.pick(this.protocol, '_id', 'name'),
-		values: values,
+		protocol: _.pick(self.protocol, '_id', 'name'),
+		values: ko.toJS(self.values),
 		params: params,
-		finishDate: this.finishDate(),
-		notes: this.notes(),
-		performer: performer()
+		finishDate: self.finishDate(),
+		notes: self.notes(),
+		performer: performer(),
+		products: products
 	};
 };
 
 experimentVM.prototype.save = function (performer) {
+	clearInterval(this.finishDateUpdate);
 	if (!this.id) this.id = Experiments.insert(this.flatten(performer));
 }
 
@@ -207,21 +283,25 @@ experimentMultiParamVM.prototype.input = function (step, input) {
 };
 
 experimentMultiParamVM.prototype.flatten = function () {
-	var values = { };
-	_.each(this.values, function (stepValues, stepKey) {
-		values[stepKey] = { };
-		_.each(stepValues, function (input, inputKey) {
-			values[stepKey][inputKey] = input();
-		});
-	});
-
-	return {
-		paramValue: {
-			experiment: this.paramValue().experiment._id(),
-			product: this.paramValue().product.name(),
-		},
-		values: values
-	};
+	switch (this.paramValue().type) {
+		case 'supply':
+			return {
+				paramValue: {
+					type: 'supply',
+					supply: this.paramValue().supply._id()
+				},
+				values: ko.toJS(this.values)
+			};
+		case 'experiment':
+			return {
+				paramValue: {
+					type: 'experiment',
+					experiment: this.paramValue().experiment._id(),
+					product: this.paramValue().product.name(),
+				},
+				values: ko.toJS(this.values)
+			};
+	}
 };
 
 Template.experiment.rendered = function () {

@@ -24,7 +24,7 @@
 		<ul id="typeProperties" data-bind="foreach: properties">
 			<li>
 				<div data-bind="ifnot: $root.editMode">
-					<span data-bind="visible: !$root.editMode(), text: name"></span> (<span data-bind="visible: !$root.editMode(), text: type().desc"></span>)
+					<span data-bind="text: name"></span> (<span data-bind="text: type().desc"></span>)
 				</div>
 				<div data-bind="if: $root.editMode">
 					<input type="text" data-bind="value: name" />

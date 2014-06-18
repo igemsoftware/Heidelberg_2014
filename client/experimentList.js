@@ -1,5 +1,5 @@
 'use strict';
 
 UI.registerHelper('experiments', function () {
-	return Experiments.find();
+	return Experiments.find({ }, { sort: { finishDate: -1 } });
 });
