@@ -118,7 +118,7 @@ experimentVM.prototype.possibleSources = function (param) {
 
 					var texts = [];
 					_.each(product.types(), function (productType) {
-						var text = sourceExperiment.products[productNameHash][productType._id()].text();
+						var text = sourceExperiment.products[productNameHash][productType._id()] && ko.utils.unwrapObservable(sourceExperiment.products[productNameHash][productType._id()].text);
 						if (text) texts.push(text);
 					});
 
