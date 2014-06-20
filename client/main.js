@@ -115,3 +115,11 @@ Router.map(function() {
 
 Router.onBeforeAction('loading');
 Router.configure({layoutTemplate: 'masterTemplate'});
+if(Meteor.isClient){
+	Template.navItems.helpers({
+		activeIfInPath: function (path) {			
+			var currentRoute = Router.current();
+			return currentRoute && (currentRoute.path.indexOf(path) == 0) ? 'active' : '';
+			}
+	});
+}

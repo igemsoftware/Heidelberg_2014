@@ -16,28 +16,7 @@
 			</div>
 			<div class="collapse navbar-collapse" >
 				<ul class="nav navbar-nav">
-					<li class="dropdown" id="typeDropdown">
-          				<a href="#" class="dropdown-toggle" data-toggle="dropdown">Types<b class="caret"></b></a>
-						<ul class="dropdown-menu">
-							<li><a href="{{pathFor 'newType'}}">Create new Type</a></li>
-							<li class="divider"></li>
-							{{#each types}}
-							<li><span><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a><a href="#" class="pull-right glyphicon glyphicon-pencil"></a></span></li>
-							{{/each}}
-						</ul>
-					</li>
-					<li><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
-					<li class="dropdown" id="protocolDropdown">
-          				<a href="#" class="dropdown-toggle" data-toggle="dropdown">Protocols<b class="caret"></b></a>
-						<ul class="dropdown-menu">
-							<li><a href="{{pathFor 'newProtocol'}}">Create new Protocol</a></li>
-							<li class="divider"></li>
-							{{#each protocols}}
-							<li><span><a href="{{pathFor 'viewProtocol' id=_id}}">{{name}}</a><span class="pull-right"><a href="#" class="glyphicon glyphicon-pencil"></a>&nbsp;<a href="{{pathFor 'performProtocol' id=_id}}" class="glyphicon glyphicon-play-circle"></a></span></span></li>
-							{{/each}}
-						</ul>
-					</li>
-					<li><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
+					{{> navItems}}
 				</ul>
 			</div>
 		</div> <!-- Container -->
@@ -45,6 +24,31 @@
 	<div class="container">
 		{{> yield}}
 	</div>
+</template>
+
+<template name='navItems'>
+	<li class="dropdown {{activeIfInPath '/t'}}" id="typeDropdown">
+		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Types<b class="caret"></b></a>
+		<ul class="dropdown-menu">
+			<li><a href="{{pathFor 'newType'}}">Create new Type</a></li>
+			<li class="divider"></li>
+			{{#each types}}
+			<li><span><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a><a href="#" class="pull-right glyphicon glyphicon-pencil"></a></span></li>
+			{{/each}}
+		</ul>
+	</li>
+	<li class="{{activeIfInPath '/s'}}"><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
+	<li class="dropdown {{activeIfInPath '/p'}}" id="protocolDropdown">
+	<a href="#" class="dropdown-toggle" data-toggle="dropdown">Protocols<b class="caret"></b></a>
+		<ul class="dropdown-menu">
+			<li><a href="{{pathFor 'newProtocol'}}">Create new Protocol</a></li>
+			<li class="divider"></li>
+			{{#each protocols}}
+			<li><span><a href="{{pathFor 'viewProtocol' id=_id}}">{{name}}</a><span class="pull-right"><a href="#" class="glyphicon glyphicon-pencil"></a>&nbsp;<a href="{{pathFor 'performProtocol' id=_id}}" class="glyphicon glyphicon-play-circle"></a></span></span></li>
+			{{/each}}
+		</ul>
+	</li>
+	<li class="{{activeIfInPath '/x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
 </template>
 
 <template name="home">
