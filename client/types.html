@@ -26,7 +26,7 @@
 		</div>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Properties&nbsp;<i class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addProperty"></i></h3>
+				<h3 class="panel-title">Properties&nbsp;&nbsp;<i class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addProperty"></i></h3>
 			</div>
 			<ul class="list-group" id="typeProperties" data-bind="foreach: properties">
 				<li class="list-group-item">
@@ -54,6 +54,11 @@
 		<button data-bind="visible: $root.editMode, click: addRef">Add reference to property</button>
 		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
 
-		<button data-bind="visible: $root.editMode, click: save">Save</button>
+		<button data-bind="visible: $root.editMode, click: save">Save</button><br />
+		<div data-bind="ifnot: $root.editMode">
+			<button class="btn btn-danger" data-bind="click: edit"><span class="glyphicon glyphicon-trash">&nbsp;Delete</span></button>
+			<button class="btn btn-warning" data-bind="click: edit"><span class="glyphicon glyphicon-pencil">&nbsp;Edit</span></button>
+			
+		</div>
 	</div>
 </template>

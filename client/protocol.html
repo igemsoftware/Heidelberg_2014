@@ -82,6 +82,10 @@
 		</div>
 
 		<button data-bind="visible: $root.editMode, click: save">Save</button>
-		<div data-bind="ifnot: $root.editMode"><a data-bind="attr: { href: '/perform/' + id }">Perform this protocol</a></div>
+		<div data-bind="ifnot: $root.editMode">
+			<button class="btn btn-danger" data-bind="click: delete" ><span class="glyphicon glyphicon-trash">&nbsp;Delete</span></button>
+			<button class="btn btn-warning" data-bind="click: edit"><span class="glyphicon glyphicon-pencil">&nbsp;Edit</span></button>
+			<a class="btn btn-success" data-bind="attr: { href: '/perform/' + id }"><span class="glyphicon glyphicon-play">&nbsp;Preform</span></a>
+		</div>
 	</div>
 </template>

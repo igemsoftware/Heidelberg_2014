@@ -70,9 +70,18 @@ protocolVM.prototype.save = function () {
 	else
 		Protocols.update(this.id, this.flatten());
 
-	Router.go('viewProtocol', {id: this.id, edit: false});
+	Router.go('viewProtocol', {id: this.id});
 	location.reload();
 };
+
+protocolVM.prototype.edit = function() {
+	Router.go('viewProtocol', {id: this.id, mode: 'edit'});
+	location.reload();
+}
+
+protocolVM.prototype.delete = function() {
+	alert("TODO: Not jet implemented");
+}
 
 function protocolParamVM(param) {
 	var self = this;
