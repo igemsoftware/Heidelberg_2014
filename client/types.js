@@ -147,7 +147,7 @@ typeVM.prototype.flatten = function () {
 
 typeVM.prototype.save = function () {
 	if (!this.id) this.id = Types.insert(this.flatten());
-	this.editMode(false);
+	Router.go('viewType', {id: this.id});
 };
 
 function typePropertyVM(property) {

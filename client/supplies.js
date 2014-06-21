@@ -95,7 +95,7 @@ supplyVM.prototype.flatten = function () {
 supplyVM.prototype.save = function () {
 	clearInterval(this.dateUpdate);
 	if (!this.id) this.id = Supplies.insert(this.flatten());
-	this.editMode(false);
+	Router.go('viewSupply', {id: this.id});
 };
 
 Template.supply.rendered = function () {

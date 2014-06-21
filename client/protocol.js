@@ -65,7 +65,7 @@ protocolVM.prototype.flatten = function () {
 
 protocolVM.prototype.save = function () {
 	if (!this.id) this.id = Protocols.insert(this.flatten());
-	this.editMode(false);
+	Router.go('viewProtocol', {id: this.id});
 };
 
 function protocolParamVM(param) {
