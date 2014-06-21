@@ -13,7 +13,7 @@ Router.map(function() {
 		template: 'type',
 		data: function () {
 			type(null);
-			return type;
+			return {type: type, editMode: true};
 		},
 	});
 	this.route('viewType', {
@@ -21,7 +21,7 @@ Router.map(function() {
 		template: 'type',
 		data: function () {
 			type(Types.findOne(this.params.id));
-			return type;
+			return {type: type, editMode: this.params.edit ? true : false};
 		},
 		waitOn: function () {
 			var self = this;
@@ -36,7 +36,7 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(null);
-			return supply;
+			return {supply: supply, editMode: true};
 		},
 	});
 	this.route('viewSupply', {
@@ -44,7 +44,7 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
-			return supply;
+			return {supply: supply, editMode: this.params.edit ? true : false};
 		},
 		waitOn: function () {
 			var self = this;
@@ -59,7 +59,7 @@ Router.map(function() {
 		template: 'protocol',
 		data: function () {
 			protocol(null);
-			return protocol;
+			return {protocol: protocol, editMode: true};
 		}
 	});
 	this.route('viewProtocol', {
@@ -67,7 +67,7 @@ Router.map(function() {
 		template: 'protocol',
 		data: function () {
 			protocol(Protocols.findOne(this.params.id));
-			return protocol;
+			return {protocol: protocol, editMode: this.params.edit ? true : false};
 		},
 		waitOn: function () {
 			var self = this;
@@ -83,7 +83,7 @@ Router.map(function() {
 			experiment({
 				protocol: Protocols.findOne(this.params.id)
 			});
-			return experiment;
+			return {data: experiment, editMode: true, newMode: true}; 
 		},
 		waitOn: function () {
 			var self = this;
@@ -102,7 +102,8 @@ Router.map(function() {
 			};
 			data.protocol = Protocols.findOne(data.experiment.protocol._id);
 			experiment(data);
-			return experiment;
+			console.log(experiment());
+			return {data: experiment, editMode: this.params.edit ? true : false, newMode: false};
 		},
 		waitOn: function () {
 			var self = this;

@@ -8,9 +8,10 @@ Template.suppliesList.text = function () {
 	return _.pluck(this.types, 'text').join('/');
 };
 
-function supplyVM(supply) {
+function supplyVM(data) {
 	var self = this;
-	self.editMode = ko.observable(!supply);
+	self.editMode = ko.observable(data.editMode);
+	var supply = data.supply ? data.supply() : data.supply;
 	self.id = supply && supply._id;
 
 	self.types = ko.observableArray(supply ? _.filter(this.possibleTypes(), function (ptype) {
@@ -94,14 +95,18 @@ supplyVM.prototype.flatten = function () {
 
 supplyVM.prototype.save = function () {
 	clearInterval(this.dateUpdate);
-	if (!this.id) this.id = Supplies.insert(this.flatten());
-	this.editMode(false);
+	if (!this.id)
+		this.id = Supplies.insert(this.flatten());
+	else
+		Supplies.update(this.id, this.flatten());
+	Router.go('viewSupply', {id: this.id, edit: false});
+	location.reload(); //TODO: Understand why this is needed--> edit: false does not seem to invalidate data function
 };
 
 Template.supply.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		return new supplyVM(self.data());
+		return new supplyVM(self.data);
 	});
 
 	self.nodesToClean = [];
