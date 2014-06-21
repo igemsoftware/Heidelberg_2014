@@ -36,7 +36,7 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(null);
-			return supply;
+			return {supply: supply, editMode: true};
 		},
 	});
 	this.route('viewSupply', {
@@ -44,7 +44,7 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
-			return supply;
+			return {supply: supply, editMode: (this.params.edit === undefined || this.params.edit === false)  ? false : true};
 		},
 		waitOn: function () {
 			var self = this;
