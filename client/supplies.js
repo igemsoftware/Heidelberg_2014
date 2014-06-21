@@ -95,7 +95,10 @@ supplyVM.prototype.flatten = function () {
 
 supplyVM.prototype.save = function () {
 	clearInterval(this.dateUpdate);
-	if (!this.id) this.id = Supplies.insert(this.flatten());
+	if (!this.id)
+		this.id = Supplies.insert(this.flatten());
+	else
+		Supplies.update(this.id, this.flatten());
 	Router.go('viewSupply', {id: this.id, edit: false});
 	location.reload(); //TODO: Understand why this is needed--> edit: false does not seem to invalidate data function
 };

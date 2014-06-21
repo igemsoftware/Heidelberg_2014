@@ -1,14 +1,10 @@
 'use strict';
 
-function experimentsVM(data) {
+function experimentsVM(datacontainer) {
 	var self = this;
-	if (data.experiment) {
-		self.editMode = ko.observable(false);
-		self.newMode = ko.observable(false);
-	} else {
-		self.editMode = ko.observable(true);
-		self.newMode = ko.observable(true);
-	}
+	self.editMode = ko.observable(datacontainer.editMode);
+	self.newMode = ko.observable(datacontainer.newMode);
+	var data = datacontainer.data ? datacontainer.data() : datacontainer.data;
 	self.performer = ko.observable(data.experiment && data.experiment.performer);
 	self.protocol = data.protocol;
 	self.experiments = ko.observableArray([ new experimentVM(data) ]);
@@ -31,6 +27,9 @@ experimentsVM.prototype.save = function () {
 		experiment.save(self.performer);
 	});
 	self.editMode(false);
+	self.newMode(false);
+	Router.go('experimentList');
+	//location.reload();
 };
 
 function experimentVM(data) {
@@ -273,7 +272,10 @@ experimentVM.prototype.flatten = function (performer) {
 
 experimentVM.prototype.save = function (performer) {
 	clearInterval(this.finishDateUpdate);
-	if (!this.id) this.id = Experiments.insert(this.flatten(performer));
+	if (!this.id)
+		this.id = Experiments.insert(this.flatten(performer));
+	else
+		Experiments.update(this.id, this.flatten(performer));
 }
 
 function experimentMultiParamVM(multiParam) {
@@ -312,7 +314,7 @@ experimentMultiParamVM.prototype.flatten = function () {
 Template.experiment.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		return new experimentsVM(self.data());
+		return new experimentsVM(self.data);
 	});
 
 	self.nodesToClean = [];

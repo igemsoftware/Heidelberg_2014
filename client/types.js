@@ -4,9 +4,10 @@ UI.registerHelper('types', function () {
 	return Types.find();
 });
 
-function typeVM(textEditor, type) {
+function typeVM(textEditor, data) {
 	var self = this;
-	self.editMode = ko.observable(!type);
+	self.editMode = ko.observable(data.editMode);
+	var type = data.type ? data.type() : data.type;
 	self.id = type && type._id;
 	self.name = ko.observable(type ? type.name : 'Enter the name of the new type here');
 
@@ -146,8 +147,13 @@ typeVM.prototype.flatten = function () {
 };
 
 typeVM.prototype.save = function () {
-	if (!this.id) this.id = Types.insert(this.flatten());
-	Router.go('viewType', {id: this.id});
+	if (!this.id)
+		this.id = Types.insert(this.flatten());
+	else
+		Types.update(this.id, this.flatten());
+
+	Router.go('viewType', {id: this.id, edit: false});
+	location.reload();
 };
 
 function typePropertyVM(property) {
@@ -170,7 +176,7 @@ Template.type.rendered = function () {
 	var self = this;
 	var editor = self.find('#textEditor');
 	self.vm = ko.computed(function () {
-		return new typeVM(editor, self.data());
+		return new typeVM(editor, self.data);
 	});
 
 	self.nodesToClean = [];
@@ -185,8 +191,9 @@ Template.type.rendered = function () {
 			}
 		}
 
-		if (self.data()) {
-			_.each(self.data().text, function (part) {
+
+		if (self.data.type()) {
+			_.each(self.data.type().text, function (part) {
 				switch (part.type) {
 					case 'text':
 						editor.appendChild(document.createTextNode(part.text));

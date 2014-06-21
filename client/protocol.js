@@ -1,8 +1,9 @@
 'use strict';
 
-function protocolVM(protocol) {
+function protocolVM(data) {
 	var self = this;
-	self.editMode = ko.observable(!protocol);
+	self.editMode = ko.observable(data.editMode);
+	var protocol = data.protocol ? data.protocol() : data.protocol;
 	self.id = protocol && protocol._id;
 	self.name = ko.observable(protocol ? protocol.name : 'Enter the name of the new protocol here');
 
@@ -64,8 +65,13 @@ protocolVM.prototype.flatten = function () {
 };
 
 protocolVM.prototype.save = function () {
-	if (!this.id) this.id = Protocols.insert(this.flatten());
-	Router.go('viewProtocol', {id: this.id});
+	if (!this.id)
+		this.id = Protocols.insert(this.flatten());
+	else
+		Protocols.update(this.id, this.flatten());
+
+	Router.go('viewProtocol', {id: this.id, edit: false});
+	location.reload();
 };
 
 function protocolParamVM(param) {
@@ -271,7 +277,7 @@ protocolProductVM.prototype.flatten = function () {
 Template.protocol.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		return new protocolVM(self.data());
+		return new protocolVM(self.data);
 	});
 
 	self.nodesToClean = [];
