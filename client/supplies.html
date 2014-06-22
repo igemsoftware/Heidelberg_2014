@@ -10,6 +10,7 @@
 <template name="supply">
 	<div id="supply">
 		<h1 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h1>
+		<button class="btn btn-warning pull-right" data-bind="visible: !editMode(), click: edit"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 
 		<h3>Types</h3>
 		<div data-bind="if: $root.editMode"><select multiple="true" size="8" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select></div>
@@ -37,7 +38,7 @@
 		<div class="form-inline datetime" data-bind="if: $root.editMode">
 			<div class="datetime-date">
 				<div class="input-group date" data-bind="datepicker: { date: date, options: { todayBtn: 'linked', autoclose: true, todayHighlight: true } }, event: { 'change': function () { clearInterval(dateUpdate); } }">
-					<input class="form-control" type="text" />
+					<input class="	form-control" type="text" />
 					<span class="input-group-addon">
 						<span class="glyphicon glyphicon-calendar"></span>
 					</span>
