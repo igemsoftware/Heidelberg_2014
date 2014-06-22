@@ -19,6 +19,10 @@ ko.bindingHandlers.datepicker = {
 				modelValue(currentDate);
 			}
 		});
+
+		ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+			$(element).datepicker('remove');
+		});
 	},
 	update: function (element, valueAccessor, allBindingsAccessor) {
 		var modelValue = valueAccessor();
@@ -45,6 +49,10 @@ ko.bindingHandlers.clockpicker = {
 			} else {
 				modelValue(currentDate);
 			}
+		});
+
+		ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+			$(element).clockpicker('remove');
 		});
 	},
 	update: function (element, valueAccessor, allBindingsAccessor) {

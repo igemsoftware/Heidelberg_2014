@@ -180,7 +180,6 @@ Template.type.rendered = function () {
 	var self = this;
 	var editor = self.find('#textEditor');
 	self.vm = ko.computed(function () {
-		console.log('self.vm');
 		return new typeVM(editor, self.data);
 	});
 
