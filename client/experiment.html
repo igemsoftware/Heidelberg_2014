@@ -1,5 +1,6 @@
 <template name="experiment">
-	<h1 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h1>	
+	<h1 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h1>
+	<button class="btn btn-warning pull-right" data-bind="visible: !editMode(), click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 	<h2 data-bind="text: protocol.name"></h2>
 
 	<p data-bind="ifnot: $root.editMode">Performed by <span data-bind="text: performer"></span></p>
@@ -113,5 +114,8 @@
 		</tr>
 	</table>
 
-	<button class="btn btn-default" data-bind="visible: $root.editMode, click: save">Save</button>
+	<div class="btn-toolbar">
+		<button class="btn btn-success" data-bind="visible: $root.editMode, click: save.bind($data)">Save</button>
+		<button class="btn btn-danger" data-bind="visible: $root.editMode, click: cancel.bind($data)">Cancel</button>
+	</div>
 </template>

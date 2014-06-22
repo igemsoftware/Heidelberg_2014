@@ -1,7 +1,7 @@
 'use strict';
 
 UI.registerHelper('supplies', function () {
-	return Supplies.find();
+	return Supplies.find({ }, { sort: { date: -1 } });
 });
 
 Template.suppliesList.text = function () {

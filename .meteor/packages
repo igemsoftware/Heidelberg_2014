@@ -8,6 +8,5 @@ autopublish
 insecure
 iron-router
 underscore
-knockout
 bootstrap-3
 crypto-md5
