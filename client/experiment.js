@@ -1,10 +1,10 @@
 'use strict';
 
-function experimentsVM(datacontainer) {
+function experimentsVM(dataContainer) {
 	var self = this;
-	self.editMode = ko.observable(datacontainer.editMode);
-	self.newMode = ko.observable(datacontainer.newMode);
-	var data = datacontainer.data ? datacontainer.data() : datacontainer.data;
+	self.editMode = dataContainer.editMode;
+	self.newMode = dataContainer.newMode;
+	var data = dataContainer.data();
 	self.performer = ko.observable(data.experiment && data.experiment.performer);
 	self.protocol = data.protocol;
 	self.experiments = ko.observableArray([ new experimentVM(data) ]);
@@ -29,7 +29,6 @@ experimentsVM.prototype.save = function () {
 	self.editMode(false);
 	self.newMode(false);
 	Router.go('experimentList');
-	//location.reload();
 };
 
 function experimentVM(data) {
@@ -104,8 +103,7 @@ experimentVM.prototype.possibleSources = function (param) {
 				});
 
 				return {
-					type: 'supply',
-					supply: supply,
+					href: Router.path('viewSupply', { id: supply._id() }),
 					text: texts.length ? texts.join('/') + ' (' + origin + ')' : origin
 				};
 			});
@@ -122,9 +120,7 @@ experimentVM.prototype.possibleSources = function (param) {
 					});
 
 					return {
-						type: 'experiment',
-						experiment: sourceExperiment,
-						product: product,
+						href: Router.path('viewExperiment', { id: experiment._id() }),
 						text: texts.length ? texts.join('/') + ' (' + origin + ')' : origin
 					};
 				});

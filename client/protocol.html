@@ -4,7 +4,7 @@
 		<h2 id="protocolName"><span data-bind="visible: !$root.editMode(), text: name"></span><input type="text" data-bind="visible: $root.editMode, value: name" /></h2>
 		<div class="panel panel-default">
 			<div class="panel-heading">	
-				<h3 class="panel-title">Parameters&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addParam"></span></h3>
+				<h3 class="panel-title">Parameters&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addParam.bind($data)"></span></h3>
 			</div>
 			<ul class="list-group" id="protocolParameters" data-bind="foreach: params">
 				<li class="list-group-item">
@@ -25,7 +25,7 @@
 		</div>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title" >Steps&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addStep"></span></h3>
+				<h3 class="panel-title" >Steps&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addStep.bind($data)"></span></h3>
 			</div>
 			<ol id="protocolSteps" class="list-group" data-bind="foreach: steps">
 				<li class="list-group-item">
@@ -35,7 +35,7 @@
 						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeStep.bind($parent)"></span>
 					</div>
 					<div style="padding-top:5px;" class="list-group-item-text">
-						User input fields:&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addInput"></span>
+						User input fields:&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addInput.bind($data)"></span>
 						<ul class="list-group" data-bind="foreach: inputs">
 							<li class="list-group-item">
 								<div data-bind="ifnot: $root.editMode">
@@ -55,7 +55,7 @@
 		</div>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Products&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addProduct"></span></h3>
+				<h3 class="panel-title">Products&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addProduct.bind($data)"></span></h3>
 			</div>
 			<ul class="list-group" id="protocolProducts" data-bind="foreach: products">
 				<li class="list-group-item">
@@ -83,9 +83,9 @@
 
 		<button data-bind="visible: $root.editMode, click: save">Save</button>
 		<div data-bind="ifnot: $root.editMode">
-			<button class="btn btn-danger" data-bind="click: delete" ><span class="glyphicon glyphicon-trash">&nbsp;Delete</span></button>
+			<!--button class="btn btn-danger" data-bind="click: delete" ><span class="glyphicon glyphicon-trash">&nbsp;Delete</span></button-->
 			<button class="btn btn-warning" data-bind="click: edit"><span class="glyphicon glyphicon-pencil">&nbsp;Edit</span></button>
-			<a class="btn btn-success" data-bind="attr: { href: '/perform/' + id }"><span class="glyphicon glyphicon-play">&nbsp;Preform</span></a>
+			<a class="btn btn-success" data-bind="attr: { href: '/perform/' + id }"><span class="glyphicon glyphicon-play">&nbsp;Perform</span></a>
 		</div>
 	</div>
 </template>

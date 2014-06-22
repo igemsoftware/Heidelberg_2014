@@ -6,6 +6,9 @@ Router.map(function() {
 	var protocol = ko.observable();
 	var experiment = ko.observable();
 
+	var newMode = ko.observable();
+	var editMode = ko.observable();
+
 	this.route('home', { path: '/' });
 	this.route('typeList', { path: '/t' });
 	this.route('newType', {
@@ -13,15 +16,17 @@ Router.map(function() {
 		template: 'type',
 		data: function () {
 			type(null);
-			return {type: type, editMode: true};
+			editMode(true);
+			return { type: type, editMode: editMode };
 		},
 	});
 	this.route('viewType', {
-		path: '/t/:id/:mode?',
+		path: '/t/:id',
 		template: 'type',
 		data: function () {
 			type(Types.findOne(this.params.id));
-			return {type: type, editMode: (this.params.mode === "edit") ? true : false};
+			editMode(this.params.edit);
+			return { type: type, editMode: editMode };
 		},
 		waitOn: function () {
 			var self = this;
@@ -36,15 +41,17 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(null);
-			return {supply: supply, editMode: true};
+			editMode(true);
+			return { supply: supply, editMode: editMode };
 		},
 	});
 	this.route('viewSupply', {
-		path: '/s/:id/:mode?',
+		path: '/s/:id',
 		template: 'supply',
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
-			return {supply: supply, editMode: this.params.mode === "edit" ? true : false};
+			editMode(this.params.edit);
+			return { supply: supply, editMode: editMode };
 		},
 		waitOn: function () {
 			var self = this;
@@ -59,15 +66,17 @@ Router.map(function() {
 		template: 'protocol',
 		data: function () {
 			protocol(null);
-			return {protocol: protocol, editMode: true};
+			editMode(true);
+			return { protocol: protocol, editMode: editMode };
 		}
 	});
 	this.route('viewProtocol', {
-		path: '/p/:id/:mode?',
+		path: '/p/:id',
 		template: 'protocol',
 		data: function () {
 			protocol(Protocols.findOne(this.params.id));
-			return {protocol: protocol, editMode: this.params.mode === "edit" ? true : false};
+			editMode(this.params.edit);
+			return { protocol: protocol, editMode: editMode };
 		},
 		waitOn: function () {
 			var self = this;
@@ -83,7 +92,9 @@ Router.map(function() {
 			experiment({
 				protocol: Protocols.findOne(this.params.id)
 			});
-			return {data: experiment, editMode: true, newMode: true}; 
+			newMode(true);
+			editMode(true);
+			return { data: experiment, newMode: newMode, editMode: editMode }; 
 		},
 		waitOn: function () {
 			var self = this;
@@ -94,7 +105,7 @@ Router.map(function() {
 	});
 	this.route('experimentList', { path: '/x' });
 	this.route('viewExperiment', {
-		path: '/x/:id/:mode',
+		path: '/x/:id',
 		template: 'experiment',
 		data: function () {
 			var data = {
@@ -102,7 +113,9 @@ Router.map(function() {
 			};
 			data.protocol = Protocols.findOne(data.experiment.protocol._id);
 			experiment(data);
-			return {data: experiment, editMode: this.params.mode === "edit" ? true : false, newMode: false};
+			newMode(false);
+			editMode(this.params.edit);
+			return { data: experiment, newMode: newMode, editMode: editMode };
 		},
 		waitOn: function () {
 			var self = this;

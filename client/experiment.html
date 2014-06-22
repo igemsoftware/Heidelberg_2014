@@ -7,7 +7,7 @@
 
 	<table class="hierarchical">
 		<tr data-bind="if: $root.editMode() &amp;&amp; $root.newMode()">
-			<td><a href="" data-bind="click: addExperiment">+</a></td>
+			<td><a href="" data-bind="click: addExperiment.bind($data)">+</a></td>
 			<!-- ko foreach: experiments -->
 				<td><a href="" data-bind="click: $parent.removeExperiment.bind($parent)">-</a></td>
 			<!-- /ko -->
@@ -19,17 +19,12 @@
 				<!-- ko if: multi -->
 					<!--ko foreach: $root.experiments -->
 						<td>
-							<a href="" data-bind="visible: $root.editMode, click: addMultiParam($parent)">+</a>
+							<a href="" data-bind="visible: $root.editMode, click: addMultiParam.bind($data)($parent)">+</a>
 							<ul data-bind="foreach: getParam($parent, true)">
 								<li>
 									<div data-bind="ifnot: $root.editMode">
 										<div data-bind="with: paramValue">
-											<div data-bind="if: type == 'supply'">
-												<a data-bind="text: text, attr: { href: '/s/' + supply._id() }"></a>
-											</div>
-											<div data-bind="if: type == 'experiment'">
-												<a data-bind="text: text, attr: { href: '/x/' + experiment._id() }"></a>
-											</div>
+											<a data-bind="text: text, attr: { href: href }"></a>
 										</div>
 									</div>
 									<div data-bind="if: $root.editMode">
@@ -46,12 +41,7 @@
 						<td>
 							<div data-bind="ifnot: $root.editMode">
 								<div data-bind="with: getParam($parent)">
-									<div data-bind="if: type == 'supply'">
-										<a data-bind="text: text, attr: { href: '/s/' + supply._id() }"></a>
-									</div>
-									<div data-bind="if: type == 'experiment'">
-										<a data-bind="text: text, attr: { href: '/x/' + experiment._id() }"></a>
-									</div>
+									<a data-bind="text: text, attr: { href: href }"></a>
 								</div>
 							</div>
 							<select class="form-control" data-bind="visible: $root.editMode, value: getParam($parent), options: possibleSources($parent), optionsText: 'text'"></select>

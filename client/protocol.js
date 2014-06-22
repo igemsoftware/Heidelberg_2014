@@ -2,7 +2,7 @@
 
 function protocolVM(data) {
 	var self = this;
-	self.editMode = ko.observable(data.editMode);
+	self.editMode = data.editMode;
 	var protocol = data.protocol ? data.protocol() : data.protocol;
 	self.id = protocol && protocol._id;
 	self.name = ko.observable(protocol ? protocol.name : 'Enter the name of the new protocol here');
@@ -71,12 +71,10 @@ protocolVM.prototype.save = function () {
 		Protocols.update(this.id, this.flatten());
 
 	Router.go('viewProtocol', {id: this.id});
-	location.reload();
 };
 
 protocolVM.prototype.edit = function() {
 	Router.go('viewProtocol', {id: this.id, mode: 'edit'});
-	location.reload();
 }
 
 protocolVM.prototype.delete = function() {

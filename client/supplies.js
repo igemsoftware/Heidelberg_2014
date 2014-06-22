@@ -10,7 +10,7 @@ Template.suppliesList.text = function () {
 
 function supplyVM(data) {
 	var self = this;
-	self.editMode = ko.observable(data.editMode);
+	self.editMode = data.editMode;
 	var supply = data.supply ? data.supply() : data.supply;
 	self.id = supply && supply._id;
 
@@ -100,7 +100,6 @@ supplyVM.prototype.save = function () {
 	else
 		Supplies.update(this.id, this.flatten());
 	Router.go('viewSupply', {id: this.id, edit: false});
-	location.reload(); //TODO: Understand why this is needed--> edit: false does not seem to invalidate data function
 };
 
 Template.supply.rendered = function () {

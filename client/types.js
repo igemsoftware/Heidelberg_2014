@@ -6,7 +6,7 @@ UI.registerHelper('types', function () {
 
 function typeVM(textEditor, data) {
 	var self = this;
-	self.editMode = ko.observable(data.editMode);
+	self.editMode = data.editMode;
 	var type = data.type ? data.type() : data.type;
 	self.id = type && type._id;
 	self.name = ko.observable(type ? type.name : 'Enter the name of the new type here');
@@ -154,7 +154,10 @@ typeVM.prototype.save = function () {
 		Types.update(this.id, this.flatten());
 
 	Router.go('viewType', {id: this.id, edit: false});
-	location.reload();
+};
+
+typeVM.prototype.edit = function () {
+	// TODO
 };
 
 function typePropertyVM(property) {
@@ -177,6 +180,7 @@ Template.type.rendered = function () {
 	var self = this;
 	var editor = self.find('#textEditor');
 	self.vm = ko.computed(function () {
+		console.log('self.vm');
 		return new typeVM(editor, self.data);
 	});
 
@@ -192,24 +196,29 @@ Template.type.rendered = function () {
 			}
 		}
 
+		self.updateEditor = ko.computed(function () {
+			while (editor.firstChild) {
+				editor.removeChild(editor.firstChild);
+			}
 
-		if (self.data.type()) {
-			_.each(self.data.type().text, function (part) {
-				switch (part.type) {
-					case 'text':
-						editor.appendChild(document.createTextNode(part.text));
-						break;
-					case 'propertyReference':
-						var block = typeVM.createRefBlock(_.find(self.vm().allProperties(), function (property) {
-							return property.name() == part.property.name;
-						}));
-						editor.appendChild(block);
-						self.nodesToClean.push(block);
-						break;
-				}
-			});
-		}
-		editor.appendChild(document.createElement('br'));
+			if (self.data.type()) {
+				_.each(self.data.type().text, function (part) {
+					switch (part.type) {
+						case 'text':
+							editor.appendChild(document.createTextNode(part.text));
+							break;
+						case 'propertyReference':
+							var block = typeVM.createRefBlock(_.find(self.vm().allProperties(), function (property) {
+								return property.name() == part.property.name;
+							}));
+							editor.appendChild(block);
+							self.nodesToClean.push(block);
+							break;
+					}
+				});
+			}
+			editor.appendChild(document.createElement('br'));
+		});
 	}, 0);
 };
 
@@ -217,6 +226,7 @@ Template.type.destroyed = function () {
 	_.each(this.nodesToClean, function (node) {
 		ko.cleanNode(node);
 	});
+	this.updateEditor.dispose();
 	this.vm.dispose();
 };
 
