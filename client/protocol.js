@@ -5,7 +5,8 @@ function protocolVM(data) {
 	self.editMode = data.editMode;
 	var protocol = data.protocol ? data.protocol() : data.protocol;
 	self.id = protocol && protocol._id;
-	self.name = ko.observable(protocol ? protocol.name : 'Enter the name of the new protocol here');
+	self.data = protocol;
+	self.name = ko.observable(protocol && protocol.name);
 
 	self.params = ko.observableArray(protocol ? _.map(protocol.params, function (param) {
 		return new protocolParamVM(param);
@@ -23,6 +24,8 @@ function protocolVM(data) {
 	self.products = ko.observableArray(protocol ? _.map(protocol.products, function (product) {
 		return new protocolProductVM(self, product);
 	}) : []);
+
+	self.performHref = Router.path('performProtocol', { id: self.id });
 }
 
 protocolVM.prototype.addParam = function () {
@@ -65,21 +68,31 @@ protocolVM.prototype.flatten = function () {
 };
 
 protocolVM.prototype.save = function () {
-	if (!this.id)
-		this.id = Protocols.insert(this.flatten());
-	else
-		Protocols.update(this.id, this.flatten());
+	var flat = this.flatten();
 
-	Router.go('viewProtocol', {id: this.id});
+	if (!this.id) {
+		this.id = Protocols.insert(_.extend({
+			v: [flat]
+		}, flat));
+	} else {
+		Meteor.call('updateProtocol', this.id, flat);
+	}
+
+	Router.go('viewProtocol', { id: this.id });
+	return this.data ? this.data.v.length : 0;
 };
 
-protocolVM.prototype.edit = function() {
-	Router.go('viewProtocol', {id: this.id, mode: 'edit'});
+protocolVM.prototype.edit = function () {
+	Router.go('viewProtocol', { id: this.id }, { query: { edit: 1 } });
 }
 
-protocolVM.prototype.delete = function() {
-	alert("TODO: Not jet implemented");
-}
+protocolVM.prototype.cancel = function () {
+	if (this.id) {
+		Router.go('viewProtocol', { id: this.id });
+	} else {
+		Router.go('protocolList');
+	}
+};
 
 function protocolParamVM(param) {
 	var self = this;
