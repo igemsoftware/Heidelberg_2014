@@ -9,7 +9,7 @@ function typeVM(textEditor, data) {
 	self.editMode = data.editMode;
 	var type = data.type ? data.type() : data.type;
 	self.id = type && type._id;
-	self.name = ko.observable(type ? type.name : 'Enter the name of the new type here');
+	self.name = ko.observable(type ? type.name : '');
 
 	self.baseTypes = ko.observableArray(type ? _.filter(this.types(), function (ptype) {
 		return _.contains(_.pluck(type.baseTypes, '_id'), ptype._id());
@@ -161,7 +161,7 @@ typeVM.prototype.edit = function () {
 };
 
 function typePropertyVM(property) {
-	this.name = ko.observable(property ? property.name : 'Enter the name of the property here');
+	this.name = ko.observable(property ? property.name : '');
 	this.type = ko.observable(property && _.find(this.types, function (ptype) {
 		return ptype.id == property.type;
 	}));

@@ -10,7 +10,7 @@
 <template name="type">
 	<div id="type2">
 		<h1 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h1>
-		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" /></h2>
+		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" placeholder="Enter the name of the new type here"/></h2>
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">Base types (everything of this type also has these types)</h3>
@@ -34,7 +34,7 @@
 						<span data-bind="text: name"></span> (<span data-bind="text: type().desc"></span>)
 					</div>
 					<div class="input-group" data-bind="if: $root.editMode">
-						<input style="width:50%;" class="form-control" type="text" data-bind="value: name" />
+						<input style="width:50%;" class="form-control" type="text" data-bind="value: name" placeholder="Enter the name of the property here" />
 						<select style="width:50%;" class="form-control" data-bind="value: type, options: types, optionsText: 'desc'"></select>
 						<i class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeProperty.bind($parent)"></i> 
 					</div>

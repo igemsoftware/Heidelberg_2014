@@ -5,7 +5,7 @@ function protocolVM(data) {
 	self.editMode = data.editMode;
 	var protocol = data.protocol ? data.protocol() : data.protocol;
 	self.id = protocol && protocol._id;
-	self.name = ko.observable(protocol ? protocol.name : 'Enter the name of the new protocol here');
+	self.name = ko.observable(protocol ? protocol.name : '');
 
 	self.params = ko.observableArray(protocol ? _.map(protocol.params, function (param) {
 		return new protocolParamVM(param);
@@ -111,7 +111,7 @@ protocolParamVM.prototype.flatten = function () {
 function protocolStepVM(protocolVM, step) {
 	var self = this;
 	self.protocolVM = protocolVM;
-	self.desc = ko.observable(step ? step.desc : 'Enter description of the step');
+	self.desc = ko.observable(step ? step.desc : '');
 	self.inputs = ko.observableArray(step ? _.map(step.inputs, function (input) {
 		return new protocolStepInputVM(protocolVM, input);
 	}) : []);
@@ -137,7 +137,7 @@ protocolStepVM.prototype.flatten = function () {
 };
 
 function protocolStepInputVM(protocolVM, input) {
-	this.desc = ko.observable(input ? input.desc : 'Enter description of the input field here');
+	this.desc = ko.observable(input ? input.desc : '');
 	this.type = ko.observable(input && _.find(this.types, function (ptype) {
 		return ptype.id == input.type;
 	}));
@@ -159,7 +159,7 @@ protocolStepInputVM.prototype.flatten = function () {
 
 function protocolProductVM(protocolVM, product) {
 	var self = this;
-	self.name = ko.observable(product ? product.name : 'Enter name of the product here');
+	self.name = ko.observable(product ? product.name : '');
 	self.types = ko.observableArray(product ? _.filter(self.possibleTypes(), function (ptype) {
 		return _.contains(_.pluck(product.types, '_id'), ptype._id());
 	}) : []);
