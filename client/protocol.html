@@ -1,10 +1,10 @@
 <template name="protocol">
-	<h1 data-bind="text: $root.editMode() ? id ? 'Edit protocol' : 'New protocol' : 'View protocol'"></h1>
-	<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
-		<a class="btn btn-success" data-bind="attr: { href: performHref }"><span class="glyphicon glyphicon-play"></span> Perform</a>
-		<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-	</div>
 	<div id="protocol">
+		<h1 data-bind="text: $root.editMode() ? id ? 'Edit protocol' : 'New protocol' : 'View protocol'"></h1>
+		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
+			<a class="btn btn-success" data-bind="attr: { href: performHref }"><span class="glyphicon glyphicon-play"></span> Perform</a>
+			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+		</div>
 		<h2 id="protocolName"><span data-bind="visible: !$root.editMode(), text: name"></span><input class="form-control" type="text" data-bind="visible: $root.editMode, value: name" placeholder="Enter the name of the new protocol here" /></h2>
 		<div class="panel panel-default">
 			<div class="panel-heading">	
@@ -46,9 +46,10 @@
 									<span data-bind="text: desc"></span> (<span data-bind="text: type().desc"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
 								</div>
 								<div class="input-group" data-bind="if: $root.editMode">
-									<input type="text" style="width:50%;" class="form-control" data-bind="value: desc" />
-									<select class="form-control" style="width:20%;" data-bind="value: type, options: types, optionsText: 'desc'"></select>
-									<label class="form-control" style="width:15%;" ><input type="checkbox" data-bind="checked: multi" />prompt for every</label><select style="width:15%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
+									<input type="text" style="width:43%;" class="form-control" data-bind="value: desc" />
+									<select class="form-control" style="width:15%;" data-bind="value: type, options: types, optionsText: 'desc'"></select>
+									<label class="form-control" style="width:11%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
+									<label class="form-control" style="width:16%;" ><input type="checkbox" data-bind="checked: multi" /> prompt for every</label><select style="width:15%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
 									<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeInput.bind($parent)"></span> 
 								</div>
 							</li>
@@ -86,8 +87,76 @@
 		</div>
 
 		<div class="btn-toolbar" data-bind="if: $root.editMode">
-			<button class="btn btn-success" data-bind="click: save.bind($data)">Save</button>
+			<button class="btn btn-success" data-bind="click: save.bind($data, $root)">Save</button>
 			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
 		</div>
 	</div>
+
+	<div id="cannotCascadeModal" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="cannotCascadeModalTitle" data-bind="if: cannotCascadeModalVM">
+		<div class="modal-dialog" data-bind="with: cannotCascadeModalVM">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 id="cannotCascadeModalTitle" class="modal-title">Experiments cannot be auto-updated</h4>
+				</div>
+				<div class="modal-body">
+					<p><span data-bind="text: xCount"></span> experiments have been performed with the last protocol version. Since you have added parameters or required input fields which previously existing data cannot be mapped to, those experiments will not be updated to the new protocol version automatically.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: saveWithoutCascade">Save without updating experiments</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+	<div id="mappingsModal" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="mappingModalTitle" data-bind="if: mappingsModalVM">
+		<div class="modal-dialog" data-bind="with: mappingsModalVM">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 id="mappingModalTitle" class="modal-title">Auto-update of previous experiments</h4>
+				</div>
+				<div class="modal-body">
+					<p>
+						<span data-bind="text: xCount"></span> experiments have been performed with the last protocol version.
+						<label><input type="checkbox" data-bind="checked: cascade" /> Update them to use the new protocol version</label>
+					</p>
+					<div data-bind="if: cascade">
+						<div data-bind="if: paramMappings.length > 0">
+							<h5>Parameters</h5>
+							<dl data-bind="foreach: paramMappings">
+								<dt><span data-bind="text: param.name"></span></dt>
+								<dd>
+									<div data-bind="if: param.multi">
+										<label><input type="radio" data-bind="checked: blank, checkedValue: true" /> Leave this parameter blank</label>
+										<label data-bind="if: possibleMappings.length > 0"><input type="radio" data-bind="checked: blank, checkedValue: false" /> Map the values from the following previously defined parameter:</label>
+									</div>
+									<select class="form-control" data-bind="visible: possibleMappings.length > 0, enable: !blank(), value: source, options: possibleMappings, optionsText: 'name'"></select>
+								</dd>
+							</dl>
+						</div>
+
+						<div data-bind="if: inputMappings.length > 0">
+							<h5>Input fields</h5>
+							<dl data-bind="foreach: inputMappings">
+								<dt><span data-bind="text: input.desc"></span> of step "<span data-bind="text: step.desc"></span>"</dt>
+								<dd>
+									<div data-bind="ifnot: input.required">
+										<label><input type="radio" data-bind="checked: blank, checkedValue: true" /> Leave this field blank</label>
+										<label data-bind="if: possibleMappings.length > 0"><input type="radio" data-bind="checked: blank, checkedValue: false" /> Map this value from the following previously defined input field:</label>
+									</div>
+									<select class="form-control" data-bind="visible: possibleMappings.length > 0, enable: !blank(), value: source, options: possibleMappings, optionsText: 'longDesc'"></select>
+								</dd>
+							</dl>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: saveWithCascade, text: cascade() ? 'Save and update experiments' : 'Save without updating experiments'"></button>
+					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
 </template>
