@@ -1,7 +1,6 @@
 {
   "packages": {
     "iron-router": {},
-    "knockout": {},
     "bootstrap-3": {},
     "crypto-md5": {}
   }

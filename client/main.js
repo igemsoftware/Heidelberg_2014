@@ -2,9 +2,13 @@
 
 Router.map(function() {
 	var type = ko.observable();
+	var typeVersion = ko.observable();
 	var supply = ko.observable();
+	var supplyVersion = ko.observable();
 	var protocol = ko.observable();
+	var protocolVersion = ko.observable();
 	var experiment = ko.observable();
+	var experimentVersion = ko.observable();
 
 	var newMode = ko.observable();
 	var editMode = ko.observable();
@@ -17,7 +21,7 @@ Router.map(function() {
 		data: function () {
 			type(null);
 			editMode(true);
-			return { type: type, editMode: editMode };
+			return { type: type, editMode: editMode, version: typeVersion };
 		},
 	});
 	this.route('viewType', {
@@ -26,7 +30,8 @@ Router.map(function() {
 		data: function () {
 			type(Types.findOne(this.params.id));
 			editMode(this.params.edit);
-			return { type: type, editMode: editMode };
+			typeVersion(this.params.v);
+			return { type: type, editMode: editMode, version: typeVersion };
 		},
 		waitOn: function () {
 			var self = this;
@@ -42,7 +47,7 @@ Router.map(function() {
 		data: function () {
 			supply(null);
 			editMode(true);
-			return { supply: supply, editMode: editMode };
+			return { supply: supply, editMode: editMode, version: supplyVersion };
 		},
 	});
 	this.route('viewSupply', {
@@ -51,7 +56,8 @@ Router.map(function() {
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
 			editMode(this.params.edit);
-			return { supply: supply, editMode: editMode };
+			supplyVersion(this.params.v);
+			return { supply: supply, editMode: editMode, version: supplyVersion };
 		},
 		waitOn: function () {
 			var self = this;
@@ -67,7 +73,7 @@ Router.map(function() {
 		data: function () {
 			protocol(null);
 			editMode(true);
-			return { protocol: protocol, editMode: editMode };
+			return { protocol: protocol, editMode: editMode, version: protocolVersion };
 		}
 	});
 	this.route('viewProtocol', {
@@ -76,7 +82,8 @@ Router.map(function() {
 		data: function () {
 			protocol(Protocols.findOne(this.params.id));
 			editMode(this.params.edit);
-			return { protocol: protocol, editMode: editMode };
+			protocolVersion(this.params.v);
+			return { protocol: protocol, editMode: editMode, version: protocolVersion };
 		},
 		waitOn: function () {
 			var self = this;
@@ -94,7 +101,7 @@ Router.map(function() {
 			});
 			newMode(true);
 			editMode(true);
-			return { data: experiment, newMode: newMode, editMode: editMode }; 
+			return { data: experiment, newMode: newMode, editMode: editMode, version: experimentVersion }; 
 		},
 		waitOn: function () {
 			var self = this;
@@ -115,7 +122,8 @@ Router.map(function() {
 			experiment(data);
 			newMode(false);
 			editMode(this.params.edit);
-			return { data: experiment, newMode: newMode, editMode: editMode };
+			experimentVersion(this.params.v);
+			return { data: experiment, newMode: newMode, editMode: editMode, version: experimentVersion };
 		},
 		waitOn: function () {
 			var self = this;

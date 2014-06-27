@@ -14,7 +14,8 @@ Template.experimentList.protocol = function () {
 
 Template.experimentList.productText = function (experiment) {
 	var texts = [];
-	_.each(experiment.products[CryptoJS.MD5(this.name).toString()], function (productType) {
+	var version = experiment.v[experiment.v.length - 1];
+	_.each(version.products[CryptoJS.MD5(this.name).toString()], function (productType) {
 		if (productType.text) texts.push(productType.text);
 	});
 	return texts.join('/');

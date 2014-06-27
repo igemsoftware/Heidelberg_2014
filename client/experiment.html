@@ -1,6 +1,11 @@
 <template name="experiment">
-	<h1 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h1>	
+	<h1 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h1>
+	<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
+			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-dashboard"></span> Versions</button>
+	</div>
 	<h2 data-bind="text: protocol.name"></h2>
+	<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this experiment.</p>
 
 	<p data-bind="ifnot: $root.editMode">Performed by <span data-bind="text: performer"></span></p>
 	<input class="form-control" data-bind="visible: $root.editMode, value: performer" placeholder="Who are you?" />
@@ -22,13 +27,19 @@
 							<a href="" data-bind="visible: $root.editMode, click: addMultiParam.bind($data)($parent)">+</a>
 							<ul data-bind="foreach: getParam($parent, true)">
 								<li>
-									<div data-bind="ifnot: $root.editMode">
-										<div data-bind="with: paramValue">
+									<div data-bind="with: paramValue">
+										<div data-bind="ifnot: $root.editMode() &amp;&amp; editable()">
 											<a data-bind="text: text, attr: { href: href }"></a>
+											<span data-bind="if: currentVersionHref">
+												(<a data-bind="text: currentVersionText, attr: { href: currentVersionHref }"></a>)
+											</span>
+										</div>
+										<div data-bind="if: $root.editMode() &amp;&amp; !editable()">
+											<a href="" data-bind="click: edit.bind($data)">Edit</a>
 										</div>
 									</div>
-									<div data-bind="if: $root.editMode">
-										<select class="form-control" data-bind="value: paramValue, options: $parent.possibleSources.bind($parent)($parents[1]), optionsText: 'text'"></select>
+									<div data-bind="if: $root.editMode() &amp;&amp; paramValue().editable()">
+										<select class="form-control" data-bind="visible: $root.editMode, value: paramValue, options: $parent.possibleSources($parents[1]), optionsText: 'text'"></select>
 										<a href="" data-bind="click: $parent.removeMultiParam($parents[1]).bind($parent)">-</a>
 									</div>
 								</li>
@@ -39,12 +50,21 @@
 				<!-- ko ifnot: multi -->
 					<!--ko foreach: $root.experiments -->
 						<td>
-							<div data-bind="ifnot: $root.editMode">
-								<div data-bind="with: getParam($parent)">
+							<div data-bind="with: getParam($parent)">
+								<div data-bind="ifnot: $root.editMode() &amp;&amp; editable()">
 									<a data-bind="text: text, attr: { href: href }"></a>
+									<span data-bind="if: currentVersionHref">
+										(<a data-bind="text: currentVersionText, attr: { href: currentVersionHref }"></a>)
+									</span>
+								</div>
+								<div data-bind="if: $root.editMode() &amp;&amp; !editable()">
+									<a href="" data-bind="click: edit.bind($data)">Edit</a>
 								</div>
 							</div>
-							<select class="form-control" data-bind="visible: $root.editMode, value: getParam($parent), options: possibleSources($parent), optionsText: 'text'"></select>
+							<div data-bind="if: $root.editMode() &amp;&amp; getParam($parent)().editable()">
+								<select class="form-control" data-bind="visible: $root.editMode, value: getParam($parent), options: 
+								possibleSources($parent), optionsText: 'text'"></select>
+							</div>
 						</td>
 					<!-- /ko -->
 				<!-- /ko -->
@@ -113,5 +133,28 @@
 		</tr>
 	</table>
 
-	<button class="btn btn-default" data-bind="visible: $root.editMode, click: save">Save</button>
+	<div class="btn-toolbar">
+		<button class="btn btn-success" data-bind="visible: $root.editMode, click: save.bind($data)">Save</button>
+		<button class="btn btn-danger" data-bind="visible: $root.editMode, click: cancel.bind($data)">Cancel</button>
+	</div>
+
+	<div id="versionsModal" class="modal fade">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title">Version Management</h4>
+				</div>
+				<div class="modal-body">
+					<div class="list-group" data-bind="foreach: versions" >
+						<a class="list-group-item" data-bind="text: 'Version '+ (versionNr +1), attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary">Save changes</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
 </template>

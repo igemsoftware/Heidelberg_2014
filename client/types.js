@@ -157,7 +157,7 @@ typeVM.prototype.save = function () {
 };
 
 typeVM.prototype.edit = function () {
-	// TODO
+	Router.go('viewType', { id: this.id }, { query: { edit: 1 } });
 };
 
 function typePropertyVM(property) {
@@ -180,7 +180,6 @@ Template.type.rendered = function () {
 	var self = this;
 	var editor = self.find('#textEditor');
 	self.vm = ko.computed(function () {
-		console.log('self.vm');
 		return new typeVM(editor, self.data);
 	});
 
