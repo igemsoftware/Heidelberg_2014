@@ -171,7 +171,7 @@
 	      </div>
 	      <div class="modal-body">
 	        <div class="list-group" data-bind="foreach: versions" >
-	        	<a class="list-group-item" data-bind="text: 'Version '+ versionNr, attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
+	        	<a class="list-group-item" data-bind="text: 'Version '+ (versionNr +1), attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
 	        </div>
 	      </div>
 	      <div class="modal-footer">
