@@ -132,6 +132,10 @@ Router.map(function() {
 		},
 		loadingTemplate: 'loading'
 	});
+	this.route('options', {
+		path: '/options',
+		template: 'options'
+	});
 });
 
 Router.onBeforeAction('loading');

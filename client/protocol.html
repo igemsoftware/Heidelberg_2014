@@ -4,7 +4,7 @@
 		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
 			<a class="btn btn-success" data-bind="attr: { href: performHref }, visible: !oldVersion"><span class="glyphicon glyphicon-play"></span> Perform</a>
 			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-dashboard"></span> Versions</button>
+			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
 		</div>
 		<h2 id="protocolName"><span data-bind="visible: !$root.editMode(), text: name"></span><input class="form-control" type="text" data-bind="visible: $root.editMode, value: name" placeholder="Enter the name of the new protocol here" /></h2>
 		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this protocol.</p>
@@ -48,10 +48,10 @@
 									<span data-bind="text: desc"></span> (<span data-bind="text: type().desc"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
 								</div>
 								<div class="input-group" data-bind="if: $root.editMode">
-									<input type="text" style="width:50%;" class="form-control" data-bind="value: desc" placeholder="Enter description of the input field here" />
-									<select class="form-control" style="width:15%;" data-bind="value: type, options: types, optionsText: 'desc'"></select>
-									<label class="form-control" style="width:11%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
-									<label class="form-control" style="width:16%;" ><input type="checkbox" data-bind="checked: multi" /> prompt for every</label><select style="width:15%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
+									<input type="text" style="width:45%;" class="form-control" data-bind="value: desc" placeholder="Enter description of the input field here" />
+									<select class="form-control" style="width:18%;" data-bind="value: type, options: types, optionsText: 'desc'"></select>
+									<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
+									<label class="form-control" style="width:16%;" ><input type="checkbox" data-bind="checked: multi" /> prompt for every</label><select style="width:11%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
 									<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeInput.bind($parent)"></span> 
 								</div>
 							</li>
