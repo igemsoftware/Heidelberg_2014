@@ -12,7 +12,6 @@
 		<h1 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h1>
 		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
 			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-			<button class="btn btn-info"><span class="glyphicon glyphicon-dashboard"></span>&nbsp;Versions</button>
 		</div>
 		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" /></h2>
 		<div class="panel panel-default">
@@ -59,4 +58,23 @@
 		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
 		<button data-bind="visible: $root.editMode, click: save.bind($data)">Save</button><br />
 	</div>
+	<div id="versionsModal" class="modal fade">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	        <h4 class="modal-title">Version Management</h4>
+	      </div>
+	      <div class="modal-body">
+	        <div class="list-group" data-bind="foreach: versions" >
+	        	<a class="list-group-item" data-bind="text: 'Version '+ versionNr, attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
+	        </div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	        <button type="button" class="btn btn-primary">Save changes</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
 </template>

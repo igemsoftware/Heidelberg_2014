@@ -2,7 +2,6 @@
 
 Template.protocol.rendered = function () {
 	var self = this;
-
 	var cannotCascadeModalVM = ko.observable();
 	var mappingsModalVM = ko.observable();
 	self.vm = ko.computed(function () {
