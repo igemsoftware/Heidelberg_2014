@@ -103,7 +103,7 @@
 					<p><span data-bind="text: xCount"></span> experiments have been performed with the last protocol version. Since you have added parameters or required input fields which previously existing data cannot be mapped to, those experiments will not be updated to the new protocol version automatically.</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: saveWithoutCascade">Save without updating experiments</button>
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: save.bind($data)">Save without updating experiments</button>
 					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
 				</div>
 			</div><!-- /.modal-content -->
@@ -153,7 +153,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: saveWithCascade, text: cascade() ? 'Save and update experiments' : 'Save without updating experiments'"></button>
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: save.bind($data), text: cascade() ? 'Save and update experiments' : 'Save without updating experiments'"></button>
 					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
 				</div>
 			</div><!-- /.modal-content -->

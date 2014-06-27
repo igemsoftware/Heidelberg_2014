@@ -157,7 +157,7 @@ typeVM.prototype.save = function () {
 };
 
 typeVM.prototype.edit = function () {
-	// TODO
+	Router.go('viewType', { id: this.id }, { query: { edit: 1 } });
 };
 
 function typePropertyVM(property) {

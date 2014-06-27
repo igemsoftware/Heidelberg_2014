@@ -51,14 +51,12 @@
 		</div>
 		<h3>Textual representation</h3>
 		<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
-		<button data-bind="visible: $root.editMode, click: addRef">Add reference to property</button>
+		<button data-bind="visible: $root.editMode, click: addRef.bind($data)">Add reference to property</button>
 		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
 
-		<button data-bind="visible: $root.editMode, click: save">Save</button><br />
+		<button data-bind="visible: $root.editMode, click: save.bind($data)">Save</button><br />
 		<div data-bind="ifnot: $root.editMode">
-			<button class="btn btn-danger" data-bind="click: edit"><span class="glyphicon glyphicon-trash">&nbsp;Delete</span></button>
-			<button class="btn btn-warning" data-bind="click: edit"><span class="glyphicon glyphicon-pencil">&nbsp;Edit</span></button>
-			
+			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 		</div>
 	</div>
 </template>
