@@ -33,7 +33,7 @@
 			<li><a href="{{pathFor 'newType'}}">Create new Type</a></li>
 			<li class="divider"></li>
 			{{#each types}}
-			<li><span><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a><a href="{{pathFor 'viewType' id=_id query='edit'}}" class="pull-right glyphicon glyphicon-pencil"></a></span></li>
+			<li><span><span class="pull-right"><a href="{{pathFor 'viewType' id=_id query='edit'}}" class="glyphicon glyphicon-pencil"></a></span><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a></span></li>
 			{{/each}}
 		</ul>
 	</li>
@@ -44,7 +44,7 @@
 			<li><a href="{{pathFor 'newProtocol'}}">Create new Protocol</a></li>
 			<li class="divider"></li>
 			{{#each protocols}}
-			<li><span><a href="{{pathFor 'viewProtocol' id=_id}}">{{name}}</a><span class="pull-right"><a href="{{pathFor 'viewProtocol' id=_id query='edit'}}" class="glyphicon glyphicon-pencil"></a>&nbsp;<a href="{{pathFor 'performProtocol' id=_id}}" class="glyphicon glyphicon-play"></a></span></span></li>
+			<li><span><span class="pull-right" ><a href="{{pathFor 'viewProtocol' id=_id query='edit'}}" class="glyphicon glyphicon-pencil"></a>&nbsp;<a href="{{pathFor 'performProtocol' id=_id}}" class="glyphicon glyphicon-play"></a></span><a href="{{pathFor 'viewProtocol' id=_id}}">{{name}}</a>&nbsp;</span></li>
 			{{/each}}
 		</ul>
 	</li>

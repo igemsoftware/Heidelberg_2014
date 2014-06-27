@@ -4,6 +4,7 @@
 display: block;
 padding: 3px 20px;
 clear: both;
+white-space: nowrap;
 }
 
 .dropdown-menu > li > span a {
@@ -13,6 +14,16 @@ color: #333;
 white-space: nowrap;
 text-decoration: none;
 }
+
+.dropdown-menu > li > span > a {
+	padding-right: 35px
+}
+
+
+.dropdown-menu > li > span > span{
+	white-space: nowrap;
+}
+
 .dropdown-menu > li > span:hover,
 .dropdown-menu > li > span:focus {
   color: #262626;
