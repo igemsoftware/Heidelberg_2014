@@ -4,7 +4,7 @@
 		<div class="list-group">
 			{{#each experiments}}
 				<a href="{{pathFor 'viewExperiment' id=_id}}" class="list-group-item">
-					<h4 class="list-group-item-heading">{{protocol.name}} <small>{{performer}}</small><small class="pull-right">{{finishDate}}</small></h4>
+					<h4 class="list-group-item-heading">{{protocol.name}} <small>{{performer}}</small><small class="pull-right">{{formatDate finishDate}}</small></h4>
 					<div class="list-group-item-text">
 						<div class="list-really-inline">
 							<ul class="list-inline">
