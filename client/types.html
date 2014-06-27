@@ -10,6 +10,10 @@
 <template name="type">
 	<div id="type2">
 		<h1 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h1>
+		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
+			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+			<button class="btn btn-info"><span class="glyphicon glyphicon-dashboard"></span>&nbsp;Versions</button>
+		</div>
 		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" /></h2>
 		<div class="panel panel-default">
 			<div class="panel-heading">
@@ -53,10 +57,6 @@
 		<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
 		<button data-bind="visible: $root.editMode, click: addRef.bind($data)">Add reference to property</button>
 		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
-
 		<button data-bind="visible: $root.editMode, click: save.bind($data)">Save</button><br />
-		<div data-bind="ifnot: $root.editMode">
-			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
-		</div>
 	</div>
 </template>
