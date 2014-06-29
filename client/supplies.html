@@ -36,7 +36,7 @@
 		<input type="text" data-bind="visible: $root.editMode, value: source" />
 
 		<h3>Date</h3>
-		<div data-bind="visible: !$root.editMode(), text: date"></div>
+		<div data-bind="visible: !$root.editMode(), text: UI._globalHelper('formatDate')(date())"></div>
 		<div class="form-inline datetime" data-bind="if: $root.editMode">
 			<div class="datetime-date">
 				<div class="input-group date" data-bind="datepicker: { date: date, options: { todayBtn: 'linked', autoclose: true, todayHighlight: true } }, event: { 'change': function () { clearInterval(dateUpdate); } }">

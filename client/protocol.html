@@ -66,8 +66,11 @@
 			</div>
 			<ul class="list-group" id="protocolProducts" data-bind="foreach: products">
 				<li class="list-group-item">
-					Name: <span data-bind="visible: !$root.editMode(), text: name"></span><input type="text" data-bind="visible: $root.editMode, value: name" placeholder="Enter name of the product here" />
-					<a href="" data-bind="visible: $root.editMode, click: $parent.removeProduct.bind($parent)">-</a>
+					Name: <span data-bind="visible: !$root.editMode(), text: name"></span>
+					<div class="input-group" data-bind="if: $root.editMode">
+						<input type="text" class="form-control" data-bind="value: name" placeholder="Enter name of the product here" />
+						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeProduct.bind($parent)"></span>
+					</div>
 					<br />
 					Has the following type(s):
 					<div data-bind="ifnot: $root.editMode">
