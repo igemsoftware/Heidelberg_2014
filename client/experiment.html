@@ -1,10 +1,10 @@
 <template name="experiment">
-	<h1 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h1>
+	<h2 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h2>
 	<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
 			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
 	</div>
-	<h2 data-bind="text: protocol.name"></h2>
+	<h1 data-bind="text: protocol.name"></h1>
 	<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this experiment.</p>
 
 	<p data-bind="ifnot: $root.editMode">Performed by <span data-bind="text: performer"></span></p>
