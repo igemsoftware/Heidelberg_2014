@@ -5,9 +5,13 @@ UI.registerHelper('getOption', function (option) {
 	return result && result.value;;
 });
 
-UI.registerHelper('formatDate', function (date) {
+UI.registerHelper('formatDate', function (date, relative) {
 	var format = Options.findOne({ key: 'timeFormat'}, {fields: { value: 1}});
+	relative = (typeof relative === "undefined") ? false : relative;
 	format = format && format.value;
+	if(moment(date).isAfter(moment().subtract(1, 'day')) && relative){
+		return moment(date).fromNow();
+	}
 	return moment(date).format(format);
 });
 
