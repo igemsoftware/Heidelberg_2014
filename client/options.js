@@ -1,8 +1,7 @@
 'use strict';
 
 UI.registerHelper('getOption', function (option) {
-	var result = Options.findOne({ key: option}, {fields: { value: 1}});
-	return result && result.value;;
+	return getUserOption(option);
 });
 
 UI.registerHelper('formatDate', function (date, relative) {
@@ -11,7 +10,7 @@ UI.registerHelper('formatDate', function (date, relative) {
 
 Template.options.events({
 	'click #savebtn': function() {
-		Meteor.call('updateOptions', 'timeFormat', $('#timeFormat').val())
+		Meteor.call('updateOption', 'dateFormat', $('#dateFormat').val())
 		alert("Saved!");
 	}
 });
