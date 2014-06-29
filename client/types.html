@@ -8,7 +8,7 @@
 </template>
 
 <template name="type">
-	<div id="type2">
+	<div id="type">
 		<h2 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
 			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
@@ -52,10 +52,19 @@
 				</li>
 			</ul>
 		</div>
-		<h3>Textual representation</h3>
-		<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
-		<button data-bind="visible: $root.editMode, click: addRef.bind($data)">Add reference to property</button>
-		<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
-		<button data-bind="visible: $root.editMode, click: save.bind($data)">Save</button><br />
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Textual representation</h3>
+			</div>
+			<div class="panel-body">
+				<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
+				<button data-bind="visible: $root.editMode, click: addRef.bind($data)">Add reference to property</button>
+				<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
+			</div>
+		</div>
+		<div class="btn-toolbar" data-bind="if: $root.editMode">
+			<button class="btn btn-success" data-bind="click: save.bind($data, $root)">Save</button>
+			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
+		</div>
 	</div>
 </template>

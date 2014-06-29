@@ -156,6 +156,14 @@ typeVM.prototype.save = function () {
 	Router.go('viewType', {id: this.id, edit: false});
 };
 
+typeVM.prototype.cancel = function () {
+	if (this.id) {
+		Router.go('viewType', { id: this.id });
+	} else {
+		Router.go('typeList');
+	}
+};
+
 typeVM.prototype.edit = function () {
 	Router.go('viewType', { id: this.id }, { query: { edit: 1 } });
 };
