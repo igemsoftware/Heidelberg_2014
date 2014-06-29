@@ -9,7 +9,7 @@
 
 <template name="supply">
 	<div id="supply">
-		<h1 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h1>
+		<h2 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
 			<button class="btn btn-warning" data-bind="visible: !editMode(), click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>

@@ -9,11 +9,11 @@
 
 <template name="type">
 	<div id="type2">
-		<h1 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h1>
+		<h2 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
 			<button class="btn btn-warning" data-bind="click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 		</div>
-		<h2 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" placeholder="Enter the name of the new type here"/></h2>
+		<h1 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" placeholder="Enter the name of the new type here"/></h1>
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">Base types (everything of this type also has these types)</h3>
