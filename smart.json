@@ -3,6 +3,7 @@
     "iron-router": {},
     "bootstrap-3": {},
     "crypto-md5": {},
-    "moment": {}
+    "moment": {},
+    "accounts-ui-bootstrap-3": {}
   }
 }

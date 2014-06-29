@@ -1,5 +1,13 @@
 'use strict';
 
+Template.masterTemplate.events({
+	'click #loginNag': function (ev, tmpl) {
+		setTimeout(function () {
+			$('#login-dropdown-list').addClass('open');
+		}, 0);
+	}
+});
+
 Router.map(function() {
 	var type = ko.observable();
 	var typeVersion = ko.observable();

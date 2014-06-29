@@ -20,7 +20,15 @@
 		</div> <!-- Container -->
 	</nav>
 	<div class="container">
+	{{#if currentUser}}
 		{{> yield}}
+	{{else}}
+		<div class="jumbotron">
+			<h1>Welcome to MidnightDoc!</h1>
+			<p>This ultra awesome peace of software will enable you to keep track of all the stuff that is going on in the lab!</p>
+			<p><button id="loginNag" class="btn btn-primary btn-lg" >Please login to proceed</button></p>
+		</div>
+	{{/if}}
 	</div>
 </template>
 
@@ -50,7 +58,8 @@
 		<li class="{{activeIfInPath '/x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
 	</ul>
 	<ul class="nav navbar-nav navbar-right">
-		<li class="{{activeIfInPath '/options'}} pull-right"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
+		{{> loginButtons }}
+		<li class="{{activeIfInPath '/options'}}"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
 	</ul>
 
 </template>
