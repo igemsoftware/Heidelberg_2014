@@ -41,7 +41,7 @@
 						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeStep.bind($parent)"></span>
 					</div>
 					<div style="padding-top:5px;" class="list-group-item-text">
-						User input fields:&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addInput.bind($data)"></span>
+						<span data-bind="visible: inputs().length > 0 || $root.editMode ">User input fields:&nbsp;&nbsp;</span><span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addInput.bind($data)"></span>
 						<ul class="list-group" data-bind="foreach: inputs">
 							<li class="list-group-item">
 								<div data-bind="ifnot: $root.editMode">
@@ -164,23 +164,5 @@
 			</div><!-- /.modal-content -->
 		</div><!-- /.modal-dialog -->
 	</div><!-- /.modal -->
-
-	<div id="versionsModal" class="modal fade">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-					<h4 class="modal-title">Version Management</h4>
-				</div>
-				<div class="modal-body">
-					<div class="list-group" data-bind="foreach: versions" >
-						<a class="list-group-item" data-bind="text: 'Version '+ (versionNr +1), attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				</div>
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
+	{{> versionModal}}
 </template>

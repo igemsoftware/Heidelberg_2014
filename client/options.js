@@ -6,13 +6,7 @@ UI.registerHelper('getOption', function (option) {
 });
 
 UI.registerHelper('formatDate', function (date, relative) {
-	var format = Options.findOne({ key: 'timeFormat'}, {fields: { value: 1}});
-	relative = (typeof relative === "undefined") ? false : relative;
-	format = format && format.value;
-	if(moment(date).isAfter(moment().subtract(1, 'day')) && relative){
-		return moment(date).fromNow();
-	}
-	return moment(date).format(format);
+	return formatDate(date, relative);
 });
 
 Template.options.events({
