@@ -149,9 +149,9 @@ typeVM.prototype.flatten = function () {
 
 typeVM.prototype.save = function () {
 	if (!this.id)
-		this.id = Types.insert(this.flatten());
+		this.id = Meteor.call('insertType',this.flatten());
 	else
-		Types.update(this.id, this.flatten());
+		Meteor.call('updateType',this.id, this.flatten());
 
 	Router.go('viewType', {id: this.id, edit: false});
 };
