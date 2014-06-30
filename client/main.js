@@ -7,6 +7,8 @@ Template.masterTemplate.events({
 		}, 0);
 	}
 });
+/* Workaround for Iron router */
+
 
 Router.map(function() {
 	var type = ko.observable();
@@ -21,10 +23,15 @@ Router.map(function() {
 	var newMode = ko.observable();
 	var editMode = ko.observable();
 
-	this.route('home', { path: '/' });
-	this.route('typeList', { path: '/t' });
+	/* Workaround for Iron router */
+	var basepath = '/' + Meteor.absoluteUrl().replace(/http:\/\/.*?\//,"", ""); 
+
+	console.log(basepath);
+
+	this.route('home', { path: basepath });
+	this.route('typeList', { path: basepath+'t' });
 	this.route('newType', {
-		path: '/newType',
+		path: basepath+'newType',
 		template: 'type',
 		data: function () {
 			type(null);
@@ -33,7 +40,7 @@ Router.map(function() {
 		},
 	});
 	this.route('viewType', {
-		path: '/t/:id',
+		path: basepath+'t/:id',
 		template: 'type',
 		data: function () {
 			type(Types.findOne(this.params.id));
@@ -48,9 +55,9 @@ Router.map(function() {
 		},
 		loadingTemplate: 'loading'
 	});
-	this.route('suppliesList', { path: '/s' });
+	this.route('suppliesList', { path: basepath+'s' });
 	this.route('obtainSupply', {
-		path: '/obtainSupply',
+		path: basepath+'obtainSupply',
 		template: 'supply',
 		data: function () {
 			supply(null);
@@ -59,7 +66,7 @@ Router.map(function() {
 		},
 	});
 	this.route('viewSupply', {
-		path: '/s/:id',
+		path: basepath+'s/:id',
 		template: 'supply',
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
@@ -74,9 +81,9 @@ Router.map(function() {
 		},
 		loadingTemplate: 'loading'
 	});
-	this.route('protocolList', { path: '/p' });
+	this.route('protocolList', { path: basepath+'p' });
 	this.route('newProtocol', {
-		path: '/newProtocol',
+		path: basepath+'newProtocol',
 		template: 'protocol',
 		data: function () {
 			protocol(null);
@@ -85,7 +92,7 @@ Router.map(function() {
 		}
 	});
 	this.route('viewProtocol', {
-		path: '/p/:id',
+		path: basepath+'p/:id',
 		template: 'protocol',
 		data: function () {
 			protocol(Protocols.findOne(this.params.id));
@@ -101,7 +108,7 @@ Router.map(function() {
 		loadingTemplate: 'loading'
 	});
 	this.route('performProtocol', {
-		path: '/perform/:id',
+		path: basepath+'perform/:id',
 		template: 'experiment',
 		data: function () {
 			experiment({
@@ -118,9 +125,9 @@ Router.map(function() {
 		},
 		loadingTemplate: 'loading'
 	});
-	this.route('experimentList', { path: '/x' });
+	this.route('experimentList', { path: basepath+'x' });
 	this.route('viewExperiment', {
-		path: '/x/:id',
+		path: basepath+'x/:id',
 		template: 'experiment',
 		data: function () {
 			var data = {
@@ -141,7 +148,7 @@ Router.map(function() {
 		loadingTemplate: 'loading'
 	});
 	this.route('options', {
-		path: '/options',
+		path: basepath+'options',
 		template: 'options'
 	});
 });
