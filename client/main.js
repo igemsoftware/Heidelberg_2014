@@ -29,7 +29,7 @@ Router.map(function() {
 		template: 'type',
 		data: function () {
 			type(Types.findOne(this.params.id));
-			editMode(this.params.edit);
+			editMode(!!this.params.edit);
 			typeVersion(this.params.v);
 			return { type: type, editMode: editMode, version: typeVersion };
 		},
@@ -55,7 +55,7 @@ Router.map(function() {
 		template: 'supply',
 		data: function () {
 			supply(Supplies.findOne(this.params.id));
-			editMode(this.params.edit);
+			editMode(!!this.params.edit);
 			supplyVersion(this.params.v);
 			return { supply: supply, editMode: editMode, version: supplyVersion };
 		},
@@ -81,7 +81,7 @@ Router.map(function() {
 		template: 'protocol',
 		data: function () {
 			protocol(Protocols.findOne(this.params.id));
-			editMode(this.params.edit);
+			editMode(!!this.params.edit);
 			protocolVersion(this.params.v);
 			return { protocol: protocol, editMode: editMode, version: protocolVersion };
 		},
@@ -121,7 +121,7 @@ Router.map(function() {
 			data.protocol = Protocols.findOne(data.experiment.protocol._id);
 			experiment(data);
 			newMode(false);
-			editMode(this.params.edit);
+			editMode(!!this.params.edit);
 			experimentVersion(this.params.v);
 			return { data: experiment, newMode: newMode, editMode: editMode, version: experimentVersion };
 		},
