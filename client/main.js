@@ -37,7 +37,7 @@ Router.map(function() {
 		template: 'type',
 		data: function () {
 			type(Types.findOne(this.params.id));
-			editMode(this.params.edit);
+			editMode(!!this.params.edit);
 			typeVersion(this.params.v);
 			return { type: type, editMode: editMode, version: typeVersion };
 		},
