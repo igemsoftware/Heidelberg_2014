@@ -9,11 +9,13 @@
 
 <template name="supply">
 	<div id="supply">
-		<h2 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
-			<button class="btn btn-warning" data-bind="visible: !editMode(), click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+			<button class="btn btn-warning" data-bind="visible: !oldVersion, click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
 		</div>
+		<h2 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
+		<p class="alert alert-warning" data-bind="visible: needsReview">This supply could not be automatically adapted to a change made to one of its types. You need to add missing information manually to be able to reference it in future experiments.</p>
+		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this supply.</p>
 		<h3>Types</h3>
 		<div data-bind="if: $root.editMode"><select multiple="true" size="8" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select></div>
 		<div data-bind="ifnot: $root.editMode">
@@ -61,7 +63,7 @@
 		<textarea class="form-control" data-bind="visible: $root.editMode, value: notes"></textarea>
 
 		<div class="btn-toolbar" data-bind="if: $root.editMode">
-			<button class="btn btn-success" data-bind="click: save.bind($data)">Save</button>
+			<button class="btn btn-success" data-bind="click: save.bind($data, undefined)">Save</button>
 			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
 		</div>
 	</div>
