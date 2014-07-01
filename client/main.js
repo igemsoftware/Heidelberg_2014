@@ -24,9 +24,7 @@ Router.map(function() {
 	var editMode = ko.observable();
 
 	/* Workaround for Iron router */
-	var basepath = '/' + Meteor.absoluteUrl().replace(/http:\/\/.*?\//,"", ""); 
-
-	console.log(basepath);
+	var basepath = '/' + Meteor.absoluteUrl().replace(/https?:\/\/.*?\//,"", "");
 
 	this.route('home', { path: basepath });
 	this.route('typeList', { path: basepath+'t' });
