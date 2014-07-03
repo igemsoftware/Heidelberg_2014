@@ -21,9 +21,9 @@
 		<!-- ko foreach: protocol.params -->
 			<tr>
 				<th class="ul"><div class="li"><span data-bind="text: name"></span>:</div></th>
-				<!-- ko if: multi -->
-					<!--ko foreach: $root.experiments -->
-						<td>
+				<!--ko foreach: $root.experiments -->
+					<td>
+						<!-- ko if: $parent.multi -->
 							<a href="" data-bind="visible: $root.editMode, click: addMultiParam.bind($data)($parent)">+</a>
 							<ul data-bind="foreach: getParam($parent, true)">
 								<li>
@@ -44,12 +44,8 @@
 									</div>
 								</li>
 							</ul>
-						</td>
-					<!-- /ko -->
-				<!-- /ko -->
-				<!-- ko ifnot: multi -->
-					<!--ko foreach: $root.experiments -->
-						<td>
+						<!-- /ko -->
+						<!-- ko ifnot: $parent.multi -->
 							<div data-bind="with: getParam($parent)">
 								<div data-bind="ifnot: $root.editMode() &amp;&amp; editable()">
 									<a data-bind="text: text, attr: { href: href }"></a>
@@ -65,8 +61,8 @@
 								<select class="form-control" data-bind="visible: $root.editMode, value: getParam($parent), options: 
 								possibleSources($parent), optionsText: 'text'"></select>
 							</div>
-						</td>
-					<!-- /ko -->
+						<!-- /ko -->
+					</td>
 				<!-- /ko -->
 			</tr>
 		<!-- /ko -->

@@ -13,21 +13,21 @@
 			<button class="btn btn-warning" data-bind="visible: !oldVersion, click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
 		</div>
-		<h2 data-bind="text: $root.editMode() ? id ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
+		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
 		<p class="alert alert-warning" data-bind="visible: needsReview">This supply could not be automatically adapted to a change made to one of its types. You need to add missing information manually to be able to reference it in future experiments.</p>
 		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this supply.</p>
 		<h3>Types</h3>
 		<div data-bind="if: $root.editMode"><select multiple="true" size="8" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select></div>
 		<div data-bind="ifnot: $root.editMode">
 			<ul data-bind="foreach: types">
-				<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
+				<li><a data-bind="text: name, attr: { href: href }"></a></li>
 			</ul>
 		</div>
 
 		<h3>Properties</h3>
 		<ul data-bind="foreach: properties">
 			<li>
-				<span data-bind="text: name"></span> (from <span data-bind="text: from.name"></span>):
+				<span data-bind="text: property.name"></span> (from <span data-bind="text: property.from.name"></span>):
 				<span data-bind="visible: !$root.editMode(), text: value"></span>
 				<input type="text" data-bind="visible: $root.editMode, value: value" />
 			</li>
@@ -67,5 +67,6 @@
 			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
 		</div>
 	</div>
+
 	{{> versionModal}}
 </template>

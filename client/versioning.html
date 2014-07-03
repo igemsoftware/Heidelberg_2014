@@ -9,7 +9,7 @@
 				</div>
 				<div class="modal-body">
 					<div class="list-group" data-bind="foreach: versions" >
-						<a class="list-group-item" data-bind="attr: { href: href }, css: { 'active': isCurrent($parent.version), 'list-group-item-success': isCurrent($parent.data.v.length-1) },click: hideModal">
+						<a class="list-group-item" data-bind="attr: { href: href }, css: { 'active': isCurrent($parent.version), 'list-group-item-success': isCurrent($parent.DBData.v.length-1) },click: hideModal">
 						Version <span data-bind="text: (versionNr +1)"></span><em class="pull-right"><span data-bind="text: version.editor ? 'Edited by '+idToUser(version.editor).username+': ' : ''"></span> <span data-bind="text: formatDate(version.mtime)"></span></em></a>
 					</div>
 				</div>

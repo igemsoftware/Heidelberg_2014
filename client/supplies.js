@@ -8,10 +8,68 @@ Template.suppliesList.text = function () {
 	return _.pluck(this.types, 'text').join('/');
 };
 
+function SupplyVM(data) {
+	var self = this;
+	self.editMode = data.editMode;
+	Supply.call(this, data.supply(), ko.unwrap(data.version), self.editMode());
+
+	self.versions = self.DBData ? _.map(self.DBData.v, function (version, index) {
+		return new VersionVM(version, index, Router.path('viewSupply', { id: self._id() }, { query: { v: index } }));
+	}).reverse() : [];
+
+	self.dateUpdate = !self.DBData && setInterval(function () {
+		self.date(new Date());
+	}, 1000);
+}
+SupplyVM.prototype = new Supply();
+SupplyVM.prototype.constructor = SupplyVM;
+
+SupplyVM.prototype.edit = function () {
+	Router.go('viewSupply', { id: this._id() }, { query: { edit: 1 } });
+};
+
+SupplyVM.prototype.save = function () {
+	var self = this;
+	clearInterval(self.dateUpdate);
+	var flat;
+	try {
+		flat = self.flatten();
+	} catch (e) {
+		// The result being thrown as an exception signals a failed cascading update, but this doesn't matter here
+		// Check if the exception really is the result first
+		if (!e.name instanceof Function || e.name() != protocol.name) throw e;
+		flat = e;
+	}
+
+	if (!this._id()) {
+		Meteor.call('insertSupply', flat, function (error, result) {
+			if (!error) {
+				self._id(result);
+				Router.go('viewSupply', { id: self._id() });
+			}
+		});
+	} else if (!isUnchanged(flat, this.DBData)) {
+		Meteor.call('updateSupply', this._id(), flat);
+		Router.go('viewSupply', { id: this._id() });
+	}
+};
+
+SupplyVM.prototype.cancel = function () {
+	if (this._id()) {
+		Router.go('viewSupply', { id: this._id() });
+	} else {
+		Router.go('suppliesList');
+	}
+};
+
+SupplyVM.prototype.displayVersions = function() {
+	$("#versionModal").modal();
+};
+
 Template.supply.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		return new supplyVM(self.data);
+		return new SupplyVM(self.data);
 	});
 
 	self.nodesToClean = [];

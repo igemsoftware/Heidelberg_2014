@@ -9,7 +9,7 @@
 
 <template name="type">
 	<div id="type">
-		<h2 data-bind="text: $root.editMode() ? id ? 'Edit type' : 'New type' : 'View type'"></h2>
+		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit type' : 'New type' : 'View type'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
 			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
@@ -24,7 +24,7 @@
 				<div data-bind="if: $root.editMode"><select class="" multiple="true" size="8" data-bind="options: types, optionsText: 'name', selectedOptions: baseTypes"></select></div>
 				<div data-bind="ifnot: $root.editMode">
 					<ul data-bind="foreach: baseTypes">
-						<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
+						<li><a data-bind="text: name, attr: { href: href }"></a></li>
 					</ul>
 				</div>
 			</div>
@@ -36,11 +36,11 @@
 			<ul class="list-group" id="typeProperties" data-bind="foreach: properties">
 				<li class="list-group-item">
 					<div data-bind="ifnot: $root.editMode">
-						<span data-bind="text: name"></span> (<span data-bind="text: type().desc"></span>)
+						<span data-bind="text: name"></span> (<span data-bind="text: type().name"></span>)
 					</div>
 					<div class="input-group" data-bind="if: $root.editMode">
 						<input style="width:70%;" class="form-control" type="text" data-bind="value: name" placeholder="Enter the name of the property here" />
-						<select style="width:20%;" class="form-control" data-bind="value: type, options: types, optionsText: 'desc'"></select>
+						<select style="width:20%;" class="form-control" data-bind="value: type, options: types, optionsText: 'name'"></select>
 						<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
 						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeProperty.bind($parent)"></span>
 					</div>
@@ -51,7 +51,7 @@
 			</div>
 			<ul class="list-group" id="typeInheritedProperties" data-bind="foreach: inheritedProperties">
 				<li class="list-group-item">
-					<span data-bind="text: name"></span> (<span data-bind="text: type"></span>, from <span data-bind="text: from.name"></span>)
+					<span data-bind="text: name"></span> (<span data-bind="text: type().name"></span>, from <span data-bind="text: from.name"></span>)
 				</li>
 			</ul>
 		</div>
@@ -121,22 +121,5 @@
 		</div><!-- /.modal-dialog -->
 	</div><!-- /.modal -->
 
-	<div id="versionsModal" class="modal fade">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-					<h4 class="modal-title">Version Management</h4>
-				</div>
-				<div class="modal-body">
-					<div class="list-group" data-bind="foreach: versions" >
-						<a class="list-group-item" data-bind="text: 'Version '+ (versionNr +1), attr: { href: href }, css: { 'active': isCurrent($parent.version)},click: hideModal"></a>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				</div>
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
+	{{> versionModal}}
 </template>

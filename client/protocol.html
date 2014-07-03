@@ -1,6 +1,6 @@
 <template name="protocol">
 	<div id="protocol">
-		<h2 data-bind="text: $root.editMode() ? id ? 'Edit protocol' : 'New protocol' : 'View protocol'"></h2>
+		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit protocol' : 'New protocol' : 'View protocol'"></h2>
 		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
 			<a class="btn btn-success" data-bind="attr: { href: performHref }, visible: !oldVersion"><span class="glyphicon glyphicon-play"></span> Perform</a>
 			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
@@ -15,12 +15,12 @@
 			<ul class="list-group" id="protocolParameters" data-bind="foreach: params">
 				<li class="list-group-item">
 					<span data-bind="ifnot: $root.editMode">
-						<a data-bind="text: type().name, attr: { href: '/t/' + type()._id() }"></a>:
+						<a data-bind="text: type().name, attr: { href: type().href }"></a>:
 						<span data-bind="text: name"></span>
 						<span data-bind="if: multi">(multiple)</span>
 					</span>
 					<span class="input-group" data-bind="if: $root.editMode">
-						<select style="width:45%;" class="form-control" data-bind="visible: $root.editMode, value: type, options: types(), optionsText: 'name'"></select>
+						<select style="width:45%;" class="form-control" data-bind="visible: $root.editMode, value: type, options: types, optionsText: 'name'"></select>
 						<input style="width:45%;" class="form-control" type="text" data-bind="value: name, valueUpdate: 'input', event: { change: nameChanged }" />
 						<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: multi" /> multiple</label>
 						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeParam.bind($parent)"></span>
@@ -31,7 +31,7 @@
 		</div>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title" >Steps&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addStep.bind($data)"></span></h3>
+				<h3 class="panel-title">Steps&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addStep.bind($data)"></span></h3>
 			</div>
 			<ol id="protocolSteps" class="list-group" data-bind="foreach: steps">
 				<li class="list-group-item">
@@ -45,11 +45,11 @@
 						<ul class="list-group" data-bind="foreach: inputs">
 							<li class="list-group-item">
 								<div data-bind="ifnot: $root.editMode">
-									<span data-bind="text: desc"></span> (<span data-bind="text: type().desc"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
+									<span data-bind="text: desc"></span> (<span data-bind="text: type().name"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
 								</div>
 								<div class="input-group" data-bind="if: $root.editMode">
 									<input type="text" style="width:45%;" class="form-control" data-bind="value: desc" placeholder="Enter description of the input field here" />
-									<select class="form-control" style="width:18%;" data-bind="value: type, options: types, optionsText: 'desc'"></select>
+									<select class="form-control" style="width:18%;" data-bind="value: type, options: types, optionsText: 'name'"></select>
 									<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
 									<label class="form-control" style="width:16%;" ><input type="checkbox" data-bind="checked: multi" /> prompt for every</label><select style="width:11%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
 									<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeInput.bind($parent)"></span> 
@@ -78,13 +78,18 @@
 							<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
 						</ul>
 					</div>
-					<select multiple="true" size="5" data-bind="visible: $root.editMode, options: possibleTypes, optionsText: 'name', selectedOptions: types"></select>
+					<div data-bind="if: $root.editMode">
+						<select multiple="true" size="5" data-bind="visible: $root.editMode, options: possibleTypes, optionsText: 'name', selectedOptions: types"></select>
+					</div>
 					<br />
 					Property bindings:
 					<ul data-bind="foreach: propertyBindings">
 						<li>
-							<span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type"></span>):
-							<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span><select data-bind="visible: $root.editMode, value: source, options: possibleSources, optionsText: 'text'"></select>
+							<span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type().name"></span>):
+							<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span>
+							<div data-bind="if: $root.editMode">
+								<select data-bind="value: source, options: possibleSources, optionsText: 'text'"></select>
+							</div>
 						</li>
 					</ul>
 				</li>
