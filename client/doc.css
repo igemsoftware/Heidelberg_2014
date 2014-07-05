@@ -53,11 +53,17 @@ text-decoration: none;
 }
 
 .hierarchical {
+	width: 100%;
 	counter-reset: ol0;
 }
 
-.hierarchical .section {
-	
+.hierarchical th {
+	white-space: nowrap;
+	padding: 2px;
+}
+
+.hierarchical td {
+	padding: 2px;
 }
 
 .hierarchical .ul {
@@ -121,11 +127,20 @@ text-decoration: none;
 
 .datetime {
 	display: table;
+	width: 100%;
+	/*border-spacing: 3px;*/
 }
 
 .datetime .datetime-date, .datetime .datetime-time {
 	display: table-cell;
-	padding: 0 .3em;
+}
+
+.datetime-date {
+	min-width: 150px
+}
+
+.datetime-time {
+	min-width: 110px;
 }
 
 .list-really-inline {
@@ -134,4 +149,51 @@ text-decoration: none;
 
 .list-really-inline .list-inline {
 	margin-bottom: 0px;
+}
+
+.scrollable-menu {
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+}
+
+.form-table {
+	width: 100%;
+}
+
+.form-table th {
+	white-space: nowrap;
+	max-width: 50%;
+	padding: 2px;
+}
+
+.form-table td {
+	width: 100%;
+	padding: 2px;
+}
+
+#experimentsTable {
+	margin: 1em 0;
+}
+
+#experimentsTable th, #experimentsTable td {
+	vertical-align: top;
+}
+
+.btn-square {
+	width: 32px;
+}
+
+.inputList {
+	padding-left: 0px;
+}
+
+.inputList li {
+	list-style-type: none;
+	margin-left: 0px;
+	padding: 2px 0;
+}
+
+.minWidth {
+	width: 0px;
 }

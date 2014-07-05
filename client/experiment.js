@@ -3,6 +3,7 @@
 Template.experiment.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
+		$('#container').width('');
 		return new experimentsVM(self.data);
 	});
 

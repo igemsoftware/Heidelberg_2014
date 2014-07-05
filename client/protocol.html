@@ -48,9 +48,9 @@
 									<span data-bind="text: desc"></span> (<span data-bind="text: type().name"></span><span data-bind="if: multi">, prompted for every <span data-bind="text: multiParam().name"></span></span>)
 								</div>
 								<div class="input-group" data-bind="if: $root.editMode">
-									<input type="text" style="width:45%;" class="form-control" data-bind="value: desc" placeholder="Enter description of the input field here" />
+									<input type="text" style="width:44%;" class="form-control" data-bind="value: desc" placeholder="Enter description of the input field here" />
 									<select class="form-control" style="width:18%;" data-bind="value: type, options: types, optionsText: 'name'"></select>
-									<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
+									<label class="form-control" style="width:11%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
 									<label class="form-control" style="width:16%;" ><input type="checkbox" data-bind="checked: multi" /> prompt for every</label><select style="width:11%;" class="form-control" data-bind="enable: multi, value: multiParam, options: $parents[1].multiParams, optionsText: 'name'"></select>
 									<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeInput.bind($parent)"></span> 
 								</div>
@@ -66,32 +66,30 @@
 			</div>
 			<ul class="list-group" id="protocolProducts" data-bind="foreach: products">
 				<li class="list-group-item">
-					Name: <span data-bind="visible: !$root.editMode(), text: name"></span>
-					<div class="input-group" data-bind="if: $root.editMode">
+					<h4 class="list-group-item-heading" data-bind="ifnot: $root.editMode">
+						<span data-bind="text: name"></span>
+						(<a data-bind="text: types()[0].name, attr: { href: types()[0].href() }"></a>)
+					</h4>
+					<h4 class="list-group-item-heading input-group" data-bind="if: $root.editMode">
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default" data-toggle="dropdown"><span data-bind="text: types()[0].name"></span> <span class="caret"></span></button>
+							<ul class="dropdown-menu scrollable-menu" role="menu" data-bind="foreach: possibleTypes">
+								<li><a href="" data-bind="text: name, click: function () { $parent.types([$data]) }"></a></li>
+							</ul>
+						</div>
 						<input type="text" class="form-control" data-bind="value: name" placeholder="Enter name of the product here" />
-						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeProduct.bind($parent)"></span>
-					</div>
-					<br />
-					Has the following type(s):
-					<div data-bind="ifnot: $root.editMode">
-						<ul data-bind="foreach: types">
-							<li><a data-bind="text: name, attr: { href: '/t/' + _id() }"></a></li>
-						</ul>
-					</div>
-					<div data-bind="if: $root.editMode">
-						<select multiple="true" size="5" data-bind="visible: $root.editMode, options: possibleTypes, optionsText: 'name', selectedOptions: types"></select>
-					</div>
-					<br />
-					Property bindings:
-					<ul data-bind="foreach: propertyBindings">
-						<li>
-							<span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type().name"></span>):
-							<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span>
-							<div data-bind="if: $root.editMode">
-								<select data-bind="value: source, options: possibleSources, optionsText: 'text'"></select>
-							</div>
-						</li>
-					</ul>
+						<span class="glyphicon glyphicon-trash input-group-addon clickable" data-bind="click: $parent.removeProduct.bind($parent)"></span>
+					</h4>
+					The product will have the following properties:
+					<table class="form-table" style="width: 100%" data-bind="foreach: propertyBindings">
+						<tr>
+							<th><span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type().name"></span>)</th>
+							<td>
+								<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span>
+								<select class="form-control" data-bind="visible: $root.editMode, value: source, options: possibleSources, optionsText: 'text'"></select>
+							</td>
+						</tr>
+					</table>
 				</li>
 			</ul>
 		</div>
