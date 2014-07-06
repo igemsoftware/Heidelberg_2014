@@ -37,7 +37,7 @@ SupplyVM.prototype.save = function () {
 	} catch (e) {
 		// The result being thrown as an exception signals a failed cascading update, but this doesn't matter here
 		// Check if the exception really is the result first
-		if (e.name != self.name()) throw e;
+		if (e instanceof Error) throw e;
 		flat = e;
 	}
 
