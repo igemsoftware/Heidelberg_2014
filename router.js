@@ -38,8 +38,8 @@ Router.map(function() {
 		},
 		waitOn: function () {
 			var self = this;
-			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
-			return { ready: function () { return Types.findOne(self.params.id) != undefined; } };
+			// TODO: return Meteor.subscribe('type', this.params.id); or so once fine-grained subscriptions are implemented
+			return Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -64,8 +64,8 @@ Router.map(function() {
 		},
 		waitOn: function () {
 			var self = this;
-			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
-			return { ready: function () { return Supplies.findOne(self.params.id) != undefined; } };
+			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
+			return Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -90,8 +90,8 @@ Router.map(function() {
 		},
 		waitOn: function () {
 			var self = this;
-			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
-			return { ready: function () { return Protocols.findOne(self.params.id) != undefined; } };
+			// TODO: return Meteor.subscribe('protocol', this.params.id); or so once fine-grained subscriptions are implemented
+			return Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -108,8 +108,8 @@ Router.map(function() {
 		},
 		waitOn: function () {
 			var self = this;
-			// TODO: just return Meteor.subscribe('protocol', this.params.id); or so once autopublish is removed
-			return { ready: function () { return Protocols.findOne(self.params.id) != undefined; } };
+			// TODO: return Meteor.subscribe('protocol', this.params.id); or so once fine-grained subscriptions are implemented
+			return Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -130,8 +130,8 @@ Router.map(function() {
 		},
 		waitOn: function () {
 			var self = this;
-			// TODO: just return Meteor.subscribe('experiment', this.params.id); or so once autopublish is removed
-			return { ready: function () { return Experiments.findOne(self.params.id) != undefined; } };
+			// TODO: return Meteor.subscribe('experiment', this.params.id); or so once fine-grained subscriptions are implemented
+			return Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
