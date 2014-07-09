@@ -1,4 +1,4 @@
-=Boinc Java Wrapper
+#Boinc Java Wrapper
 The Boinc Java Wrapper is necessary to allow calls from Java to the native Boinc api.
 It consists of several files:
 1. Boinc.java: Not yet implement. It's supposed to contain the methods that Java developers are supposed to easily call from their code.
