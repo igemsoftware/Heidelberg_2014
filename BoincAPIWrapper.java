@@ -1,4 +1,4 @@
-public class LowLvlBoincWrapper {
+public class BoincAPIWrapper {
 	
 	static {
 		System.loadLibrary("boincAPIWrapper");
