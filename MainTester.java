@@ -4,7 +4,7 @@ public class MainTester {
 		System.out.println("Main Tester");
 
 
-		LowLvlBoincWrapper.init();
+		BoincAPIWrapper.init();
 
 		System.out.println("Finished Main Test");
 	}

@@ -5,8 +5,11 @@ BOINC_API_DIR = $(BOINC_DIR)/api
 BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_ZIP_DIR = $(BOINC_DIR)/zip
 FREETYPE_DIR = /usr/include/freetype2
-JDK_INCLUDE_DIR = /opt/jdk8/include
-JDK_INCLUDE_PLATFORM_DIR = /opt/jdk8/include/linux
+JDK = $(JAVA_HOME)
+JDK_INCLUDE_DIR = $(JDK)/include
+JDK_INCLUDE_PLATFORM_DIR = $(JDK_INCLUDE_DIR)/linux
+JAVAC = $(JDK)/bin/javac
+JAVA = $(JDK)/bin/java
 
 INCLUDES += \
 	-I$(BOINC_DIR) \
@@ -21,26 +24,28 @@ CCFLAGS += -c \
 	-DJAVAARCH="i386" \
 
 
-CXXFLAGS += -g \
-	-Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common \
-    -L.
+CXXFLAGS += -g -Wall
 
-LDFLAGS += -shared -fPIC 
+LDFLAGS += -shared -fPIC
 
-PROGS = jBoincClass
+PROGS = jBoincClass test
 
 all: $(PROGS)
 
+test:
+	$(JAVAC) MainTester.java
+	$(JAVA) -Djava.library.path=. MainTester
+
 BoincAPIWrapper:
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o libboincAPIWrapper.so boincAPIWrapper.cpp
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o libboincAPIWrapper.so boincAPIWrapper.cpp
 
 jBoincAPIWrapper: BoincAPIWrapper
-	javac BoincAPIWrapper.java
+	$(JAVAC) BoincAPIWrapper.java
 
 clean: distclean
 
 distclean:
-	/bin/rm -f $(PROGS) *.o *.so
+	/bin/rm -f $(PROGS) *.o *.so *.class
 
 jBoincClass: jBoincAPIWrapper
-	javac Boinc.java
+	$(JAVAC) Boinc.java
