@@ -24,20 +24,27 @@ CCFLAGS += -c \
 	-DJAVAARCH="i386" \
 
 
-CXXFLAGS += -g -Wall
+CXXFLAGS += -c -g -Wall -fPIC
 
-LDFLAGS += -shared -fPIC
+LDFLAGS += -g -static 
 
 PROGS = jBoincClass test
 
 all: $(PROGS)
 
+libstdc++.a:
+	ln -s `g++ -print-file-name=libstdc++.a`
+
 test:
 	$(JAVAC) MainTester.java
 	$(JAVA) -Djava.library.path=. MainTester
 
-BoincAPIWrapper:
-	$(CXX) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o libboincAPIWrapper.so boincAPIWrapper.cpp
+BoincAPIWrapper: libstdc++.a $(BOINC_DIR)/api/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
+	$(CXX) $(INCLUDES) $(LDFLAGS) boincAPIWrapper.cpp -Wl,-static,--whole-archive  $(BOINC_DIR)/api/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a -Wl,--no-whole-archive,-Bdynamic -lpthread \
+	-shared -o libboincAPIWrapper.so 
+
+libboincAPIWrapper.o:
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS) -o libboincAPIWrapper.o boincAPIWrapper.cpp
 
 jBoincAPIWrapper: BoincAPIWrapper
 	$(JAVAC) BoincAPIWrapper.java
@@ -45,7 +52,7 @@ jBoincAPIWrapper: BoincAPIWrapper
 clean: distclean
 
 distclean:
-	/bin/rm -f $(PROGS) *.o *.so *.class
+	/bin/rm -f $(PROGS) *.o *.so *.class *.log
 
 jBoincClass: jBoincAPIWrapper
 	$(JAVAC) Boinc.java

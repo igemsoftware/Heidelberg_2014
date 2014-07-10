@@ -15,8 +15,7 @@ extern "C" {
  */
 JNIEXPORT jint JNICALL Java_BoincAPIWrapper_init
   (JNIEnv *, jclass){
-	printf("Welcome to C++\n");
-     return 0;
+     return boinc_init();
   }
 
 /*
