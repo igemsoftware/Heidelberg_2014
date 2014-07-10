@@ -40,7 +40,8 @@ test:
 	$(JAVA) -Djava.library.path=. MainTester
 
 BoincAPIWrapper: libstdc++.a $(BOINC_DIR)/api/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
-	$(CXX) $(INCLUDES) $(LDFLAGS) boincAPIWrapper.cpp -Wl,-static,--whole-archive  $(BOINC_DIR)/api/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a -Wl,--no-whole-archive,-Bdynamic -lpthread \
+	$(CXX) $(INCLUDES) $(LDFLAGS) boincAPIWrapper.cpp -Wl,-static,--whole-archive  $(BOINC_DIR)/api/libboinc_api.a \
+	$(BOINC_LIB_DIR)/libboinc.a -Wl,--no-whole-archive,-Bdynamic -lpthread \
 	-shared -o libboincAPIWrapper.so 
 
 libboincAPIWrapper.o:

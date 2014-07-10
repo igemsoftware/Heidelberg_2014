@@ -15,6 +15,8 @@ extern "C" {
  */
 JNIEXPORT jint JNICALL Java_BoincAPIWrapper_init
   (JNIEnv *, jclass){
+    getchar();
+    fclose(stderr); // Very strange workaround for preventing segfault in libboincapi
      return boinc_init();
   }
 
@@ -24,7 +26,8 @@ JNIEXPORT jint JNICALL Java_BoincAPIWrapper_init
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_BoincAPIWrapper_finish
-  (JNIEnv *, jclass, jint){
+  (JNIEnv *, jclass, jint gvalue){
+    fprintf(stderr, "Great value: %i", gvalue);
      return 0;
   }
 
