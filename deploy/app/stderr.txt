@@ -1,0 +1,16 @@
+15:34:53 (31444): Can't open init data file - running in standalone mode
+15:34:56 (31444): called boinc_finish(0)
+15:36:29 (31851): Can't open init data file - running in standalone mode
+15:37:10 (31851): called boinc_finish(0)
+15:38:13 (32299): Can't open init data file - running in standalone mode
+15:38:20 (32299): called boinc_finish(0)
+15:42:47 (2355): Can't open init data file - running in standalone mode
+15:42:51 (2355): called boinc_finish(0)
+18:19:58 (24931): Can't open init data file - running in standalone mode
+18:20:05 (24931): called boinc_finish(0)
+18:23:00 (25809): Can't open init data file - running in standalone mode
+18:23:04 (25809): called boinc_finish(0)
+18:24:29 (26220): Can't open init data file - running in standalone mode
+18:24:33 (26220): called boinc_finish(0)
+18:29:33 (27610): Can't open init data file - running in standalone mode
+18:29:34 (27610): called boinc_finish(0)

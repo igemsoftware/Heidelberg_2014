@@ -1,3 +1,5 @@
+package org.igemathome.boinc.wrapper;
+
 public class BoincAPIWrapper {
 	
 	static {

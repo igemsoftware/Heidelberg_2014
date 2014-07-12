@@ -1,5 +1,9 @@
 *.so
 *.[ao]
 *.class
+*.jar
 .*
 !.gitignore
+deploy/app/*.jar
+deploy/app/*.so
+deploy/runtime/*
