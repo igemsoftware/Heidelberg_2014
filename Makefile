@@ -21,6 +21,9 @@ deploy: subdirs
 	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so deploy/app
 	cp src/java/test/MainTest.jar deploy/app
 
+run: deploy
+	./deploy/launcher
+
 clean:
 	for dir in $(SUBDIRS); do \
 		$(MAKE) -C $$dir clean; \

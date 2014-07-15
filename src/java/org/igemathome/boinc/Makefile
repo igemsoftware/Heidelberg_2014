@@ -7,6 +7,8 @@ all: BoincAPIWrapper Boinc
 BoincAPIWrapper:
 	$(JAVAC) wrapper/BoincAPIWrapper.java 
 
+
+
 Boinc:
 	echo Nothing to do here yet...
 

@@ -42,6 +42,11 @@
 
 #define MAX_PATH 4096
 
+#include <boinc_zip.h>
+#include <boinc_api.h>
+
+
+
 int fileExists(char* name) {
   struct stat buf;
   return (stat(name, &buf) == 0) ? TRUE : FALSE;
@@ -66,6 +71,7 @@ int getFileInPackage(char* basedir, char *relative_path, char *fullpath, int buf
 #define CONFIG_MAINCLASS_KEY  "app.mainclass"
 #define CONFIG_CLASSPATH_KEY  "app.classpath"
 #define CONFIG_APP_ID_KEY     "app.preferences.id"
+#define RUNTIME_ZIP_FILE      "runtime.zip"
 
 //remove trailing end of line character
 //modifies buffer in place
@@ -702,6 +708,31 @@ int getAppFolder(char* basedir, char* appFolder, int buffer_size) {
     return getFileInPackage(basedir, MAINJAR_FOLDER, appFolder, MAX_PATH);
 }
 
+int unzip_runtime(char *basedir) {
+    char unzip_path[MAX_PATH] = {0};
+	char unzip_file[MAX_PATH] = {0};
+    int rc;
+
+    strcat(unzip_path, basedir);
+    strcat(unzip_path, "/runtime");
+    if(!fileExists(unzip_path)) {
+		//boinc_init();	// Need BoincAPI to uses logical names
+        boinc_resolve_filename(RUNTIME_ZIP_FILE, unzip_file, MAX_PATH);
+		printf("%s does not exist yet. Extracting %s...\n", unzip_path, unzip_file);
+
+        if(fileExists(unzip_file)) {
+            rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
+            printf("boinc_zip(UNZIP_IT, %s, \"%s\") returned %i\n",unzip_file, basedir, rc);
+			return rc;
+        }
+        else {
+            printf("%s does not exist. Aborting...\n", unzip_file);
+            return -1;
+        }
+    }
+
+}
+
 int main(int argc, const char** argv) {
     char basedir[MAX_PATH] = {0};
     char appFolder[MAX_PATH] = {0};
@@ -716,7 +747,7 @@ int main(int argc, const char** argv) {
             }
             return -1;
         }
-
+		unzip_runtime(basedir);
         getAppFolder(basedir, appFolder, MAX_PATH);
 
         //DO Launch

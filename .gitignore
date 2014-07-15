@@ -6,4 +6,5 @@
 !.gitignore
 deploy/app/*.jar
 deploy/app/*.so
+deploy/app/*.txt
 deploy/runtime/*

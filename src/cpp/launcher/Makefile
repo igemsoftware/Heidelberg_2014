@@ -13,10 +13,16 @@ INCLUDES += \
     -I$(JDK_INCLUDE_DIR) \
     -I$(JDK_INCLUDE_PLATFORM_DIR)
 
+LIBS +=\
+	-lstdc++
+
 all: launcher
 
 launcher:
-	$(CC) $(INCLUDES) -DJAVAARCH='"$(ARCH)"' -ldl xmlparser.c launcher.c -o launcher
+	$(CC) -c $(INCLUDES) -DJAVAARCH='"$(ARCH)"' -Wl,-static xmlparser.c launcher.c
+	$(CXX) $(INCLUDES) -Wl,-static launcher.o xmlparser.o \
+	$(BOINC_ZIP_DIR)/libboinc_zip.a $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a \
+	-o launcher $(LIBS) -Wl,-Bdynamic -ldl
 
 clean:
 	rm launcher
