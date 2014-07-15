@@ -120,9 +120,9 @@ public class BoincAPIWrapper {
 
 	public static native String boinc_resolve_filename_s(String logical_filename);
 
-	private static class BoincAppInitData {
-		public BoincAppInitData(int major_version, int minor_version, int release, int app_version, String app_name, String symstore, String acct_mgr_url, String project_preferences, int userid, int teamid, int hostid, String user_name, String team_name, String project_dir, String boinc_dir, String wu_name, String result_name, String authenticator, int slot, int client_pid, double user_total_credit, double user_expavg_credit, double host_total_credit, double host_expavg_credit, double resource_share_fraction, int host_info, int proxy_info, int global_prefs, double starting_elapsed_time, boolean using_sandbox, boolean vm_extensions_disabled, double rsc_fpops_est, double rsc_fpops_bound, double rsc_memory_bound, double rsc_disk_bound, double computation_deadline, double fraction_done_start, double fraction_done_end, String gpu_type, int gpu_device_num, int gpu_opencl_dev_index, double gpu_usage, double ncpus, boolean vbox_window, double checkpoint_period, double wu_cpu_time){
-			this.major_version = major_version;
+    public static class BoincAppInitData {
+        private BoincAppInitData(int major_version, int minor_version, int release, int app_version, String app_name, String symstore, String acct_mgr_url, String project_preferences, int userid, int teamid, int hostid, String user_name, String team_name, String project_dir, String boinc_dir, String wu_name, String result_name, String authenticator, int slot, int client_pid, double user_total_credit, double user_expavg_credit, double host_total_credit, double host_expavg_credit, double resource_share_fraction, int host_info, int proxy_info, int global_prefs, double starting_elapsed_time, boolean using_sandbox, boolean vm_extensions_disabled, double rsc_fpops_est, double rsc_fpops_bound, double rsc_memory_bound, double rsc_disk_bound, double computation_deadline, double fraction_done_start, double fraction_done_end, String gpu_type, int gpu_device_num, int gpu_opencl_dev_index, double gpu_usage, double ncpus, boolean vbox_window, double checkpoint_period, double wu_cpu_time) {
+            this.major_version = major_version;
 			this.minor_version = minor_version;
 			this.release = release;
 			this.app_version = app_version;
