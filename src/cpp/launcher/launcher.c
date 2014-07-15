@@ -65,8 +65,8 @@ int getFileInPackage(char* basedir, char *relative_path, char *fullpath, int buf
     return fileExists(fullpath);
 }
 
-#define MAINJAR_FOLDER        "/app/"
-#define CONFIG_FILE           "/app/package.cfg"
+#define MAINJAR_FOLDER        "/"
+#define CONFIG_FILE           "/package.cfg"
 #define CONFIG_MAINJAR_KEY    "app.mainjar"
 #define CONFIG_MAINCLASS_KEY  "app.mainclass"
 #define CONFIG_CLASSPATH_KEY  "app.classpath"
@@ -188,10 +188,13 @@ int getMainJar(char* basedir, char* jar, int buffer_size) {
 
 int getExecPath(char *path, size_t len) {
     //this should work for linux
-    if (readlink("/proc/self/exe", path, len) != -1) {
+    /*if (readlink("/proc/self/exe", path, len) != -1) {
         dirname(path);
         return TRUE;
-    }
+    }*/
+    if(getcwd(path, len) != NULL)
+        return TRUE;
+
 
     return FALSE;
 }
@@ -747,6 +750,7 @@ int main(int argc, const char** argv) {
             }
             return -1;
         }
+        printf("Hello, Hello!\n");
 		unzip_runtime(basedir);
         getAppFolder(basedir, appFolder, MAX_PATH);
 

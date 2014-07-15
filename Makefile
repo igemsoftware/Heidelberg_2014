@@ -18,8 +18,14 @@ $(SUBDIRS):
 
 deploy: subdirs
 	cp src/cpp/launcher/launcher deploy
-	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so deploy/app
-	cp src/java/test/MainTest.jar deploy/app
+	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so deploy/.runtime-build/runtime/jre/lib/$(ARCH)
+	cp src/java/test/MainTest.jar deploy
+
+repack-runtime:
+	rm -r deploy/runtime.zip
+	rm -rf deploy/runtime
+	cd deploy/.runtime-build; zip -r ../runtime.zip runtime
+
 
 run: deploy
 	./deploy/launcher
@@ -29,4 +35,4 @@ clean:
 		$(MAKE) -C $$dir clean; \
 	done
 	rm deploy/launcher
-	rm deploy/app/*.so deploy/app/*.jar
+	rm deploy/*.jar

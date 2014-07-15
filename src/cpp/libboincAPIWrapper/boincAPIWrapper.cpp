@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <cstdio>
+#include <string>
 #include <boinc_api.h>
 /* Header for class BoincAPIWrapper */
 
@@ -449,6 +450,32 @@ JNIEXPORT jint JNICALL Java_org_igemathome_boinc_wrapper_BoincAPIWrapper_reportA
 JNIEXPORT jint JNICALL Java_org_igemathome_boinc_wrapper_BoincAPIWrapper_temporaryExit(JNIEnv *, jclass, jint, jstring, jboolean){
   return 0;
 }
+
+/*
+ * Class:     org_igemathome_boinc_wrapper_BoincAPIWrapper
+ * Method:    boinc_resolve_filename_s
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_igemathome_boinc_wrapper_BoincAPIWrapper_boinc_1resolve_1filename_1s
+  (JNIEnv *env, jclass, jstring logical_filename){
+    char error_buff[250];
+    std::string physical_filename;
+    const char *logical_filename_ptr;
+    int rc;
+
+    logical_filename_ptr = env->GetStringUTFChars(logical_filename, 0);
+    rc = boinc_resolve_filename_s(logical_filename_ptr, physical_filename);
+    env->ReleaseStringUTFChars(logical_filename, logical_filename_ptr);
+
+    if(rc != 0) {
+      sprintf(error_buff, "boinc_resolve_filename returned: %i", rc);
+      env->ThrowNew(env->FindClass("java/io/FileNotFoundException"), error_buff);
+      return NULL;
+    }
+    
+    return env->NewStringUTF(physical_filename.c_str());
+}
+
 
 #ifdef __cplusplus
 }
