@@ -56,7 +56,7 @@ ProtocolVM.prototype.save = function () {
 				var oldParamsByType = { };
 				_.each(self.DBData.params, function (oldParam) {
 					oldParam = _.clone(oldParam);
-					oldParam.allTypes = _.pluck(Types.findOne(oldParam.type).allBaseTypes, '_id');
+					oldParam.allTypes = _.pluck(Types.findOne(oldParam.type._id).allBaseTypes, '_id');
 					oldParam.allTypes.push(oldParam.type._id);
 					oldParam.allTypesMap = { };
 

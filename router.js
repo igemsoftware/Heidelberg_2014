@@ -1,4 +1,4 @@
-'use strict';
+subscription = null;
 
 Router.map(function() {
 	var type = ko.observable();
@@ -39,7 +39,7 @@ Router.map(function() {
 		waitOn: function () {
 			var self = this;
 			// TODO: return Meteor.subscribe('type', this.params.id); or so once fine-grained subscriptions are implemented
-			return Meteor.subscribe('Everything');
+			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -65,7 +65,7 @@ Router.map(function() {
 		waitOn: function () {
 			var self = this;
 			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
-			return Meteor.subscribe('Everything');
+			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -91,7 +91,7 @@ Router.map(function() {
 		waitOn: function () {
 			var self = this;
 			// TODO: return Meteor.subscribe('protocol', this.params.id); or so once fine-grained subscriptions are implemented
-			return Meteor.subscribe('Everything');
+			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -109,7 +109,7 @@ Router.map(function() {
 		waitOn: function () {
 			var self = this;
 			// TODO: return Meteor.subscribe('protocol', this.params.id); or so once fine-grained subscriptions are implemented
-			return Meteor.subscribe('Everything');
+			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
@@ -131,7 +131,7 @@ Router.map(function() {
 		waitOn: function () {
 			var self = this;
 			// TODO: return Meteor.subscribe('experiment', this.params.id); or so once fine-grained subscriptions are implemented
-			return Meteor.subscribe('Everything');
+			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading'
 	});
