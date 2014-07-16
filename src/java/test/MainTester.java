@@ -8,13 +8,19 @@ public class MainTester {
 
     public static void main(String[] args) throws IOException {
         BoincAPIWrapper.init();
-        System.out.println("Called BoincAPIWrapper.init()");
+        System.err.println("Called BoincAPIWrapper.init()");
 
         String initDataString = BoincAPIWrapper.getInitData().toString();
         String inputText = readFile(BoincAPIWrapper.boinc_resolve_filename_s("input.txt"));
 
+        System.err.println(inputText);
+
+
         try {
-            Path file = Files.createFile(Paths.get(BoincAPIWrapper.boinc_resolve_filename_s("out.txt")));
+            String out = BoincAPIWrapper.boinc_resolve_filename_s("out.txt");
+            Path file = Files.createFile(Paths.get(out));
+            System.err.println("Boinc resolve filename: " + out);
+            System.err.println("Real path: " + file.toRealPath(LinkOption.NOFOLLOW_LINKS));
             Files.write(file, "I'm a text and this is cool".getBytes(), StandardOpenOption.CREATE);
         } catch (IOException e) {
             e.printStackTrace();
@@ -26,7 +32,7 @@ public class MainTester {
 		    Thread.currentThread().interrupt();
 		}
 
-        System.out.println("Calling BoincAPIWrapper.finish(0)");
+        System.err.println("Calling BoincAPIWrapper.finish(0)");
         BoincAPIWrapper.finish(0);
 	}
 
