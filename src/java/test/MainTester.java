@@ -23,7 +23,7 @@ public class MainTester {
             System.err.println("Real path: " + file.toRealPath(LinkOption.NOFOLLOW_LINKS));
             Files.write(file, "I'm a text and this is cool".getBytes(), StandardOpenOption.CREATE);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Exception :" + e.getStackTrace());
         }
 
         try {
