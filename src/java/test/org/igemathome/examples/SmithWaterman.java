@@ -13,6 +13,7 @@ public class SmithWaterman {
         prepareMatrix(seq1.length(), seq2.length());
         fillMatrix(seq1, seq2);
         System.out.println(printMatrix());
+
         result = backtrace(seq1, seq2);
     }
 
@@ -38,10 +39,10 @@ public class SmithWaterman {
                     sb.append(seq1.charAt(a - 1));
                 } else if (matrix[a - 1][b] >= matrix[a][b - 1]) {
                     nextLoc = new int[]{-1, 0};
-                    sb.append("-");
+                    sb.append("");
                 } else {
                     nextLoc = new int[]{0, -1};
-                    sb.append("");
+                    sb.append("-");
                 }
                 a = a + nextLoc[0];
                 b = b + nextLoc[1];
@@ -55,7 +56,7 @@ public class SmithWaterman {
     private void fillMatrix(String seq1, String seq2) {
         for (int a = 1; a < matrix.length; a++) {
             for (int b = 1; b < matrix[a].length; b++) {
-                int value = (seq1.charAt(a - 1) == seq2.charAt(b - 1) ? 2 : -1) + matrix[a - 1][b - 1];
+                int value = (seq1.charAt(a - 1) == seq2.charAt(b - 1) ? 1 : -1) + matrix[a - 1][b - 1];
                 matrix[a][b] = value < 0 ? 0 : value;
             }
         }
