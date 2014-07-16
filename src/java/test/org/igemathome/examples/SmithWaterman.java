@@ -1,173 +1,47 @@
 package org.igemathome.examples;
 
-import java.util.Stack;
-
-//Harry Hull
-//Implements the following Smith-Waterman algorithm http://en.wikipedia.org/wiki/Smith_waterman
-
-//	Affine Gap algorithm taken from:
-//  http://en.wikipedia.org/wiki/Gap_penalty#Affine_gap_penalty
-//	gap = o + (l-1)*e;
-//	o:	gap opening penalty  (o < 0)
-//	l:	length of the gap
-//	e:	gap extension penalty (o < e < 0)
-
+/**
+ * Created by artjom on 7/16/14.
+ */
 public class SmithWaterman {
-    private String one, two;
-    private int matrix[][];
-    private int gap;
-    private int match;
-    private int o;
-    private int l;
-    private int e;
 
-    public SmithWaterman(String one, String two) {
-        this.one = "-" + one.toLowerCase();
-        this.two = "-" + two.toLowerCase();
-        this.match = 2;
+    private int[][] matrix;
 
-        // Define affine gap starting values
-        o = -2;
-        l = 0;
-        e = -1;
+    private String result;
 
-        // initialize matrix to 0
-        matrix = new int[one.length() + 1][two.length() + 1];
-        for (int i = 0; i < one.length(); i++)
-            for (int j = 0; j < two.length(); j++)
-                matrix[i][j] = 0;
-
+    public SmithWaterman(String seq1, String seq2) {
+        prepareMatrix(seq1.length(), seq2.length());
+        System.out.println(printMatrix());
     }
 
-    // returns the alignment score
-    public int computeSmithWaterman() {
-        for (int i = 0; i < one.length(); i++) {
-            for (int j = 0; j < two.length(); j++) {
-                gap = o + (l - 1) * e;
-                if (i != 0 && j != 0) {
-                    if (one.charAt(i) == two.charAt(j)) {
-                        // match
-                        // reset l
-                        l = 0;
-                        matrix[i][j] = Math.max(0, Math.max(
-                                matrix[i - 1][j - 1] + match, Math.max(
-                                        matrix[i - 1][j] + gap,
-                                        matrix[i][j - 1] + gap)));
-                    } else {
-                        // gap
-                        l++;
-                        matrix[i][j] = Math.max(0, Math.max(
-                                matrix[i - 1][j - 1] + gap, Math.max(
-                                        matrix[i - 1][j] + gap,
-                                        matrix[i][j - 1] + gap)));
-                    }
-                }
-            }
+    private void prepareMatrix(int length1, int length2) {
+        matrix = new int[length1 + 1][length2 + 1];
+        for (int a = 0; a <= length1; a++) {
+            matrix[a][0] = a;
         }
-
-        // find the highest value
-        int longest = 0;
-        int iL = 0, jL = 0;
-        for (int i = 0; i < one.length(); i++) {
-            for (int j = 0; j < two.length(); j++) {
-                if (matrix[i][j] > longest) {
-                    longest = matrix[i][j];
-                    iL = i;
-                    jL = j;
-                }
-            }
+        for (int b = 0; b <= length1; b++) {
+            matrix[b][0] = b;
         }
-
-        // Backtrack to reconstruct the path
-        int i = iL;
-        int j = jL;
-        Stack<String> actions = new Stack<String>();
-
-        while (i != 0 && j != 0) {
-            // diag case
-            if (Math.max(matrix[i - 1][j - 1],
-                    Math.max(matrix[i - 1][j], matrix[i][j - 1])) == matrix[i - 1][j - 1]) {
-                actions.push("align");
-                i = i - 1;
-                j = j - 1;
-                // left case
-            } else if (Math.max(matrix[i - 1][j - 1],
-                    Math.max(matrix[i - 1][j], matrix[i][j - 1])) == matrix[i][j - 1]) {
-                actions.push("insert");
-                j = j - 1;
-                // up case
-            } else {
-                actions.push("delete");
-                i = i - 1;
-            }
-        }
-
-        String alignOne = new String();
-        String alignTwo = new String();
-
-        Stack<String> backActions = (Stack<String>) actions.clone();
-        for (int z = 0; z < one.length(); z++) {
-            alignOne = alignOne + one.charAt(z);
-            if (!actions.empty()) {
-                String curAction = actions.pop();
-                // System.out.println(curAction);
-                if (curAction.equals("insert")) {
-                    alignOne = alignOne + "-";
-                    while (actions.peek().equals("insert")) {
-                        alignOne = alignOne + "-";
-                        actions.pop();
-                    }
-                }
-            }
-        }
-
-        for (int z = 0; z < two.length(); z++) {
-            alignTwo = alignTwo + two.charAt(z);
-            if (!backActions.empty()) {
-                String curAction = backActions.pop();
-                if (curAction.equals("delete")) {
-                    alignTwo = alignTwo + "-";
-                    while (backActions.peek().equals("delete")) {
-                        alignTwo = alignTwo + "-";
-                        backActions.pop();
-                    }
-                }
-            }
-        }
-
-        // print alignment
-        System.out.println(alignOne + "\n" + alignTwo);
-        return longest;
     }
 
-    public void printMatrix() {
-        for (int i = 0; i < one.length(); i++) {
-            if (i == 0) {
-                for (int z = 0; z < two.length(); z++) {
-                    if (z == 0)
-                        System.out.print("   ");
-                    System.out.print(two.charAt(z) + "  ");
-
-                    if (z == two.length() - 1)
-                        System.out.println();
+    private String printMatrix() {
+        if (matrix == null) {
+            return "[]";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (int a = 0; a < matrix.length; a++) {
+                for (int b = 0; b < matrix[a].length; b++) {
+                    sb.append(matrix[a][b]);
                 }
+                sb.append("\n");
             }
-
-            for (int j = 0; j < two.length(); j++) {
-                if (j == 0) {
-                    System.out.print(one.charAt(i) + "  ");
-                }
-                System.out.print(matrix[i][j] + "  ");
-            }
-            System.out.println();
+            return sb.toString();
         }
-        System.out.println();
     }
 
-    public static int align(String seq1, String seq2) {
-        // DNA sequence Test:
-        SmithWaterman sw = new SmithWaterman(seq1, seq2);
-        return sw.computeSmithWaterman();
 
+    public String bestAlign() {
+        return result;
     }
+
 }
