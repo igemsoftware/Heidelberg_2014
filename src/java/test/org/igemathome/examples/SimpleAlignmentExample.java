@@ -7,10 +7,8 @@ package org.igemathome.examples;
 public class SimpleAlignmentExample {
 
     public static void main(String[] args) {
-        System.out.println("Bla");
-//        SmithWaterman sw = new SmithWaterman("a", "b");
-//        System.out.println(sw.bestAlign());
-        System.out.println(new Bla());
+        SmithWaterman sw = new SmithWaterman("Hello", "Heello");
+        System.out.println(sw.bestAlign());
     }
 
 }
