@@ -2,12 +2,12 @@
 
 BOINC_DIR = $(BOINC_HOME)
 JDK = $(JAVA_HOME)
-ARCH=i386
+
 
 
 all: subdirs
 
-SUBDIRS = src/cpp/libboincAPIWrapper src/java/org/igemathome/boinc src/java/test src/cpp/launcher
+SUBDIRS = src/cpp/libboincAPIWrapper src/java/main/org/igemathome/boinc src/java/test src/cpp/launcher
      
 .PHONY: subdirs $(SUBDIRS)
      

@@ -4,10 +4,10 @@ JAR = $(JDK)/bin/jar
 all: test jar
 
 test:
-	$(JAVAC) -cp ../ MainTester.java
+	$(JAVAC) -cp ../main MainTester.java
 
 jar:
-	CLASSPATH=..:. $(JAR) cfe MainTest.jar MainTester *.class -C .. org
+	CLASSPATH=..:. $(JAR) cfe MainTest.jar MainTester *.class -C . org
 
 clean:
 	rm *.class *.jar
