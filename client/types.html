@@ -1,10 +1,10 @@
 <template name="typeList">
+	<a href="{{pathFor 'newType'}}">Create new type</a>
 	<ul id="types">
 		{{#each types}}
 		<li><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a></li>
 		{{/each}}
 	</ul>
-	<a href="{{pathFor 'newType'}}">Create new type</a>
 </template>
 
 <template name="type">

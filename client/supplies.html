@@ -1,10 +1,10 @@
 <template name="suppliesList">
+	<a href="{{pathFor 'obtainSupply'}}">Enter a new supply</a>
 	<ul id="supplies">
 		{{#each supplies}}
 			<li><a href="{{pathFor 'viewSupply' id=_id}}">{{text}}</a></li>
 		{{/each}}
 	</ul>
-	<a href="{{pathFor 'obtainSupply'}}">Enter a new supply</a>
 </template>
 
 <template name="supply">
