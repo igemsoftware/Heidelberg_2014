@@ -26,6 +26,12 @@ Router.map(function() {
 			editMode(true);
 			return { type: type, editMode: editMode, version: typeVersion };
 		},
+		waitOn: function () {
+			var self = this;
+			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
+			return subscription = Meteor.subscribe('Everything');
+		},
+		loadingTemplate: 'loading',
 	});
 	this.route('viewType', {
 		path: basepath+'t/:id',
@@ -52,6 +58,12 @@ Router.map(function() {
 			editMode(true);
 			return { supply: supply, editMode: editMode, version: supplyVersion };
 		},
+		waitOn: function () {
+			var self = this;
+			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
+			return subscription = Meteor.subscribe('Everything');
+		},
+		loadingTemplate: 'loading',
 	});
 	this.route('viewSupply', {
 		path: basepath+'s/:id',
@@ -67,7 +79,7 @@ Router.map(function() {
 			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
 			return subscription = Meteor.subscribe('Everything');
 		},
-		loadingTemplate: 'loading'
+		loadingTemplate: 'loading',
 	});
 	this.route('protocolList', { path: basepath+'p' });
 	this.route('newProtocol', {
@@ -77,7 +89,13 @@ Router.map(function() {
 			protocol(null);
 			editMode(true);
 			return { protocol: protocol, editMode: editMode, version: protocolVersion };
-		}
+		},
+		waitOn: function () {
+			var self = this;
+			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
+			return subscription = Meteor.subscribe('Everything');
+		},
+		loadingTemplate: 'loading',
 	});
 	this.route('viewProtocol', {
 		path: basepath+'p/:id',
@@ -111,7 +129,13 @@ Router.map(function() {
 			// TODO: return Meteor.subscribe('protocol', this.params.id); or so once fine-grained subscriptions are implemented
 			return subscription = Meteor.subscribe('Everything');
 		},
-		loadingTemplate: 'loading'
+		loadingTemplate: 'loading',
+		waitOn: function () {
+			var self = this;
+			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
+			return subscription = Meteor.subscribe('Everything');
+		},
+		loadingTemplate: 'loading',
 	});
 	this.route('experimentList', { path: basepath+'x' });
 	this.route('viewExperiment', {
@@ -133,11 +157,11 @@ Router.map(function() {
 			// TODO: return Meteor.subscribe('experiment', this.params.id); or so once fine-grained subscriptions are implemented
 			return subscription = Meteor.subscribe('Everything');
 		},
-		loadingTemplate: 'loading'
+		loadingTemplate: 'loading',
 	});
 	this.route('options', {
 		path: basepath+'options',
-		template: 'options'
+		template: 'options',
 	});
 });
 
