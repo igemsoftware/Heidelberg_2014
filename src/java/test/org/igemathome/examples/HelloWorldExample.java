@@ -1,12 +1,7 @@
 package org.igemathome.examples;
 
-import org.igemathome.boinc.wrapper.BoincAPIWrapper;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import org.igemathome.boinc.wrapper.BoincAPIWrapper;
 
 /**
  * This example inits Boinc, writes "Hello Boinc!" to the error stream, waits 5 seconds and finishes

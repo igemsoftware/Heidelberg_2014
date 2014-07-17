@@ -53,6 +53,7 @@ public class SmithWaterman {
         return sb.reverse().toString();
     }
 
+
     private void fillMatrix(String seq1, String seq2) {
         for (int a = 1; a < matrix.length; a++) {
             for (int b = 1; b < matrix[a].length; b++) {
@@ -73,9 +74,7 @@ public class SmithWaterman {
     }
 
 
-
-
-    private String printMatrix() {
+    public String printMatrix() {
         if (matrix == null) {
             return "[]";
         } else {
@@ -93,6 +92,10 @@ public class SmithWaterman {
 
     public String bestAlign() {
         return result;
+    }
+
+    public int[][] getMatrix() {
+        return matrix;
     }
 
 }

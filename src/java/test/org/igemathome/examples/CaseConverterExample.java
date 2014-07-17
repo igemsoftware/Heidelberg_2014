@@ -1,6 +1,6 @@
 package org.igemathome.examples;
 
-import org.igemathome.boinc.Boinc;
+
 import org.igemathome.boinc.wrapper.BoincAPIWrapper;
 
 import java.io.IOException;
