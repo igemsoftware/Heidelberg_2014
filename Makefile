@@ -2,37 +2,45 @@
 
 BOINC_DIR = $(BOINC_HOME)
 JDK = $(JAVA_HOME)
+JAR=$(JDK)/bin/jar
 
+ifndef ARCH
+ $(error ARCH is undefined)
+endif
+ifndef BOINC_HOME
+ $(error BOINC_HOME is undefined)
+endif
+ifndef JAVA_HOME
+ $(error JAVA_HOME is undefined)
+endif
 
+all: subdirs jar dynamic-libs
 
-all: subdirs
-
-SUBDIRS = src/cpp/libboincAPIWrapper src/java/main/org/igemathome/boinc src/java/test src/cpp/launcher
+SUBDIRS = src/cpp/libboincAPIWrapper src/java/main/ src/cpp/launcher
      
 .PHONY: subdirs $(SUBDIRS)
-     
+
 subdirs: $(SUBDIRS)
      
 $(SUBDIRS):
 	$(MAKE) -C $@ BOINC_DIR=$(BOINC_DIR) JDK=$(JDK) ARCH=$(ARCH)
 
+jar:
+	$(JAR) cvf runtime/jre/lib/ext/igemathome.jar -C build .
+
+dynamic-libs:
+	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so runtime/jre/lib/$(ARCH)
+
 deploy: subdirs
 	cp src/cpp/launcher/launcher deploy
-	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so deploy/.runtime-build/runtime/jre/lib/$(ARCH)
-	cp src/java/test/MainTest.jar deploy
-
-repack-runtime:
-	rm -r deploy/runtime.zip
-	rm -rf deploy/runtime
-	cd deploy/.runtime-build; zip -r ../runtime.zip runtime
-
-
-run: deploy
-	./deploy/launcher
+	zip -r deploy/runtime.zip runtime
 
 clean:
-	for dir in $(SUBDIRS); do \
+	-rm -r build/*
+	-for dir in $(SUBDIRS); do \
 		$(MAKE) -C $$dir clean; \
 	done
-	rm deploy/launcher
-	rm deploy/*.jar
+	-rm runtime/jre/lib/$(ARCH)/libboincAPIWrapper.so
+	-rm runtime/jre/lib/ext/igemathome.jar
+	-rm deploy/launcher
+	-rm deploy/runtime.zip
