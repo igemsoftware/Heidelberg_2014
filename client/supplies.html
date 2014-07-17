@@ -23,7 +23,7 @@
 					<div data-bind="if: $root.editMode"><select class="form-control" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select></div>
 					<div data-bind="ifnot: $root.editMode">
 						<ul data-bind="foreach: types">
-							<li><a data-bind="text: name, attr: { href: href }"></a></li>
+							<li><a data-bind="text: name, attr: { href: href() }"></a></li>
 						</ul>
 					</div>
 				</td>
