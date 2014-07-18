@@ -16,7 +16,7 @@ git clone "https://igem2014.bioquant.uni-heidelberg.de/git/igem/documentation.gi
 ```
 *run
 
-``` bash
+```bash
 cd documentation
 mrt
 ```
