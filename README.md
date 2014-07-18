@@ -1,17 +1,17 @@
 ## installation
 * install Meteor https://www.meteor.com/
 
-``` bash
+```bash
 curl https://install.meteor.com/ | sh
 ```
 * install meteorite https://github.com/oortcloud/meteorite/
 
-``` bash
+```bash
 sudo -H npm install -g meteorite
 ```
 *checkout repository
 
-``` bash
+```bash
 git clone "https://igem2014.bioquant.uni-heidelberg.de/git/igem/documentation.git"
 ```
 *run
