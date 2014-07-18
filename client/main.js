@@ -11,7 +11,7 @@ Template.masterTemplate.events({
 Template.navItems.helpers({
 	activeIfInPath: function (path) {
 		var currentRoute = Router.current();
-		return currentRoute && (currentRoute.path.indexOf(path) == 0) ? 'active' : '';
+		return currentRoute && (currentRoute.path.indexOf(basepath + path) == 0) ? 'active' : '';
 	}
 });
 

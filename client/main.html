@@ -34,7 +34,7 @@
 
 <template name='navItems'>
 	<ul class="nav navbar-nav">
-		<li class="dropdown {{activeIfInPath '/t'}}" id="typeDropdown">
+		<li class="dropdown {{activeIfInPath 't'}}" id="typeDropdown">
 			<a href="#" class="dropdown-toggle" data-toggle="dropdown">Types<b class="caret"></b></a>
 			<ul class="dropdown-menu">
 				<li><a href="{{pathFor 'newType'}}">Create new Type</a></li>
@@ -44,7 +44,7 @@
 				{{/each}}
 			</ul>
 		</li>
-		<li class="{{activeIfInPath '/s'}}"><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
+		<li class="{{activeIfInPath 's'}}"><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
 		<li class="dropdown {{activeIfInPath '/p'}}" id="protocolDropdown">
 		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Protocols<b class="caret"></b></a>
 			<ul class="dropdown-menu">
@@ -55,11 +55,11 @@
 				{{/each}}
 			</ul>
 		</li>
-		<li class="{{activeIfInPath '/x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
+		<li class="{{activeIfInPath 'x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
 	</ul>
 	<ul class="nav navbar-nav navbar-right">
 		{{> loginButtons }}
-		<li class="{{activeIfInPath '/options'}}"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
+		<li class="{{activeIfInPath 'options'}}"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
 	</ul>
 
 </template>

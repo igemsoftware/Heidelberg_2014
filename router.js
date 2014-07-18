@@ -1,5 +1,8 @@
 subscription = null;
 
+/* Workaround for Iron router */
+basepath = '/' + Meteor.absoluteUrl().replace(/https?:\/\/.*?\//,"", "");
+
 Router.map(function() {
 	var type = ko.observable();
 	var typeVersion = ko.observable();
@@ -12,9 +15,6 @@ Router.map(function() {
 
 	var newMode = ko.observable();
 	var editMode = ko.observable();
-
-	/* Workaround for Iron router */
-	var basepath = '/' + Meteor.absoluteUrl().replace(/https?:\/\/.*?\//,"", "");
 
 	this.route('home', { path: basepath });
 	this.route('typeList', { path: basepath+'t' });
