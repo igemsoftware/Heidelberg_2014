@@ -31,7 +31,7 @@ jar:
 dynamic-libs:
 	cp src/cpp/libboincAPIWrapper/libboincAPIWrapper.so runtime/jre/lib/$(ARCH)
 
-deploy: subdirs
+deploy: all
 	cp src/cpp/launcher/launcher deploy
 	zip -r deploy/runtime.zip runtime
 
