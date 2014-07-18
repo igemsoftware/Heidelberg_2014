@@ -45,7 +45,7 @@
 #include <boinc_zip.h>
 #include <boinc_api.h>
 
-
+#define DEBUG
 
 int fileExists(char* name) {
   struct stat buf;
@@ -66,7 +66,8 @@ int getFileInPackage(char* basedir, char *relative_path, char *fullpath, int buf
 }
 
 #define MAINJAR_FOLDER        "/"
-#define CONFIG_FILE           "/package.cfg"
+#define CONFIG_FILENAME       "package.cfg"
+#define CONFIG_FILE           "/"CONFIG_FILENAME
 #define CONFIG_MAINJAR_KEY    "app.mainjar"
 #define CONFIG_MAINCLASS_KEY  "app.mainclass"
 #define CONFIG_CLASSPATH_KEY  "app.classpath"
@@ -133,10 +134,27 @@ int getConfigValue(char* basedir, char* lookupKey, char* outValue, int buf_size)
     char *value;
     FILE *fp;
 
-    if (!getFileInPackage(basedir, CONFIG_FILE, config, MAX_PATH)) {
+    char resolved_file[MAX_PATH];
+
+    if(boinc_resolve_filename(CONFIG_FILENAME, resolved_file+1, MAX_PATH-1)){
+        printf("Unable to resolve file (%s) via boinc_resolve_filename!\n", CONFIG_FILE);
+        return FALSE;
+    }
+    resolved_file[0] = '/';
+
+    #ifdef DEBUG
+        printf("Resolved %s to %s\n", CONFIG_FILENAME, resolved_file);
+    #endif
+
+    if (!getFileInPackage(basedir, resolved_file, config, MAX_PATH)) {
         printf("Configuration file (%s) is not found!\n", config);
         return FALSE;
     }
+
+    #ifdef DEBUG
+        printf("FullFilePath: %s\n", config);
+    #endif
+
 
     //scan file for the key
     fp = fopen(config, "r");
@@ -177,7 +195,11 @@ int getMainJar(char* basedir, char* jar, int buffer_size) {
     }
 
     strcat(jar_relative, MAINJAR_FOLDER);
-    strcat(jar_relative, jarname);
+    //strcat(jar_relative, jarname);
+    if(boinc_resolve_filename(jarname, (jar_relative+strlen(MAINJAR_FOLDER)), MAX_PATH-strlen(MAINJAR_FOLDER))) {
+        printf("Unable to resolve file (%s) via boinc_resolve_filename!\n", jarname);
+        return FALSE;
+    }
 
     int ret = getFileInPackage(basedir, jar_relative, jar_full, MAX_PATH);
 
@@ -741,6 +763,9 @@ int main(int argc, const char** argv) {
     char appFolder[MAX_PATH] = {0};
     char jar[MAX_PATH] = {0};
 
+    freopen ("stderr.txt","w",stdout);
+    freopen ("stderr.txt","w",stderr);
+
     if (getExecPath(basedir, MAX_PATH) == TRUE) {
         if (!getMainJar(basedir, jar, MAX_PATH)) {
             if (jar[0] == 0) {
@@ -748,9 +773,11 @@ int main(int argc, const char** argv) {
             } else {
                     printf("Failed to find main application jar! (%s)\n", jar);
             }
+            fclose(stdout);
+            fclose(stderr);
             return -1;
         }
-        printf("Hello, Hello!\n");
+
 		unzip_runtime(basedir);
         getAppFolder(basedir, appFolder, MAX_PATH);
 
@@ -761,10 +788,13 @@ int main(int argc, const char** argv) {
 
         if (!startJVM(basedir, appFolder, jar, argc, argv)) {
             printf("Failed to launch JVM\n");
+            fclose(stdout);
+            fclose(stderr);
             return -1;
         }
     }
-
+    fclose(stdout);
+    fclose(stderr);
     return 1;
 }
 

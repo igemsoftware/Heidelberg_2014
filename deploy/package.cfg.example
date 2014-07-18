@@ -1,5 +1,0 @@
-app.mainjar=MainTest.jar
-app.version=1.0
-app.mainclass=MainTester
-app.classpath=
-app.preferences.id=MainTester
