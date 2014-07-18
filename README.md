@@ -2,7 +2,7 @@
 * install Meteor https://www.meteor.com/
 
 ``` bash
-$ curl https://install.meteor.com/ | sh
+curl https://install.meteor.com/ | sh
 ```
 * install meteorite https://github.com/oortcloud/meteorite/
 
