@@ -4,6 +4,8 @@
 #include <boinc_api.h>
 /* Header for class BoincAPIWrapper */
 
+#define ERROR_BUFF_SIZE 250
+
 #ifndef _Included_org_igemathome_wrapper_BoincAPIWrapper
 #define _Included_org_igemathome_wrapper_BoincAPIWrapper
 #ifdef __cplusplus
@@ -17,7 +19,7 @@ extern "C" {
 * Method:    init
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_init(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_init(JNIEnv *env, jclass){
   return boinc_init();
 }
 
@@ -26,8 +28,8 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_init(JNIEnv *
 * Method:    finish
 * Signature: (I)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_finish(JNIEnv *, jclass, jint status){
-  return boinc_finish(0);
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_finish(JNIEnv *env, jclass, jint status){
+  return boinc_finish(status);
 }
 
 /*
@@ -114,7 +116,7 @@ JNIEXPORT jobject JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getInitDat
 * Method:    parseInitDataFile
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_parseInitDataFile(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_parseInitDataFile(JNIEnv *env, jclass){
   return boinc_parse_init_data_file();
 }
 
@@ -123,8 +125,19 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_parseInitData
 * Method:    sendTrickleUp
 * Signature: (Ljava/lang/String;Ljava/lang/String;)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_sendTrickleUp(JNIEnv *, jclass, jstring) {
-  return 0;
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_sendTrickleUp(JNIEnv *env, jclass, jstring variety, jstring text) {
+  int rc;
+  char *variety_ptr, text_ptr;
+
+  variety_ptr = env->GetStringUTFChars(variety, 0);
+  text_ptr = env->GetStringUTFChars(text, 0);
+  
+  rc = boinc_send_trickle_up(variety_ptr, text_ptr);
+
+  env->ReleaseStringUTFChars(variety, variety_ptr);
+  env->ReleaseStringUTFChars(text, text_ptr);
+
+  return rc;
 }
 
 /*
@@ -132,7 +145,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_sendTrickleUp
 * Method:    setMinCheckpointPeriod
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMinCheckpointPeriod(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMinCheckpointPeriod(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -141,7 +154,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMinCheckpo
 * Method:    checkpointCompleted
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_checkpointCompleted(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_checkpointCompleted(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -150,8 +163,15 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_checkpointCom
 * Method:    fractionDone
 * Signature: (D)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_fractionDone(JNIEnv *, jclass, jdouble){
-  return 0;
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_fractionDone(JNIEnv *env, jclass, jdouble fraction_done){
+  char error_buff[ERROR_BUFF_SIZE];
+  if(!( (0 <= fraction_done) && (fraction_done <= 1) ) ){ // fraction_done value must be between 0 and 1
+    sprintf(error_buff, "parameter fraction_done (value: %d) is out of range (0 <= fraction_done <= 1)", fraction_done);
+    env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), error_buff);
+    return -1;
+  }
+
+  return boinc_fraction_done(fraction_done);
 }
 
 /*
@@ -159,7 +179,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_fractionDone(
 * Method:    suspendOtherActivities
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_suspendOtherActivities(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_suspendOtherActivities(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -168,7 +188,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_suspendOtherA
 * Method:    resumeOtherActivities
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_resumeOtherActivities(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_resumeOtherActivities(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -177,7 +197,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_resumeOtherAc
 * Method:    reportAppStatus
 * Signature: (DDD)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStatus(JNIEnv *, jclass, jdouble, jdouble, jdouble){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStatus(JNIEnv *env, jclass, jdouble, jdouble, jdouble){
 
 }
 
@@ -186,7 +206,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStat
 * Method:    timeToCheckpoint
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_timeToCheckpoint(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_timeToCheckpoint(JNIEnv *env, jclass){
 
 }
 
@@ -195,7 +215,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_timeToCheckpo
 * Method:    beginnCriticalSection
 * Signature: ()V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_beginnCriticalSection(JNIEnv *, jclass){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_beginnCriticalSection(JNIEnv *env, jclass){
   return;
 }
 
@@ -204,7 +224,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_beginnCritica
 * Method:    tryCrititalSection
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_tryCrititalSection(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_tryCrititalSection(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -213,7 +233,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_tryCrititalSe
 * Method:    endCriticalSection
 * Signature: ()V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_endCriticalSection(JNIEnv *, jclass){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_endCriticalSection(JNIEnv *env, jclass){
   return;
 }
 
@@ -222,7 +242,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_endCriticalSe
 * Method:    needNetwork
 * Signature: ()V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_needNetwork(JNIEnv *, jclass) {
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_needNetwork(JNIEnv *env, jclass) {
   return;
 }
 
@@ -231,7 +251,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_needNetwork(J
 * Method:    networkPoll
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkPoll(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkPoll(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -240,7 +260,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkPoll(J
 * Method:    networkDone
 * Signature: ()V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkDone(JNIEnv *, jclass){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkDone(JNIEnv *env, jclass){
   return;
 }
 
@@ -249,7 +269,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkDone(J
 * Method:    networkUsage
 * Signature: (DD)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkUsage(JNIEnv *, jclass, jdouble, jdouble){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkUsage(JNIEnv *env, jclass, jdouble, jdouble){
   return;
 }
 
@@ -258,8 +278,8 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_networkUsage(
 * Method:    isStandalone
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_isStandalone(JNIEnv *, jclass){
-  return 0;
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_isStandalone(JNIEnv *env, jclass){
+  return boinc_is_standalone();
 }
 
 /*
@@ -267,7 +287,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_isStandalone(
 * Method:    opsPerCpuSec
 * Signature: (DD)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsPerCpuSec(JNIEnv *, jclass, jdouble, jdouble){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsPerCpuSec(JNIEnv *env, jclass, jdouble, jdouble){
   return;
 }
 
@@ -276,7 +296,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsPerCpuSec(
 * Method:    opsCumulative
 * Signature: (DD)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsCumulative(JNIEnv *, jclass, jdouble, jdouble){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsCumulative(JNIEnv *env, jclass, jdouble, jdouble){
   return;
 }
 
@@ -285,7 +305,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_opsCumulative
 * Method:    setCreditClaim
 * Signature: (D)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setCreditClaim(JNIEnv *, jclass, jdouble){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setCreditClaim(JNIEnv *env, jclass, jdouble){
   return;
 }
 
@@ -294,7 +314,8 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setCreditClai
 * Method:    receiveTrickleDown
 * Signature: ([CI)I
 */
-  JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_receiveTrickleDown(JNIEnv *, jclass, jcharArray, jint){
+  JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_receiveTrickleDown(JNIEnv *env, jclass, jcharArray, jint){
+    
     return 0;
   }
 
@@ -303,7 +324,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setCreditClai
 * Method:    initOptions
 * Signature: (I)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initOptions(JNIEnv *, jclass, jint){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initOptions(JNIEnv *env, jclass, jint){
   return 0;
 }
 
@@ -312,7 +333,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initOptions(J
 * Method:    getStatus
 * Signature: (I)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getStatus(JNIEnv *, jclass, jint){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getStatus(JNIEnv *env, jclass, jint){
   return 0;
 }
 
@@ -321,7 +342,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getStatus(JNI
 * Method:    getFractionDone
 * Signature: ()D
 */
-JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getFractionDone(JNIEnv *, jclass){
+JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getFractionDone(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -330,7 +351,7 @@ JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_getFractio
 * Method:    registerTimerCallback
 * Signature: (Ljava/lang/Runnable;)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_registerTimerCallback(JNIEnv *, jclass, jobject){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_registerTimerCallback(JNIEnv *env, jclass, jobject){
   return;
 }
 
@@ -339,7 +360,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_registerTimer
 * Method:    workerThreadCpuTime
 * Signature: ()D
 */
-JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_workerThreadCpuTime(JNIEnv *, jclass){
+JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_workerThreadCpuTime(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -348,7 +369,7 @@ JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_workerThre
 * Method:    initParallel
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initParallel(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initParallel(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -357,7 +378,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_initParallel(
 * Method:    webGraphicsUrl
 * Signature: (Ljava/lang/String;)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_webGraphicsUrl(JNIEnv *, jclass, jstring){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_webGraphicsUrl(JNIEnv *env, jclass, jstring){
   return;
 }
 
@@ -366,7 +387,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_webGraphicsUr
 * Method:    removeDesktopAddr
 * Signature: (Ljava/lang/String;)V
 */
-JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_removeDesktopAddr(JNIEnv *, jclass, jstring){
+JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_removeDesktopAddr(JNIEnv *env, jclass, jstring){
   return;
 }
 
@@ -375,7 +396,7 @@ JNIEXPORT void JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_removeDesktop
 * Method:    setMacPList
 * Signature: ()I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacPList(JNIEnv *, jclass){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacPList(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -384,7 +405,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacPList(J
 * Method:    setMacIcon
 * Signature: (Ljava/lang/String;[CJ)I
 */
-  JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacIcon(JNIEnv *, jclass, jstring, jcharArray, jlong){
+  JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacIcon(JNIEnv *env, jclass, jstring, jcharArray, jlong){
     return 0;
   }
 
@@ -393,7 +414,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_setMacPList(J
 * Method:    wuCpuTime
 * Signature: (D)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_wuCpuTime(JNIEnv *, jclass, jdouble){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_wuCpuTime(JNIEnv *env, jclass, jdouble){
   return 0;
 }
 
@@ -402,7 +423,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_wuCpuTime(JNI
 * Method:    elapsedTime
 * Signature: ()D
 */
-JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_elapsedTime(JNIEnv *, jclass){
+JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_elapsedTime(JNIEnv *env, jclass){
   return 0;
 }
 
@@ -411,7 +432,7 @@ JNIEXPORT jdouble JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_elapsedTim
 * Method:    uploadFile
 * Signature: (Ljava/lang/String;)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadFile(JNIEnv *, jclass, jstring){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadFile(JNIEnv *env, jclass, jstring){
   return 0;
 }
 
@@ -420,7 +441,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadFile(JN
 * Method:    uploadStatus
 * Signature: (Ljava/lang/String;)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadStatus(JNIEnv *, jclass, jstring){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadStatus(JNIEnv *env, jclass, jstring){
   return 0;
 }
 
@@ -429,7 +450,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_uploadStatus(
 * Method:    msgPrefix
 * Signature: (Ljava/lang/String;I)Ljava/lang/String;
 */
-JNIEXPORT jstring JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_msgPrefix(JNIEnv *, jclass, jstring, jint){
+JNIEXPORT jstring JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_msgPrefix(JNIEnv *env, jclass, jstring, jint){
   return 0;
 }
 
@@ -438,7 +459,7 @@ JNIEXPORT jstring JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_msgPrefix(
 * Method:    reportAppStatusAux
 * Signature: (DDDIDD)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStatusAux(JNIEnv *, jclass, jdouble, jdouble, jdouble, jint, jdouble, jdouble){
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStatusAux(JNIEnv *env, jclass, jdouble, jdouble, jdouble, jint, jdouble, jdouble){
   return 0;
 }
 
@@ -447,8 +468,15 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_reportAppStat
 * Method:    temporaryExit
 * Signature: (ILjava/lang/String;Z)I
 */
-JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_temporaryExit(JNIEnv *, jclass, jint, jstring, jboolean){
-  return 0;
+JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_temporaryExit(JNIEnv *env, jclass, jint delay, jstring reason, jboolean is_notice){
+  const char *reason_ptr;
+  int rc;
+
+  reason_ptr = env->GetStringUTFChars(reason, 0);
+  rc = boinc_temporary_exit(delay, reason_ptr, is_notice);
+  env->ReleaseStringUTFChars(reason, reason_ptr);
+
+  return rc;
 }
 
 /*
@@ -457,7 +485,7 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_temporaryExit
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_resolveFilename(JNIEnv *env, jclass, jstring logical_filename){
-    char error_buff[250];
+    char error_buff[ERROR_BUFF_SIZE];
     std::string physical_filename;
     const char *logical_filename_ptr;
     int rc;

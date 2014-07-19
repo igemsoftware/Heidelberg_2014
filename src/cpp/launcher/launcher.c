@@ -73,6 +73,8 @@ int getFileInPackage(char* basedir, char *relative_path, char *fullpath, int buf
 #define CONFIG_CLASSPATH_KEY  "app.classpath"
 #define CONFIG_APP_ID_KEY     "app.preferences.id"
 #define RUNTIME_ZIP_FILE      "runtime.zip"
+#define STDERR_FILE           "stderr.txt"
+#define STDOUT_FILE           "stderr.txt"
 
 //remove trailing end of line character
 //modifies buffer in place
@@ -743,11 +745,16 @@ int unzip_runtime(char *basedir) {
     if(!fileExists(unzip_path)) {
 		//boinc_init();	// Need BoincAPI to uses logical names
         boinc_resolve_filename(RUNTIME_ZIP_FILE, unzip_file, MAX_PATH);
+
+        #ifdef DEBUG
 		printf("%s does not exist yet. Extracting %s...\n", unzip_path, unzip_file);
+        #endif
 
         if(fileExists(unzip_file)) {
             rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
+            #ifdef DEBUG
             printf("boinc_zip(UNZIP_IT, %s, \"%s\") returned %i\n",unzip_file, basedir, rc);
+            #endif
 			return rc;
         }
         else {
@@ -763,9 +770,6 @@ int main(int argc, const char** argv) {
     char appFolder[MAX_PATH] = {0};
     char jar[MAX_PATH] = {0};
 
-    freopen ("stderr.txt","w",stdout);
-    freopen ("stderr.txt","w",stderr);
-
     if (getExecPath(basedir, MAX_PATH) == TRUE) {
         if (!getMainJar(basedir, jar, MAX_PATH)) {
             if (jar[0] == 0) {
@@ -773,8 +777,7 @@ int main(int argc, const char** argv) {
             } else {
                     printf("Failed to find main application jar! (%s)\n", jar);
             }
-            fclose(stdout);
-            fclose(stderr);
+            closeStderrStdout();
             return -1;
         }
 
@@ -788,13 +791,39 @@ int main(int argc, const char** argv) {
 
         if (!startJVM(basedir, appFolder, jar, argc, argv)) {
             printf("Failed to launch JVM\n");
-            fclose(stdout);
-            fclose(stderr);
+            closeStderrStdout();
             return -1;
         }
     }
-    fclose(stdout);
-    fclose(stderr);
+    closeStderrStdout();
     return 1;
 }
 
+int redirectStderrStdout() {
+    FILE *fstdout;
+    FILE *fstderr;
+
+    fstderr = freopen (STDOUT_FILE,"a",stdout);
+    fstdout = freopen (STDERR_FILE,"a",stderr);
+
+    if((fstderr == NULL) || (fstdout == NULL)){
+        fprintf(stderr, "!!! Unable to redirect launcher stderr & stdout to %s ", STDERR_FILE);
+        if(STDERR_FILE != STDOUT_FILE)
+            fprintf(stderr, "/ %s !!!\n", STDOUT_FILE);
+        else
+            fprintf(stderr, " !!!\n");
+    }
+
+    #ifdef DEBUG
+        printf("---- Start Launcher stderr & stdout ----\n");
+    #endif
+
+}
+
+void closeStderrStdout() {
+    #ifdef DEBUG
+        printf("----- End Launcher stderr & stdout -----\n");
+    #endif
+    fclose(stdout);
+    fclose(stderr);
+}
