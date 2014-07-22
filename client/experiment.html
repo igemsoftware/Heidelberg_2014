@@ -80,7 +80,7 @@
 					<!-- ko foreach: $root.experiments -->
 						<td>
 							<!-- ko if: $parent.multiParam -->
-								<dl data-bind="foreach: params[$parent.multiParam]">
+								<dl data-bind="foreach: params()[$parent.multiParam]">
 									<dt data-bind="text: paramValue().text"></dt>
 									<dd>
 										<span data-bind="visible: !$root.editMode(), text: input($parentContext.$parentContext.$parentContext.$index(), $parentContext.$parentContext.$index())"></span>
