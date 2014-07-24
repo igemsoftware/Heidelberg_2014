@@ -1,0 +1,29 @@
+
+
+
+
+
+##################
+Weighing function:
+
+all parts of the weighing function should be indipendent of amount of points in the protein and the size of the protein. In the end, one would like to have a weighing of the different parts (length, angles, ... ) that is valid for every protein. Therefore:
+-length is normed by distance from beginning to the end of the protein
+-unprefereable_places is indipendent of the amount of the places the user defines. But it is not weighed by anything else
+-distances is weighed by the minimum, so the path with the best distances on one connection produces 1. This is beacuse if the protein is of a shape, that the distance has to become really large, it shouldn't be bad for the paths. Best path produces always the same number.
+-angles is indipendent of protein and if there is one angle less then it is also the best value. There is a seperate function, where the weighing of each angle can be defined.
+
+
+
+###################
+Evaluation of Linkers:
+
+For evaluation of valuability of proteins, there are two factors: G and B factor.
+
+-B-factor is used to tell how flexible a part from Crystal structure is, this might be nice for us to see in the angles. It is a measured value from PDB generation. The higher B-factor is, the more flexible the part is. 
+
+-G-factor is a value, that tells you, whether a aminoacid is in it's natural conformation. There are programs, like gfac2pdb , that insert in the PDB's B-factor column the G-factor, see [1]. The higher the G-factor is, the worse the conformation is.
+
+
+
+
+[1]http://www.ebi.ac.uk/thornton-srv/software/PROCHECK/manual/man6.html
