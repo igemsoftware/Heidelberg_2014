@@ -1,5 +1,4 @@
 package org.igemathome.examples;
-
 /**
  * Created by artjom on 7/16/14.
  */
@@ -29,6 +28,7 @@ public class SmithWaterman {
                 }
             }
         }
+
         System.out.println(highestLoc[0] + ", " + highestLoc[1]);
         StringBuilder sb = new StringBuilder();
         for (int a = highestLoc[0]; a > 0; ) {

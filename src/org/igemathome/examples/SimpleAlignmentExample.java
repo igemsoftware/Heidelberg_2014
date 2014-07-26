@@ -1,7 +1,7 @@
 package org.igemathome.examples;
 
 
-import org.igemathome.boinc.wrapper.BoincAPIWrapper;
+import org.igemathome.wrapper.BoincAPIWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -18,8 +18,9 @@ public class SimpleAlignmentExample {
     public static void main(String[] args) {
         System.err.println("Welcome to my implementation of Smith-Waterman on Boinc");
         BoincAPIWrapper.init();
-        Path input = Paths.get(BoincAPIWrapper.boinc_resolve_filename_s("input.txt"));
-        Path out = Paths.get(BoincAPIWrapper.boinc_resolve_filename_s("out.txt"));
+        System.err.println("After boinc init");
+        Path input = Paths.get(BoincAPIWrapper.resolveFilename("input.txt"));
+        Path out = Paths.get(BoincAPIWrapper.resolveFilename("out.txt"));
 
         try {
             String[] inputContent = new String(Files.readAllBytes(input), StandardCharsets.UTF_8).split("\n");

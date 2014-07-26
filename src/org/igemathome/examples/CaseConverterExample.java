@@ -1,7 +1,6 @@
 package org.igemathome.examples;
 
-
-import org.igemathome.boinc.wrapper.BoincAPIWrapper;
+import org.igemathome.wrapper.BoincAPIWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,18 +14,19 @@ import java.nio.file.*;
 public class CaseConverterExample {
 
     public static void main(String[] args) {
+        System.err.println("Starting Case Converter example");
         BoincAPIWrapper.init();
-        Path input = Paths.get(BoincAPIWrapper.boinc_resolve_filename_s("input.txt"));
-        Path out = Paths.get(BoincAPIWrapper.boinc_resolve_filename_s("out.txt"));
-
+        Path input = Paths.get(BoincAPIWrapper.resolveFilename("input.txt"));
+        Path out = Paths.get(BoincAPIWrapper.resolveFilename("out.txt"));
         try {
+            System.err.println("Output path: " + out.toRealPath(LinkOption.NOFOLLOW_LINKS));
             String inputContent = new String(Files.readAllBytes(input), StandardCharsets.UTF_8);
             String upperCase = inputContent.toUpperCase();
             Files.write(out, upperCase.getBytes(), StandardOpenOption.CREATE);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
+        BoincAPIWrapper.finish(0);
     }
 
 }

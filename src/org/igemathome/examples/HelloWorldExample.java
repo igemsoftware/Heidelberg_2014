@@ -1,7 +1,6 @@
 package org.igemathome.examples;
 
-
-import org.igemathome.boinc.wrapper.BoincAPIWrapper;
+import org.igemathome.wrapper.BoincAPIWrapper;
 
 /**
  * This example inits Boinc, writes "Hello Boinc!" to the error stream, waits 5 seconds and finishes
