@@ -127,12 +127,13 @@ JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_parseInitData
 */
 JNIEXPORT jint JNICALL Java_org_igemathome_wrapper_BoincAPIWrapper_sendTrickleUp(JNIEnv *env, jclass, jstring variety, jstring text) {
   int rc;
-  char *variety_ptr, text_ptr;
+  const char *variety_ptr;
+  const char *text_ptr;
 
   variety_ptr = env->GetStringUTFChars(variety, 0);
   text_ptr = env->GetStringUTFChars(text, 0);
   
-  rc = boinc_send_trickle_up(variety_ptr, text_ptr);
+  rc = boinc_send_trickle_up((char *)variety_ptr, (char *)text_ptr);
 
   env->ReleaseStringUTFChars(variety, variety_ptr);
   env->ReleaseStringUTFChars(text, text_ptr);

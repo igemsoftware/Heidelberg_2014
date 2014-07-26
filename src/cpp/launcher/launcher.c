@@ -765,6 +765,14 @@ int unzip_runtime(char *basedir) {
 
 }
 
+void closeStderrStdout() {
+    #ifdef DEBUG
+        printf("----- End Launcher stderr & stdout -----\n");
+    #endif
+    fclose(stdout);
+    fclose(stderr);
+}
+
 int main(int argc, const char** argv) {
     char basedir[MAX_PATH] = {0};
     char appFolder[MAX_PATH] = {0};
@@ -820,10 +828,3 @@ int redirectStderrStdout() {
 
 }
 
-void closeStderrStdout() {
-    #ifdef DEBUG
-        printf("----- End Launcher stderr & stdout -----\n");
-    #endif
-    fclose(stdout);
-    fclose(stderr);
-}
