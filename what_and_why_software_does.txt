@@ -1,10 +1,20 @@
+===Generation of Linkeredges:===
+
+All the linkeredges are generated from the amount of possible angles, that we have evaluated before. This is done by just taking all the possible angles and make a displacement from the starting and endingpoint with length of the linkerlengths from before. If these are too many possibilities one could think about the more out-sorting approach of using the sort_out_by_angle function, that is not that accurate, and will sort out many linkers.
+
+===Generation of special linkers, with flexible ends.===
+
+Normally there are flexible regions at the end and the beginning of a linker so that we don't have to look on the direction where the backbone is pointing to and we leave the protein some flexibility for moving. But this also gives us the possibility to use other connectors, such as just a rigid helix at the flexible ends and a linker with only one angle. All the other possibilities are too calcutlation consuming and not worth calculating.
 
 
+==One helix at flexible ends==
 
+The only variability we have there is the length of the helix. But most likely we won't find any suitable linker, but if there is the possibility this one should be found. So the problem of calculation time is not a too big issue.
+So for all possible angles that were calculated before, we calculate starting and endingpoints with lengths of 1.5 flexible aa, 2 flexible aa until the length of the flexible end. Then all possible connections are tested, whether they are too close at the protein. This should be done quite accurately, so that none of these linkers is lost by error.
 
+==Linker with one angle at flexible ends.==
 
-##################
-Weighing function:
+===Weighing function:===
 
 all parts of the weighing function should be indipendent of amount of points in the protein and the size of the protein. In the end, one would like to have a weighing of the different parts (length, angles, ... ) that is valid for every protein. Therefore:
 -length is normed by distance from beginning to the end of the protein
@@ -14,16 +24,11 @@ all parts of the weighing function should be indipendent of amount of points in 
 
 
 
-###################
-Evaluation of Linkers:
+===Evaluation of Linkers:===
 
 For evaluation of valuability of proteins, there are two factors: G and B factor.
 
--B-factor is used to tell how flexible a part from Crystal structure is, this might be nice for us to see in the angles. It is a measured value from PDB generation. The higher B-factor is, the more flexible the part is. 
+*B-factor is used to tell how flexible a part from Crystal structure is, this might be nice for us to see in the angles. It is a measured value from PDB generation. The higher B-factor is, the more flexible the part is. 
 
--G-factor is a value, that tells you, whether a aminoacid is in it's natural conformation. There are programs, like gfac2pdb , that insert in the PDB's B-factor column the G-factor, see [1]. The higher the G-factor is, the worse the conformation is.
+*G-factor is a value, that tells you, whether a aminoacid is in it's natural conformation. There are programs, like gfac2pdb , that insert in the PDB's B-factor column the G-factor, see [http://www.ebi.ac.uk/thornton-srv/software/PROCHECK/manual/man6.html]. The higher the G-factor is, the worse the conformation is.
 
-
-
-
-[1]http://www.ebi.ac.uk/thornton-srv/software/PROCHECK/manual/man6.html
