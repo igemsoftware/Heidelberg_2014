@@ -15,7 +15,7 @@
 			<ul class="list-group" id="protocolParameters" data-bind="foreach: params">
 				<li class="list-group-item">
 					<span data-bind="ifnot: $root.editMode">
-						<a data-bind="text: type().name, attr: { href: type().href }"></a>:
+						<a data-bind="text: type().name, attr: { href: type().href() }"></a>:
 						<span data-bind="text: name"></span>
 						<span data-bind="if: multi">(multiple)</span>
 					</span>

@@ -38,11 +38,8 @@ ExperimentsVM.prototype.edit = function () {
 ExperimentsVM.prototype.save = function () {
 	var self = this;
 	_.each(this.experiments(), function (experiment) {
-		experiment.save(self.performer(), undefined, self.experiments().length == 1);
+		experiment.save(self.performer(), self.experiments().length == 1);
 	});
-
-	self.editMode(false);
-	self.newMode(false);
 
 	if (self.experiments().length != 1) {
 		Router.go('experimentList');
@@ -72,9 +69,9 @@ function ExperimentVM(rootVM, data, version) {
 ExperimentVM.prototype = new Experiment();
 ExperimentVM.prototype.constructor = ExperimentVM;
 
-ExperimentVM.prototype.getParam = function (param, array) {
+ExperimentVM.prototype.getParam = function (param) {
 	if (!this.params()[param.name()]) {
-		this.params()[param.name()] = array ? ko.observableArray() : ko.observable({ editable: ko.observable(true) });
+		this.params()[param.name()] = param.multi() ? ko.observableArray() : ko.observable({ editable: ko.observable(true) });
 	}
 	return this.params()[param.name()];
 };
@@ -97,15 +94,17 @@ ExperimentVM.prototype.save = function (performer, redirect) {
 				if (redirect) Router.go('viewExperiment', { id: self._id() });
 			}
 		});
-	} else if (!isUnchanged(flat, self.data)) {
-		Meteor.call('updateExperiment', self._id, flat);
+	} else {
+		if (!isUnchanged(flat, self.data)) Meteor.call('updateExperiment', self._id, flat);
+		if (redirect) Router.go('viewExperiment', { id: self._id() });
 	}
 };
 
 Template.experiment.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		return new ExperimentsVM(self.data);
+		var vm = new ExperimentsVM(self.data);
+		return vm;
 	});
 
 	self.nodesToClean = [];

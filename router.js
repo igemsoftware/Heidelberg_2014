@@ -130,12 +130,6 @@ Router.map(function() {
 			return subscription = Meteor.subscribe('Everything');
 		},
 		loadingTemplate: 'loading',
-		waitOn: function () {
-			var self = this;
-			// TODO: return Meteor.subscribe('supply', this.params.id); or so once fine-grained subscriptions are implemented
-			return subscription = Meteor.subscribe('Everything');
-		},
-		loadingTemplate: 'loading',
 	});
 	this.route('experimentList', { path: basepath+'x' });
 	this.route('viewExperiment', {
@@ -166,4 +160,4 @@ Router.map(function() {
 });
 
 Router.onBeforeAction('loading');
-Router.configure({layoutTemplate: 'masterTemplate'});
+Router.configure({ layoutTemplate: 'masterTemplate' });

@@ -83,7 +83,7 @@ ProtocolVM.prototype.save = function () {
 					} else {
 						var obj = {
 							param: param,
-							possibleMappings: typeMatchingOldParams[param.multi() ? 1 : 0] || []
+							possibleMappings: typeMatchingOldParams[param.multi() ? 1 : 0] || [],
 						};
 						obj.source = ko.observable(_.contains(obj.possibleMappings, oldParam) && oldParam);
 						obj.blank = ko.observable(param.multi() && !obj.source.peek());
@@ -125,7 +125,7 @@ ProtocolVM.prototype.save = function () {
 								step: step,
 								inputIdx: inputIdx,
 								input: input,
-								possibleMappings: oldInputsByType[input.type().id],
+								possibleMappings: oldInputsByType[input.type().id] || [],
 								source: ko.observable(oldInput || (oldInputsByDesc[input.desc()] && oldInputsByDesc[input.desc()][stepIdx])),
 							};
 							obj.blank = ko.observable(!input.required() && !obj.source.peek());
@@ -192,6 +192,8 @@ ProtocolVM.prototype.save = function () {
 			Meteor.call('updateProtocol', self._id(), flat, self.DBData.v.length - 1);
 			Router.go('viewProtocol', { id: self._id() });
 		}
+	} else {
+		Router.go('viewProtocol', { id: self._id() });
 	}
 };
 

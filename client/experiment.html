@@ -26,7 +26,7 @@
 					<td>
 						<!-- ko if: $parent.multi -->
 							<ul class="inputList">
-								<!-- ko foreach: getParam($parent, true) -->
+								<!-- ko foreach: getParam.bind($data)($parent) -->
 									<li>
 										<div data-bind="with: paramValue">
 											<div data-bind="ifnot: $root.editMode() &amp;&amp; editable()">
@@ -51,7 +51,7 @@
 							</ul>
 						<!-- /ko -->
 						<!-- ko ifnot: $parent.multi -->
-							<div data-bind="with: getParam($parent)">
+							<div data-bind="with: getParam.bind($data)($parent)">
 								<div data-bind="ifnot: $root.editMode() &amp;&amp; editable()">
 									<a data-bind="text: text, attr: { href: href }"></a>
 									<span data-bind="if: currentVersionHref">

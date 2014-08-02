@@ -49,14 +49,16 @@ TypeVM.prototype.save = function () {
 				var oldProperties = { };
 
 				_.each(self.DBData.allProperties, function (oldProperty) {
-					if (!oldProperty.from) oldProperties[oldProperty.name] = oldProperty;
+					if (!oldProperty.from) oldProperty.from = self.toReference();
+					if (!oldProperties[oldProperty.from._id]) oldProperties[oldProperty.from._id] = { };
+					oldProperties[oldProperty.from._id][oldProperty.name] = oldProperty;
 				});
 
-				_.each(self.properties(), function (property) {
-					var oldProperty = oldProperties[property.name()];
+				_.each(self.allProperties(), function (property) {
 					if (property.required() && self.DBData.allProperties.length == 0) {
 						cannotUpdate = true;
 					} else {
+						var oldProperty = oldProperties[property.from._id()] && oldProperties[property.from._id()][property.name()];
 						var obj = {
 							property: property,
 							possibleMappings: self.DBData.allProperties,
@@ -95,13 +97,7 @@ TypeVM.prototype.save = function () {
 						_.each(mappings, function (mapping) {
 							if (!mapping.blank()) {
 								flat.versionMappings.push({
-									property: {
-										from: {
-											_id: self._id(),
-											name: self.name()
-										},
-										name: mapping.property.name()
-									},
+									property: mapping.property.toReference(),
 									source: {
 										from: mapping.source().from,
 										name: mapping.source().name
@@ -110,7 +106,9 @@ TypeVM.prototype.save = function () {
 							}
 						});
 
-						Meteor.call('updateType', self._id(), flat);
+						Meteor.call('updateType', self._id(), flat, function (error, result) {
+							console.log(error, result);
+						});
 						$('#mappingsModal').on('hidden.bs.modal', function () {
 							Router.go('viewType', { id: self._id() });
 						}).modal('hide');
@@ -119,13 +117,17 @@ TypeVM.prototype.save = function () {
 				});
 				$('#mappingsModal').modal();
 			} else {
-				Meteor.call('updateType', self._id(), flat);
+				Meteor.call('updateType', self._id(), flat, function (error, result) {
+					console.log(error, result);
+				});
 				Router.go('viewType', { id: self._id() });
 			}
 		} else {
 			Meteor.call('updateTypeWithoutCascade', self._id(), flat);
 			Router.go('viewType', { id: self._id() });
 		}
+	} else {
+		Router.go('viewType', { id: self._id() });
 	}
 };
 

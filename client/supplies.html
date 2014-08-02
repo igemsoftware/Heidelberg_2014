@@ -2,7 +2,14 @@
 	<a href="{{pathFor 'obtainSupply'}}">Enter a new supply</a>
 	<ul id="supplies">
 		{{#each supplies}}
-			<li><a href="{{pathFor 'viewSupply' id=_id}}">{{text}}</a></li>
+			<li>
+				<a href="{{pathFor 'viewSupply' id=_id}}">
+					{{text}}
+					{{#if needsReview}}
+						<span class="label label-warning">needs review</span>
+					{{/if}}
+				</a>
+			</li>
 		{{/each}}
 	</ul>
 </template>

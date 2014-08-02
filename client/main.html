@@ -44,9 +44,22 @@
 				{{/each}}
 			</ul>
 		</li>
-		<li class="{{activeIfInPath 's'}}"><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
+		<li class="{{activeIfInPath 's'}}">
+			<a href="{{pathFor 'suppliesList'}}">
+				Supplies
+				{{#if suppliesForReview}}
+					<span class="label label-warning">{{suppliesForReview}} need review}}</span>
+				{{/if}}
+			</a>
+		</li>
 		<li class="dropdown {{activeIfInPath '/p'}}" id="protocolDropdown">
-		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Protocols<b class="caret"></b></a>
+			<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+				Protocols
+				{{#if protocolsForReview}}
+					<span class="label label-warning">{{protocolsForReview}} need review</span>
+				{{/if}}
+				<span class="caret"></span>
+			</a>
 			<ul class="dropdown-menu">
 				<li><a href="{{pathFor 'newProtocol'}}">Create new Protocol</a></li>
 				<li class="divider"></li>

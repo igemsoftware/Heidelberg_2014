@@ -48,8 +48,8 @@ SupplyVM.prototype.save = function () {
 				Router.go('viewSupply', { id: self._id() });
 			}
 		});
-	} else if (!isUnchanged(flat, this.DBData)) {
-		Meteor.call('updateSupply', this._id(), flat);
+	} else {
+		if (!isUnchanged(flat, this.DBData)) Meteor.call('updateSupply', this._id(), flat);
 		Router.go('viewSupply', { id: this._id() });
 	}
 };
