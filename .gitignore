@@ -1,0 +1,6 @@
+modlib/*
+lib/*
+res/*
+slim/
+libs.lib
+build/*
