@@ -36,7 +36,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
 
 # the RPATH to be used when installing
-SET(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
+SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -51,14 +51,14 @@ add_library( boinc_api STATIC IMPORTED)
 add_library( boinc STATIC IMPORTED)
 find_library( modeller_library modeller ${PROJECT_SOURCE_DIR}/lib)
 
-add_executable( circ_modeller ${CMAKE_CURRENT_SOURCE_DIR}/circ_modeller.c )
-
 if(UNIX)
+	add_executable( circ_modeller circ_modeller.c temp_exit_wrapper.cpp linux.c)
+
 	set_target_properties(boinc_zip PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_zip.a")
 	set_target_properties(boinc_api PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_api.a")
 	set_target_properties(boinc PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc.a")
 
-	my_add_link_flags(circ_modeller "-Wl,-rpath-link,${PROJECT_SOURCE_DIR}/lib")
+	
 	#set_target_properties( modeller PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/lib/libboinc.a")
 
 	# Find get Architecture and define in Arch.h
@@ -69,27 +69,32 @@ if(UNIX)
 	#	"${PROJECT_BINARY_DIR}/Arch.h"
 	#)
 	#include_directories("${PROJECT_BINARY_DIR}")
+	my_add_link_flags(circ_modeller "-static-libgcc -static-libstdc++")
 
-	set_target_properties( circ_modeller PROPERTIES LINK_FLAGS "-static-libgcc -static-libstdc++")
+	my_add_link_flags(circ_modeller "-Wl,-rpath-link,${PROJECT_SOURCE_DIR}/lib")
+	#set_target_properties( circ_modeller PROPERTIES LINK_FLAGS "-static-libgcc -static-libstdc++")
 
 else(UNIX)
-	set_target_properties(boinc_zip PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/res/libboinc_zip.lib)
-	set_target_properties(boinc_api PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/res/libboinc_api.lib)
+	add_executable( circ_modeller circ_modeller.c temp_exit_wrapper.cpp )
+
+	set_target_properties(boinc_zip PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_zip.lib")
+	set_target_properties(boinc_api PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_api.lib")
 	set_target_properties(boinc PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc.lib")
 
 endif(UNIX)
 
 
 target_include_directories( circ_modeller PUBLIC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${BOINC_DIR}/lib PUBLIC ${BOINC_DIR}/api PUBLIC ${BOINC_DIR}/zip )
-target_link_libraries( circ_modeller ${modeller_library} boinc_zip boinc_api boinc ${GLIB2_LIBRARIES})
+target_link_libraries( circ_modeller ${modeller_library} boinc_api boinc_zip boinc  ${GLIB2_LIBRARIES} m stdc++ pthread)
 
-install(TARGETS circ_modeller RUNTIME DESTINATION ".")
+#install(TARGETS circ_modeller RUNTIME DESTINATION ".")
 install(FILES ${PROJECT_SOURCE_DIR}/libs.lib DESTINATION ".")
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/lib DESTINATION ".")
+#install(DIRECTORY ${PROJECT_SOURCE_DIR}/lib DESTINATION ".")
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/modlib DESTINATION ".")
 
 SET(CPACK_GENERATOR "ZIP")
-SET(CPACK_PACKAGE_FILE_NAME "circ_modeller")
+SET(CPACK_PACKAGE_FILE_NAME "modeller_res")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+set(CPACK_OUTPUT_FILE_PREFIX "deploy")
 
 INCLUDE(CPack)

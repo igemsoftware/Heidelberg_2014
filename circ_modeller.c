@@ -12,12 +12,13 @@
 #include <modeller.h>
 
 /* Linux */
-#include <libgen.h>
-#include <unistd.h>
+#include "linux.h"
 
 /* BOINC */
 #include <boinc_zip.h>
 #include <boinc_api.h>
+
+#include "circ_modeller.h"
 
 
 /* Example of using Modeller from a C program. This simply reads in a PDB
@@ -50,53 +51,38 @@
 #define getExecPath getExecPath_l
 #define checkFileExists fileExists
 #define createFailIfExists createFailIfExists_l
+
 #define DEBUG
-#define MAX_PATH 2048
-#define RESOURCES_ZIP MODELLER_RES_ZIP
 
-int getExecPath_l(char *path, size_t len){
-	if (readlink("/proc/self/exe", path, len) != -1) {
-        dirname(path);
-        return TRUE;
-    }
-    else
-    	return FALSE;
+#define RESOURCES_ZIP "modeller_res.zip"
+#define STDERR_FILE "stderr.txt"
+#define STDOUT_FILE STDERR_FILE
+
+
+int fileExists(char* name) {
+  struct stat buf;
+  return (stat(name, &buf) == 0) ? TRUE : FALSE;
 }
 
-int createFailIfExists_l(char *file){
-	int fd;
-	fd = open(file, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR);
-    if (fd == -1 || errno == EEXIST)
-    	return -1;	// File exists
-    else {
-    	close(fd);
-    	return 0;	// File created
-    }
-}
-
-int unzip(char *basedir) {
+int unzip_resources(char *basedir) {
 	char unzip_file[MAX_PATH] = {0};
 	char unzip_lock_started[MAX_PATH] = {0};
 	char unzip_lock_finished[MAX_PATH] = {0};
     int rc;
+    FILE *lockfile;
 
     /* Check if other process is already extracting */
     strncpy(unzip_lock_started, basedir, MAX_PATH);
-    strncat(unzip_lock_started, "/unzip_started", MAX_PATH-(strlen(basedir)+1))
+    strncat(unzip_lock_started, "/unzip_started", MAX_PATH-(strlen(basedir)+1));
     
     strncpy(unzip_lock_finished, basedir, MAX_PATH);
-    strncat(unzip_lock_finished, "/unzip_finished", MAX_PATH-(strlen(basedir)+1))
+    strncat(unzip_lock_finished, "/unzip_finished", MAX_PATH-(strlen(basedir)+1));
 
     if(!checkFileExists(unzip_lock_finished)) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
     		/* Wait max 5 minutes for process to finish */
-    		int i;
-    		for(i = 0; i < 100; i++){
-    			sleep(3);
-    			if(checkFileExists(unzip_lock_finished))
-    				return UNZIP_ALREADY_DONE;
-    		}
-    		printf("Other process taking to long to exit.")
+    		printf("Other process allready extracting...\n");
+    		boinc_temporary_exit_wrapper(20, "Other process allready extracting\n", 0);
     		return -1; 
     	}
     	else {								// Lockfile does not exist --> extract data
@@ -109,6 +95,9 @@ int unzip(char *basedir) {
 				#ifdef DEBUG
 				printf("boinc_zip(UNZIP_IT, %s, \"%s\") returned %i\n",unzip_file, basedir, rc);
 				#endif
+				lockfile = fopen(unzip_lock_finished, "w");
+				fclose(lockfile);
+
 				return rc;
         	}
 			else {
@@ -118,10 +107,7 @@ int unzip(char *basedir) {
     	}
     }
     else
-    	return UNZIP_ALREADY_DONE
-
-        
-
+    	return 0;
 }
 
 void simple_crypt(char *array, int array_size)
@@ -145,27 +131,36 @@ void handle_error(int ierr)
 
 int main(void)
 {
-	char modeller_path[FILENAME_MAX];
-	char libs_path[FILENAME_MAX];
+	char modeller_path[MAX_PATH];
+	char libs_path[MAX_PATH];
 	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
 
 	struct mod_libraries *libs;
 	struct mod_model *mdl;
 	struct mod_io_data *io;
 	struct mod_file *fh;
-	int ierr, *sel1, nsel1;
+	int ierr, *sel1, nsel1, rc;
+	char pdb_file[MAX_PATH];
 
-	
-	getExecPath(modeller_path, FILENAME_MAX);
+	boinc_init();
 
-	
+	getExecPath(modeller_path, MAX_PATH);
+
+	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
+	if(rc < 0){
+		printf("Temporary exiting...\n");
+		boinc_temporary_exit_wrapper(20, "Something went wrong while extracting!\n", 0);
+	}
+
+
 	/* Set Modeller environment variables correctly */
-	strncpy(libs_path, modeller_path, FILENAME_MAX);
-	strncat(libs_path, "/libs.lib", FILENAME_MAX-strlen(libs_path));
+	strncpy(libs_path, modeller_path, MAX_PATH);
+	strncat(libs_path, "/libs.lib", MAX_PATH-strlen(libs_path));
 	setenv("LIBS_LIB9v14", libs_path, 1);
 	#ifdef DEBUG
 		printf("Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
 	#endif
+
 	mod_install_dir_set(modeller_path);
 
 	/* Install encrypted licence */
@@ -190,7 +185,8 @@ int main(void)
 
 	mdl = mod_model_new(NULL);
 	io = mod_io_data_new();
-	fh = mod_file_open("2nbt.pdb", "r");
+	boinc_resolve_filename("pdb_file", pdb_file, MAX_PATH);
+	fh = mod_file_open(pdb_file, "r");
 	if (fh) {
 		mod_model_read(mdl, io, libs, fh, "PDB", "FIRST:@LAST:  ", 7, &ierr);
 		mod_file_close(fh, &ierr);
@@ -214,6 +210,7 @@ int main(void)
 	mod_model_free(mdl);
 	mod_io_data_free(io);
 
+	boinc_finish(0);
 	mod_end();
-	return 0;
+	return -1;
 }
