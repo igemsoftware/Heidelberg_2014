@@ -33,7 +33,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
 # when building, don't use the install RPATH already
 # (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
 
 # the RPATH to be used when installing
 SET(CMAKE_INSTALL_RPATH "$ORIGIN")
@@ -96,5 +96,10 @@ SET(CPACK_GENERATOR "ZIP")
 SET(CPACK_PACKAGE_FILE_NAME "modeller_res")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 set(CPACK_OUTPUT_FILE_PREFIX "deploy")
+
+#add_custom_target(post-packaging COMMAND ${CMAKE_COMMAND} -E message(WARNING "Es funktioniert!") DEPENDS package)
+install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib ${CMAKE_BINARY_DIR}/deploy)")
+install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/circ_modeller ${CMAKE_BINARY_DIR}/deploy)")
+
 
 INCLUDE(CPack)

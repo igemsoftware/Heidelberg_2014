@@ -102,6 +102,7 @@ int unzip_resources(char *basedir) {
         	}
 			else {
 				printf("%s does not exist. Aborting...\n", unzip_file);
+				remove(unzip_lock_started);
 				return -1;
 	        }
     	}
@@ -118,14 +119,14 @@ void simple_crypt(char *array, int array_size)
         array[i] ^= secret[i];
 }
 
-/* Exit, reporting the Modeller error, iff one occurred. */
+/* Exit, reporting the Modeller error, if one occurred. */
 void handle_error(int ierr)
 {
   if (ierr != 0) {
     GError *err = mod_error_get();
     fprintf(stderr, "Modeller error: %s\n", err->message);
     g_error_free(err);
-    exit(1);
+    boinc_finish(1);
   }
 }
 
@@ -210,7 +211,7 @@ int main(void)
 	mod_model_free(mdl);
 	mod_io_data_free(io);
 
-	boinc_finish(0);
 	mod_end();
+	boinc_finish(0);
 	return -1;
 }
