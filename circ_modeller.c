@@ -8,56 +8,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <modeller.h>
 
-/* Linux */
-#include "linux.h"
-
 /* BOINC */
-#include <boinc_zip.h>
 #include <boinc_api.h>
+#include <boinc_zip.h>
 
 #include "circ_modeller.h"
+#include "config.h"
 
+#ifdef __linux
+#include "linux.h"
+#elif _WIN32
 
-/* Example of using Modeller from a C program. This simply reads in a PDB
- * file, prints out some data from that file, and then writes out a new
- * file in MMCIF format.
- *
- * To compile, use (where XXX is your Modeller version):
- * gcc -Wall -o c-example c-example.c `modXXX --cflags --libs` \
- *     `pkg-config --cflags --libs glib-2.0`
- * (If you use a compiler other than gcc, or a non-Unix system, you may need
- * to run 'modXXX --cflags --libs' manually and construct suitable compiler
- * options by hand.)
- *
- * To run, you must ensure that the Modeller dynamic libraries are in your
- * search path. This can be done on most systems by adding the directory
- * reported by 'modXXX --libs' to the LD_LIBRARY_PATH environment variable.
- * (On Mac, set DYLD_LIBRARY_PATH instead. On Windows, PATH. On AIX, LIBPATH.)
- *
- * You must also ensure that Modeller knows where it was installed,
- * and what the license key is. You can either do this by setting the
- * MODINSTALLXXX and KEY_MODELLERXXX environment variables accordingly, or
- * by calling the mod_install_dir_set() and mod_license_key_set() functions
- * before you call mod_start(). For example, if Modeller is installed in
- * /lib/modeller on a 32-bit Linux system, the following would work from the
- * command line (all on one line), where KEY is your license key:
- *     KEY_MODELLERXXX=KEY MODINSTALLXXX=/lib/modeller/
- *     LD_LIBRARY_PATH=/lib/modeller/lib/i386-intel8 ./c-example
- */
+#endif
 
 #define getExecPath getExecPath_l
 #define checkFileExists fileExists
 #define createFailIfExists createFailIfExists_l
 
-#define DEBUG
-
 #define RESOURCES_ZIP "modeller_res.zip"
 #define STDERR_FILE "stderr.txt"
 #define STDOUT_FILE STDERR_FILE
 
+#define DEBUG
 
 int fileExists(char* name) {
   struct stat buf;
@@ -68,8 +44,10 @@ int unzip_resources(char *basedir) {
 	char unzip_file[MAX_PATH] = {0};
 	char unzip_lock_started[MAX_PATH] = {0};
 	char unzip_lock_finished[MAX_PATH] = {0};
+	char working_dir[MAX_PATH] = {0};
     int rc;
     FILE *lockfile;
+    //unzFile uf;
 
     /* Check if other process is already extracting */
     strncpy(unzip_lock_started, basedir, MAX_PATH);
@@ -82,7 +60,7 @@ int unzip_resources(char *basedir) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
     		/* Wait max 5 minutes for process to finish */
     		printf("Other process allready extracting...\n");
-    		boinc_temporary_exit_wrapper(20, "Other process allready extracting\n", 0);
+    		boinc_temporary_exit_wrapper(20, "Other process allready extracting\n", FALSE);
     		return -1; 
     	}
     	else {								// Lockfile does not exist --> extract data
@@ -91,9 +69,34 @@ int unzip_resources(char *basedir) {
 			printf("No process extracting yet. Extracting %s...\n", unzip_file);
         	#endif
         	if(checkFileExists(unzip_file)) {
+				/*#ifdef USEWIN32IOAPI
+					zlib_filefunc64_def ffunc;
+				#endif
+				#ifdef USEWIN32IOAPI
+					fill_win32_filefunc64A(&ffunc);
+					uf = unzOpen2_64(unzip_file,&ffunc);
+				#else
+					uf = unzOpen64(unzip_file);
+				#endif
+				
+				if(getcwd(working_dir, MAX_PATH) == NULL)
+					printf("Warning: Unable to save working dir!\n");
+
+				#ifdef _WIN32
+					if (_chdir(basedir))
+				#else
+					if (chdir(basedir))
+				#endif
+        		{
+          		printf("Error changing into %s, aborting\n", basedir);
+          		return(-1);
+        		}
+
+           		rc = do_extract(uf, 0, 1, '\0');
+				*/
 				rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
 				#ifdef DEBUG
-				printf("boinc_zip(UNZIP_IT, %s, \"%s\") returned %i\n",unzip_file, basedir, rc);
+				printf("Unzip routine returned %i\n", rc);
 				#endif
 				lockfile = fopen(unzip_lock_finished, "w");
 				fclose(lockfile);
@@ -141,16 +144,20 @@ int main(void)
 	struct mod_io_data *io;
 	struct mod_file *fh;
 	int ierr, *sel1, nsel1, rc;
-	char pdb_file[MAX_PATH];
+	char file_resolve[MAX_PATH];
 
 	boinc_init();
+	
+	#ifdef DEBUG
+	//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
+	#endif
 
 	getExecPath(modeller_path, MAX_PATH);
 
 	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
 	if(rc < 0){
 		printf("Temporary exiting...\n");
-		boinc_temporary_exit_wrapper(20, "Something went wrong while extracting!\n", 0);
+		boinc_temporary_exit_wrapper(20, "Something went wrong while extracting!\n", FALSE);
 	}
 
 
@@ -186,8 +193,8 @@ int main(void)
 
 	mdl = mod_model_new(NULL);
 	io = mod_io_data_new();
-	boinc_resolve_filename("pdb_file", pdb_file, MAX_PATH);
-	fh = mod_file_open(pdb_file, "r");
+	boinc_resolve_filename("pdb_file", file_resolve, MAX_PATH);
+	fh = mod_file_open(file_resolve, "r");
 	if (fh) {
 		mod_model_read(mdl, io, libs, fh, "PDB", "FIRST:@LAST:  ", 7, &ierr);
 		mod_file_close(fh, &ierr);
@@ -197,7 +204,8 @@ int main(void)
 	handle_error(ierr);
 	printf("Model of %s solved at resolution %f, rfactor %f\n", mdl->seq.name,
 	     mdl->seq.resol, mdl->seq.rfactr);
-	fh = mod_file_open("new.cif", "w");
+	boinc_resolve_filename("output", file_resolve, MAX_PATH);
+	fh = mod_file_open(file_resolve, "w");
 	if (fh) {
 		mod_selection_all(mdl, &sel1, &nsel1);
 		mod_model_write(mdl, libs, sel1, nsel1, fh, "MMCIF", 0, 1, "", &ierr);
@@ -210,8 +218,7 @@ int main(void)
 	mod_libraries_free(libs);
 	mod_model_free(mdl);
 	mod_io_data_free(io);
-
-	mod_end();
+	//mod_end();
 	boinc_finish(0);
 	return -1;
 }
