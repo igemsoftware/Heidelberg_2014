@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>iGEM@Home</title>
+
+		<meta name="description content="Boinc-Screensaver for the iGEM@Home project">
+		<meta name="author" content="iGEM Team Heidelberg 2014">
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+		<link rel="stylesheet" href="screensaver-v2.css">
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+		
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+	</head>
+
+	<body>
+
+		<div class="reveal">
+			<div class="slides">
+			<section>
+				<div class="kasten"> <p> Titelkasten </p> </div>
+				<div class="left">
+					<div class="kasten"><p class="kasten-title">Text</p><p class="kasten-content">Content lalal</p></div>
+				</div>
+				<div class="right"></div>
+			</section>
+			<section>
+				<p> Welcome to iGEM@Home! </p>
+			</section>
+			<section>
+				<div class="kasten left">
+					<p class="kasten-title">
+					Testbox
+					</p>
+					<p class="kasten-content">
+					Der Testtext testet Testtext-texttestverhalten im Textkasten.
+					</p>
+				</div>
+			</section>
+			<section>
+				<img src="./images/2013Heidelberg/Heidelberg_team_logo.png" class="bild left"></img>
+				<div class="kasten right">
+					<p class="kasten-title">
+					Heidelberg 2013 - Philosopher's Stone
+					</p>
+					<p class="kasten-content">
+					Short introductory text to iGEM team and project.
+					</p>
+				</div>
+				<div class="kasten right">
+					<p> Test-Textkasten mit Testkasten-Text </p>
+				</div>
+			</section>
+			<section>
+				<p class="fragment current-visible">visible only once</p>
+				<p> Juhuu! Es funktioniert ... </p>
+			</section>
+			<section>
+				<div class="left">
+					<div class="kasten">
+						<p>Linker Kasten</p>
+					</div>
+					<div class="kasten">
+						<p class="kasten-title">Noch ein Kasten</p>
+						<p class="kasten-content">Sogar einer mit Titel! Und er enthaelt auch jede Menge Text um sehen zu koennen, ob der Blocksatz richtig funktioniert ...</p>
+					</div>
+					<div class="kasten">
+						<p>Und hier ein vierter Kasten.
+						<br /></br />lala </br /><br /></br /><br /><br /></br />
+						</p>
+					</div>
+				</div>
+				<div class="right">
+					<div class="kasten">
+						<p>Rechter Kasten</p>
+					</div>
+					<img class="bild" src="./images/iGEM_HD_2014_logo.png"></img>
+				</div>
+			</section>
+			<section>
+				<p> ... und mit krass-geilem mega-coolem hinterdrund-parallax-perspektivischem Dingsbums-Verschieben! </p>
+			</section>
+
+			</div>
+		</div>
+
+		<div id="main-layout">
+			<a href="http://2014.igem.org/Team:Heidelberg" id="implementedby"> Implemented by </a>
+			<img id="team-logo" src="./images/iGEM_HD_2014_logo.png"></img>
+		</div>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				slideNumber: true,
+				history: false,
+				keyboard: true,
+				overview: false,
+				center: false,
+				touch: false,
+				loop: true,
+				rtl: false,
+				fragments: true,
+				embedded: false,
+				autoSlide: 3000,
+				autoSlideStoppable: true,
+				mouseWheel: false,
+				hideAddressBar: true,
+				previewLinks: false,
+				transition: 'linear', // default/cube/page/concave/zoom/linear/fade/none
+				transitionSpeed: 'slow', // default/fast/slow
+				backgroundTransition: 'default', // default/none/slide/concave/convex/zoom
+				viewDistance: 3,
+				parallaxBackgroundImage: './images/bg-igem@home.png',
+				parallaxBackgroundSize: '2500px 1080px', // CSS syntax, e.g. "2100px 900px"
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 618px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
