@@ -23,14 +23,10 @@
 #include "config.h"
 
 #ifdef __linux
-#include "linux.h"
+#include "linux_functions.h"
 #elif _WIN32
-
+#include "windows_functions.h"
 #endif
-
-#define getExecPath getExecPath_l
-#define checkFileExists fileExists
-#define createFailIfExists createFailIfExists_l
 
 #define RESOURCES_ZIP "modeller_res.zip"
 #define STDERR_FILE "stderr.txt"
@@ -59,7 +55,7 @@ int unzip_resources(char *basedir) {
     strncpy(unzip_lock_finished, basedir, MAX_PATH);
     strncat(unzip_lock_finished, "/unzip_finished", MAX_PATH-(strlen(basedir)+1));
 
-    if(!checkFileExists(unzip_lock_finished)) {
+    if(!fileExists(unzip_lock_finished)) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
     		/* Wait max 5 minutes for process to finish */
     		printf("Other process allready extracting...\n");
@@ -71,7 +67,7 @@ int unzip_resources(char *basedir) {
     		#ifdef DEBUG
 			printf("No process extracting yet. Extracting %s...\n", unzip_file);
         	#endif
-        	if(checkFileExists(unzip_file)) {
+        	if(fileExists(unzip_file)) {
 				/*#ifdef USEWIN32IOAPI
 					zlib_filefunc64_def ffunc;
 				#endif
@@ -207,7 +203,12 @@ int main(int argc, char **argv)
 	/* Set Modeller environment variables correctly */
 	strncpy(libs_path, modeller_path, MAX_PATH);
 	strncat(libs_path, "/libs.lib", MAX_PATH-strlen(libs_path));
+	#ifdef __linux
 	setenv("LIBS_LIB9v14", libs_path, 1);
+	#elif _WIN32
+	_putenv_s("LIBS_LIB9v14", libs_path);
+	#endif
+	
 	#ifdef DEBUG
 		printf("Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
 	#endif
