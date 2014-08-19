@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project("Modelling of Cirular Protein Linkers via BOINC")
 
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list( APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(AddCompileLinkFlags)
 
 set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "") 
-set(BUILD_SHARED_LIBS OFF)
+#set(BUILD_SHARED_LIBS OFF)
+
 set( BOINC_DIR "$ENV{BOINC_HOME}" CACHE PATH "Path to Boinc Sourcecode" )
 set( MANUAL_PATH FALSE CACHE BOOL "Manually select the installation path of the modeller files." )
 
@@ -30,6 +31,8 @@ if(UNIX)
 else(UNIX)
 endif(UNIX)
 
+set(Python_ADDITIONAL_VERSIONS 2.7)
+find_package(PythonLibs)
 
 # use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
@@ -93,9 +96,13 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 
-target_include_directories( circ_modeller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ${BOINC_DIR}/zip PUBLIC ${BOINC_DIR}/lib PUBLIC ${BOINC_DIR}/api)
-target_link_libraries( circ_modeller ${modeller_library}  boinc_zip boinc_api boinc ${GLIB2_LIBRARIES} pthread m)
-
+target_include_directories( circ_modeller 	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+											PUBLIC ${BOINC_DIR}/zip 
+											PUBLIC ${BOINC_DIR}/lib
+											PUBLIC ${BOINC_DIR}/api
+											PUBLIC ${PYTHON_INCLUDE_DIRS} )
+target_link_libraries( circ_modeller  ${PYTHON_LIBRARIES} boinc_zip boinc_api boinc ${GLIB2_LIBRARIES} pthread m)
+#${modeller_library}
 #install(TARGETS circ_modeller RUNTIME DESTINATION ".")
 install(FILES ${PROJECT_SOURCE_DIR}/libs.lib DESTINATION ".")
 #install(DIRECTORY ${PROJECT_SOURCE_DIR}/lib DESTINATION ".")

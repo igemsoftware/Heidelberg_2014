@@ -1,8 +1,11 @@
+
 #if __STDC_VERSION__ >= 199901L
 #define _XOPEN_SOURCE 600
 #else
 #define _XOPEN_SOURCE 500
 #endif /* __STDC_VERSION__ */
+
+#include "Python.h"
 
 #include <glib.h>
 #include <stdio.h>
@@ -10,7 +13,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include <modeller.h>
+//#include <modeller.h>
 
 /* BOINC */
 #include <boinc_api.h>
@@ -122,7 +125,7 @@ void simple_crypt(char *array, int array_size)
         array[i] ^= secret[i];
 }
 
-/* Exit, reporting the Modeller error, if one occurred. */
+/* Exit, reporting the Modeller error, if one occurred. 
 void handle_error(int ierr)
 {
   if (ierr != 0) {
@@ -131,28 +134,68 @@ void handle_error(int ierr)
     g_error_free(err);
     boinc_finish(1);
   }
+}*/
+
+void call_python(char *ProgramName, char *modeller_path, char *modeller_licence) {
+	PyObject *module, *modeller_init, *calc;
+	char **argv;
+	argv = &ProgramName;
+	Py_SetProgramName(ProgramName);
+	Py_Initialize();
+	PySys_SetArgv(1, argv);
+	//PyRun_SimpleString("import python_modelling as pm");
+	//PyRun_SimpleString("import sys");
+	//PyRun_SimpleString("print sys.path");
+	module = PyImport_ImportModule("python_modelling");
+	if(module == NULL){
+		printf("Error importing Module:\n");
+		PyErr_Print();
+		return;
+	}
+
+	modeller_init = PyObject_GetAttrString(module, "modeller_init");
+	if(modeller_init == NULL){
+		printf("Error getting Attribute modeller_init\n");
+		PyErr_Print();
+		return;
+	}
+	PyObject_CallFunction(modeller_init, "ss", modeller_path, modeller_licence);
+
+	calc = PyObject_GetAttrString(module, "calc");
+	if(calc == NULL){
+		printf("Error getting Attribute calc.\n");
+		PyErr_Print();
+		return;
+	}
+	PyObject_CallFunction(calc, NULL);
+
+	Py_Finalize();
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	char modeller_path[MAX_PATH];
 	char libs_path[MAX_PATH];
 	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
+	char exec_path[MAX_PATH];
 
+/*
 	struct mod_libraries *libs;
 	struct mod_model *mdl;
 	struct mod_io_data *io;
 	struct mod_file *fh;
 	int ierr, *sel1, nsel1, rc;
 	char file_resolve[MAX_PATH];
-
+*/
+	int rc;
 	boinc_init();
 	
 	#ifdef DEBUG
 	//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
-	getExecPath(modeller_path, MAX_PATH);
+	getExecPath(modeller_path, MAX_PATH, 1);
+	getExecPath(exec_path, MAX_PATH, 0);
 
 	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
 	if(rc < 0){
@@ -169,11 +212,14 @@ int main(void)
 		printf("Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
 	#endif
 
-	mod_install_dir_set(modeller_path);
+	//mod_install_dir_set(modeller_path);
 
 	/* Install encrypted licence */
 	simple_crypt(licence, strlen(licence));
-	mod_license_key_set(licence);
+
+	call_python(exec_path, modeller_path, licence);
+
+	/*mod_license_key_set(licence);
 
 	mod_start(&ierr);
 	handle_error(ierr);
@@ -218,7 +264,7 @@ int main(void)
 	mod_libraries_free(libs);
 	mod_model_free(mdl);
 	mod_io_data_free(io);
-	//mod_end();
+	//mod_end();*/
 	boinc_finish(0);
 	return -1;
 }

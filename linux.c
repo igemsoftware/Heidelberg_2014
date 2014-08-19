@@ -7,9 +7,10 @@
 #include <unistd.h>
 #include <glib.h>
 
-int getExecPath_l(char *path, size_t len){
+int getExecPath_l(char *path, size_t len, int get_dirname){
 	if (readlink("/proc/self/exe", path, len) != -1) {
-        dirname(path);
+        if(get_dirname)
+            dirname(path); 
         return 1;
     }
     else
