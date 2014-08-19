@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <windows.h>
 
-int getExecPath_w(char *path, size_t len){
+int getExecPath_w(char *path, size_t len, int get_dirname){
 	if (GetModuleFileName(NULL, path, len) != 0) {
-        char *end = strrchr(path, '\\');
-        if (end != NULL)
-            *end = 0;
+		if (get_dirname){
+			char *end = strrchr(path, '\\');
+			if (end != NULL)
+				*end = 0;
+		}
         return 1;
     }
     else

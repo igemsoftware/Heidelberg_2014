@@ -4,4 +4,5 @@ res/*
 slim/
 libs.lib
 build/*
-*.build/*
+*.build/
+*.so
