@@ -5,16 +5,17 @@
 #include <errno.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <glib.h>
+#include "circ_modeller.h"
+//#include <glib.h>
 
 int getExecPath_l(char *path, size_t len, int get_dirname){
 	if (readlink("/proc/self/exe", path, len) != -1) {
         if(get_dirname)
             dirname(path); 
-        return 1;
+        return TRUE;
     }
     else
-    	return 0;
+    	return FALSE;
 }
 
 int createFailIfExists_l(char *file){
