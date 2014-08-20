@@ -23,7 +23,7 @@ function ExperimentsVM(dataContainer) {
 };
 
 ExperimentsVM.prototype.addExperiment = function () {
-	this.experiments.push(new ExperimentVM(this, { protocol: this.protocol }));
+	this.experiments.push(new ExperimentVM(this, { protocol: this.protocol.DBData }));
 };
 
 ExperimentsVM.prototype.removeExperiment = function (experiment) {

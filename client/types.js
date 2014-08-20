@@ -106,9 +106,7 @@ TypeVM.prototype.save = function () {
 							}
 						});
 
-						Meteor.call('updateType', self._id(), flat, function (error, result) {
-							console.log(error, result);
-						});
+						Meteor.call('updateType', self._id(), flat);
 						$('#mappingsModal').on('hidden.bs.modal', function () {
 							Router.go('viewType', { id: self._id() });
 						}).modal('hide');
@@ -117,9 +115,7 @@ TypeVM.prototype.save = function () {
 				});
 				$('#mappingsModal').modal();
 			} else {
-				Meteor.call('updateType', self._id(), flat, function (error, result) {
-					console.log(error, result);
-				});
+				Meteor.call('updateType', self._id(), flat);
 				Router.go('viewType', { id: self._id() });
 			}
 		} else {
