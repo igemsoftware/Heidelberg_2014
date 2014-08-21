@@ -26,10 +26,6 @@ void usage(char *prog_name){
 	printf("Usage:\n%s private_key output_file boinc_title1 file1 [boinc_title2 file2] ...\n", prog_name);
 }
 
-int generate_signature_b64(char *filename, char *signature){
-
-}
-
 
 int process_files(char **parameters, int param_count){
 	int i, filesize, bytes_written, siglen, success = 0;
@@ -50,6 +46,8 @@ int process_files(char **parameters, int param_count){
 
 		/* Open file and get size */
 		current_file = fopen(filename, "rb");
+		if(current_file == NULL)
+			{print_error("file_signing", "unable to open file", filename); goto err;}
 		fseek(current_file, 0L, SEEK_END);
 		filesize = ftell(current_file);
 		file_mem = (unsigned char *)OPENSSL_malloc(filesize);
@@ -59,7 +57,6 @@ int process_files(char **parameters, int param_count){
 
 		/* read file to memory */
 		bytes_written = fread(file_mem, 1, filesize, current_file);
-		fclose(current_file);
 
 		if(bytes_written != filesize){
 			if(ferror(current_file))
