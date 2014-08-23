@@ -80,25 +80,30 @@
 				<p> Juhuu! Es funktioniert ... </p>
 			</section>
 			<section>
-				<div class="left">
-					<div class="kasten">
-						<p>Linker Kasten</p>
+				<div class="rahmen">
+					<div class="kasten gross">
+						<p> Ueberschrift </p>
 					</div>
-					<div class="kasten">
-						<p class="kasten-title">Noch ein Kasten</p>
-						<p class="kasten-content">Sogar einer mit Titel! Und er enthaelt auch jede Menge Text um sehen zu koennen, ob der Blocksatz richtig funktioniert ...</p>
+					<div class="left">
+						<div class="kasten">
+							<p>Linker Kasten</p>
+						</div>
+						<div class="kasten">
+							<p class="kasten-title">Noch ein Kasten</p>
+							<p class="kasten-content">Sogar einer mit Titel! Und er enthaelt auch jede Menge Text um sehen zu koennen, ob der Blocksatz richtig funktioniert ...</p>
+						</div>
+						<div class="kasten">
+							<p>Und hier ein vierter Kasten.
+							<br /></br />lala </br /><br /></br /><br /><br /></br />
+							</p>
+						</div>
 					</div>
-					<div class="kasten">
-						<p>Und hier ein vierter Kasten.
-						<br /></br />lala </br /><br /></br /><br /><br /></br />
-						</p>
+					<div class="right">
+						<div class="kasten">
+							<p>Rechter Kasten</p>
+						</div>
+						<img class="bild" src="./images/iGEM_HD_2014_logo.png"></img>
 					</div>
-				</div>
-				<div class="right">
-					<div class="kasten">
-						<p>Rechter Kasten</p>
-					</div>
-					<img class="bild" src="./images/iGEM_HD_2014_logo.png"></img>
 				</div>
 			</section>
 			<section>
@@ -118,9 +123,9 @@
 			// Full list of configuration options available here:
 			// https://github.com/hakimel/reveal.js#configuration
 			Reveal.initialize({
-				controls: true,
-				progress: true,
-				slideNumber: true,
+				controls: false,
+				progress: false,
+				slideNumber: false,
 				history: false,
 				keyboard: true,
 				overview: false,

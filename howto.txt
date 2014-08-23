@@ -5,7 +5,10 @@ Structur:
 
 <section> Jede Slide wir von "section" umrahmt
 
-darin gibt es zwei Spalten
+jede section bekommt von mir nochmal ein <div class="rahmen"> um die positionierung zu vereinfachen.
+darein kann man dann entweder direkt einen Kasten über die ganze Breite setzen (Kasten wie unten) oder
+
+es gibt zwei Spalten
 
 <div class="left"> und <div class="right">
 
