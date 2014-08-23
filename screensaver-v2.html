@@ -19,6 +19,7 @@
 		<link rel="stylesheet" href="lib/css/zenburn.css">
 		<link rel="stylesheet" href="screensaver-v2.css">
 		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+        <script src="js/jquery-2.1.1.min.js"></script>
 		<script>
 			if( window.location.search.match( /print-pdf/gi ) ) {
 				var link = document.createElement( 'link' );
@@ -34,6 +35,7 @@
 		<![endif]-->
 		
 		<script src="lib/js/head.min.js"></script>
+        <script src="lib/js/d3.js"></script>
 		<script src="js/reveal.min.js"></script>
 	</head>
 
@@ -109,6 +111,8 @@
 		</div>
 
 		<div id="main-layout">
+        	<img id="gear-wheel" src="./images/gear-wheel.png"></img>
+        
 			<a href="http://2014.igem.org/Team:Heidelberg" id="implementedby"> Implemented by </a>
 			<img id="team-logo" src="./images/iGEM_HD_2014_logo.png"></img>
 		</div>
@@ -156,7 +160,64 @@
 					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
 				]
 			});
+            
+            console.log("Hallo");
+            /*d3.selectAll("rect")
+            	.transition()
+                .duration(2000)
+                .each(spin)
+                
+            function spin() {
+            	var elem = d3.select(this);
+                (function repeat (){
+                	elem = elem.transition()
+                    	.ease("linear")
+                    	.duration(2000)    
+                		.attrTween("transform", tween)
+            			.each("end", repeat);
+                 })();
+            }
+            function tween(d, i, a) {
+	      		return d3.interpolateString("rotate(0, 50, 50)", "rotate(360, 50, 50)");
+		    }*/
+           	
+            /* var rotation = function (){
+             $({deg: 0}).animate({deg: 360}, {
+        		duration: 2000,
+		        step: function(now) {
+        		    $("#gear-wheel").css({
+                		transform: 'rotate(' + now + 'deg)'
+		            });
+	         	// callback:  rotation()
+        	}
+    		});
+   				//$("#gear-wheel").rotate({
+				//      angle:0, 
+			    //  	animateTo:360, 
+      			//  callback: rotation,
+			    //  easing: function (x,t,b,c,d){ 
+			    //      return c*(t/d)+b;
+			    //  }
+			   //});
+			}
+			rotation();*/
+            $.fn.animateRotate = function(angle, duration, easing, complete) {
+   				 var args = $.speed(duration, easing, complete);
+  				 var step = args.step;
+   				 return this.each(function(i, e) {
+       			 args.step = function(now) {
+		            $.style(e, 'transform', 'rotate(' + now + 'deg)');
+        		    if (step) return step.apply(this, arguments);
+        		};
 
+		        $({deg: 0}).animate({deg: angle}, args);
+    		});
+			};
+          var contRot = function(){
+         		$("#gear-wheel").animateRotate(360, 5000, "linear", contRot); 
+          }
+			contRot();
+			
 		</script>
 
 	</body>
