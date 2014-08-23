@@ -1,3 +1,14 @@
+=Real software=
+
+
+===Preparative definitions===
+
+In the beginning of the program many things are defined by the user itself or they are predefined in the program.
+
+====List of Angles====
+
+There is a list of all angles, that are possible from the model. In the list for each possible pattern is defined what angle it produces, the variation of the angle and the angle's sequence. The angle patterns are made in a way, that there is always nearly the same length added in one direction. As different angles have different distances from the actual turning point, these are balanced with Alanines, that just go into the helix too. The distances are just estimated from the paper ''Conformational analysis of loop classes''. We assumed that the two helices and the angle lie on the same leve. Of course this is not completely right, but might be some good estimation.
+
 ===Generation of Linkeredges:===
 
 All the linkeredges are generated from the amount of possible angles, that we have evaluated before. This is done by just taking all the possible angles and make a displacement from the starting and endingpoint with length of the linkerlengths from before. If these are too many possibilities one could think about the more out-sorting approach of using the sort_out_by_angle function, that is not that accurate, and will sort out many linkers.
@@ -6,23 +17,71 @@ All the linkeredges are generated from the amount of possible angles, that we ha
 
 Normally there are flexible regions at the end and the beginning of a linker so that we don't have to look on the direction where the backbone is pointing to and we leave the protein some flexibility for moving. But this also gives us the possibility to use other connectors, such as just a rigid helix at the flexible ends and a linker with only one angle. All the other possibilities are too calcutlation consuming and not worth calculating.
 
+This should be done before the "normal" linkers are generated and sorted out, because if one wants to save calculation time and this generation gives some good results, all the rest can be spared.
 
-==One helix at flexible ends==
+====One helix at flexible ends====
 
 The only variability we have there is the length of the helix. But most likely we won't find any suitable linker, but if there is the possibility this one should be found. So the problem of calculation time is not a too big issue.
-So for all possible angles that were calculated before, we calculate starting and endingpoints with lengths of 1.5 flexible aa, 2 flexible aa until the length of the flexible end. Then all possible connections are tested, whether they are too close at the protein. This should be done quite accurately, so that none of these linkers is lost by error.
+So for all possible angles that were calculated before, we calculate starting and endingpoints with lengths of 1.5 flexible aa, 2 flexible aa until the length of the flexible end. Then all possible connections are tested, whether they are too close at the protein. This should be done quite accurately, so that none of these linkers is lost by error. Therefore another function for calculating the distance of the protein from the connection is used, that is more time-consuming but also more accurate.
 
-==Linker with one angle at flexible ends.==
+====Linker with one angle at flexible ends.====
 
-===Weighing function:===
+For the linkers with flexible ends and one angle are built rectangular triangles. The rectangular triangles are chosen, because a rectangle we will be able to build with the helical linkers.
+
+At first out of all possible linkerparts it is analyzed which triangles are possible to be built, by use of Pythagoras' Theorem.
+
+Then there are just all possible rectangular triangles constructed, that have the two edges of the hypothenuse on start and endpoint. For this purpose Thales' Theorem is used, as all the rectangles lie on a sphere of radius hypothenuses half. Then these rectangular triangles are analyzed, whether they can be built with our linkerparts, by comparing the angles with the array of possible triangles from Pythagoras' Theorem. This results in many rectangular triangles.
+
+These triangles are now all shiftet by each displacement of possible angles at the beginning. But as at the end there might be other angles possible, the endpoint of the triangles are produced separately in the flexible distance from the end. So at this point the triangles don't need to be rectangular anymore, but this might not be a problem at the moment. 
+
+After this step the connection from corner to the endpoints are analyzed, whether these still have the correct length. 
+
+Then the triangles paths are analyzed, whether they pass through the protein, if yes they are sorted out. For this it is first checked, whether the rectanglepoint is lying too near or too far from the protein, then the paths are analyzed.
+
+===Enhancement of Linkerlengths===
+
+For all the linkers it is calculated, if two points nearly are the same, then they are set exactly to the same values.
+
+*Flexible Ends:
+**Without any angle the linkers are analyzed, and then shortened or elongated. It depends whether it is nearer to one linkerpart or another. Then the points are checked to be in distance of the end. For the ones with angles the linkers are just sorted out, if they don't fit.
+
+*Rigid ends
+**The only problematic part can be the third rod, but even this length should not be lying too far away. The enhancement we're doing is we just move the third point to the second point, so that it fits in the pattern. Then it is checked whether the point is still in the right distance from the endpoint. If not the linker is discarded.
+
+===Weighting function:===
 
 all parts of the weighing function should be indipendent of amount of points in the protein and the size of the protein. In the end, one would like to have a weighing of the different parts (length, angles, ... ) that is valid for every protein. Therefore:
 -length is normed by distance from beginning to the end of the protein
 -unprefereable_places is indipendent of the amount of the places the user defines. But it is not weighed by anything else
 -distances is weighed by the minimum, so the path with the best distances on one connection produces 1. This is beacuse if the protein is of a shape, that the distance has to become really large, it shouldn't be bad for the paths. Best path produces always the same number.
--angles is indipendent of protein and if there is one angle less then it is also the best value. There is a seperate function, where the weighing of each angle can be defined.
+-angles is indipendent of protein and if there is one angle less then it is also the best value. There is a seperate function, where the weighting of each angle can be defined, the anglefunction.
 
 
+====Anglefunction====
+
+This function is generated out of normed gaussians. It takes all possible angles with deviations from the model part and then adds them so that the function becomes a sum of all these gaussians. Of course it still has to be inversed, so that favorable angles get the lowest values. And it doesn't need to be normed again, because the value of a certain angle should always be the same, no matter how many angles there are in total.
+The inversion is just done by subtracting the function of the maximum, so all the values are above 0. Because 0 is reserved for no angles, we have to think about how much worse another angle is, compared to no angle in this point. We set the difference to the same value as the difference between a really unlikely angle and the best angle, so we just add the maximum again.
+
+
+====Spare active sites====
+
+The user can define active sites, that should be ommitted by the paths. He has two possibilities to define them, just the aminoacids, that should be ommitted or he has also got the possibility to model some kind of substrate. The effects of the different sites can also be weighted.
+
+* Model a substrate:
+**The user sets in an active site and tells the program the diameter of the substrate that binds to this site. The software checks all the directions in which there is solvent accessibility to the active site and creates surface points of the substrate in these directions. The weighting of all the substrate points will be the same as of the active site. So the weightingvalue of every point is one over the amount of points of the value of the site. This is the same as for ranges. There are always 10 points created on the way (at 0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, and 1 times the diameter) to the maximum length, so that if the ligand is big, also the volume of it is taken into account. There are taken 10 paths, because like this even a protein of diameter 50 A is completely omitted.
+
+* Don't model a substrate: 
+**The user can either define ranges or define single aminoacids. Each can have a weighting for their own, the weighting is always with respect to the other weightings. If there is a range defined, the weighting is distributed over the whole range of the sequence.
+
+
+Then in the actual calculation at first all the weightings of all aminoacids are summed up and normed on one, so that the ommitting contribution to the whole weighting function is independent of the amount of to be spared aminoacids. Then the distances from the connections to each of the sites is calculated and taken 1 in coordinateunits over the (distance minus the minimal distance corrdinateunits) to the square. If it is less than 5 it is assigned infinity. This is done, because no linker should be closer than the diameter of the helix to these sites.
+In the end all values for one linker are summed up.
+
+===Clustering of Paths, translation to sequences===
+
+All the paths are now translated to sequences, this means that they are analyzed by the lengths of the rods and by their angles. If the lenght is within a certain range, a certain sequence is applied, the same is with the angles.
+
+After this the linkers with the same sequences can be clustered and the weighting function of all linkers within one cluster can be calculated as the medium of all weightingvalues.
 
 ===Evaluation of Linkers:===
 
@@ -31,4 +90,29 @@ For evaluation of valuability of proteins, there are two factors: G and B factor
 *B-factor is used to tell how flexible a part from Crystal structure is, this might be nice for us to see in the angles. It is a measured value from PDB generation. The higher B-factor is, the more flexible the part is. 
 
 *G-factor is a value, that tells you, whether a aminoacid is in it's natural conformation. There are programs, like gfac2pdb , that insert in the PDB's B-factor column the G-factor, see [http://www.ebi.ac.uk/thornton-srv/software/PROCHECK/manual/man6.html]. The higher the G-factor is, the worse the conformation is.
+
+=Analyse archdb=
+
+There is a database called [http://sbi.imim.es/archdb/db Archdb] where about 30 000 loop regions have been analysed and about 20 000 loops have been clustered in different classes. They tried to take nonhomologous proteins to omit redundancy. The paper explaining the database is '''arch_db_database''' In the database can be found information about:
+
+*loop_id, this is some unique name for the loop, constructed from pdb name, chain and residue
+*pdb, the pdb code of the protein where the loop was found.	
+*chain, in which part of the protein is the loop	
+*start: First position of the loop in the protein chain.
+*end: Last position of the loop in the protein chain.
+*type, which secondarystructures are linked by the loop region	
+*length, the length of the loop sequence in aminoacids
+*NtermLength, the length of the secondary structure in direction of N-terminus measured from the end of the loop structure in aminoacids
+*CtermLength, the length of the secondary structure in direction of C-terminus measured from the end of the loop structure in aminoacids	
+*distance, Distance of the ends of the secondary structures in Angström
+*theta, the angle between the vectors fitted into the secondary structures	
+*rho, some angle that is not interesting for us
+*delta, another angle, that is not interesting for us	
+*sequence, the sequence of the whole loop structure with seocondary structure	
+*secondary_structure, a coding of the secondary structure motifs of the same length of sequence with the DSSP codes: H = alpha helix, B = residue in isolated beta-bridge, E = extended strand, participates in beta ladder, G = 3-helix (3/10 helix), I = 5 helix (pi helix), T = hydrogen bonded turn, S = bend, - = no classification
+*exposition: Evaluation of the exposition of the loop
+*ramachandran: Consensus ramachandran of the class the loop has been classified to (can be none)	
+*classification: the classification the loop has been classified to in the archDB database
+
+This database is being parsed at first, so that all the data is in numpy arrays. These arrays are a fast possibility process the data.
 
