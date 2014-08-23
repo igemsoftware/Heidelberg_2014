@@ -93,6 +93,20 @@ margin: 0px; padding: 0px;
 	right: 15px;
 	width: 180px;
 }
+#gear-wheel-container{
+	position: fixed;
+	left: 10px;
+	top: 10px;
+	width: 400px
+	height: 400px;
+}
+	
+#gear-wheel {
+	x: 20px;
+	y: 20px;
+	width: 40px;
+	height: 40px;
+}
 #implementedby, #implementedby a, #implementedby a:visited {
 	position: fixed;
 	bottom: 43px;
