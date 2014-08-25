@@ -5,7 +5,7 @@
 import numpy as np
 import cPickle as pickle       #zum Zwischenspeichern vor Abstürzen, um Zeit zu sparen.
 import h5py                    #zum Zwischenspeichern der Ergebnisse in der Generation der neuen Punkte
-
+import sys                      #kann man vielleicht durch os erstetzen, wird nur für exit gebraucht
 #das kann vielleicht noch raus
 import os                      #spaßige Dinge mit dem Betriebssystem, z.B. ob ein File existiert
 
@@ -98,12 +98,6 @@ def angle_between_connections_array(StartArray, MiddleArray, EndArray):
 
         
    
-
-
-# In[3]:
-
-
-
 def distance_from_connection(Startarray, Endarray, Points):
     '''
 takes a connection from Startarray to Endarray nnd calculates the perpendicular distance of the points from the connection. 
@@ -156,25 +150,23 @@ Start or End can also be single points.
     return DistanceFromConnection, oneaxis, twoaxis
 
 
-# Lambdalysozym, wo die komplette Berechnung durchgelaufen ist, ohne flexible Enden, mit Abkürzung :"lambdalysozyme"
-# 
-# Lambdalysozym, wo nur die flexiblen Enden berechnet wurden, : "lambdalysozyme_0802"
-# 
-# DNMT1, ohne Abkürzung, alles durchgelaufen, ohne flex Enden: ""
 
-# In[4]:
+#read the instructions file
 
+
+f = open(instructions.txt, "r")
+
+line = f.readline()
+line = line.strip()
+pdbname, subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext, RAMofclient = f.split("," )
+
+f.close()
 #PDB geht von N zu C Terminus     
     
 
-#macht aus drei Arrays ein Array mit kleinen dreierarrays in einem großen A
+UserDefinedProjectName = projectname #for saving of the files, für DNMT1daten einfach "" machen
 
-
-#macht aus drei Arrays
-
-UserDefinedProjectName = "new_dnmt1_nothrombin" #for saving of the files, für DNMT1daten einfach "" machen
-
-f = open('proteine/dnmt13PT9.pdb', 'r')
+f = open(pdbname, 'r')
 #print pdbfile
 
 
@@ -200,6 +192,7 @@ for line in f:
         wholey.append(float(line[38:46]))
         wholez.append(float(line[46:54]))
         
+f.close()
 
 #aus allen Listen arrays machen
 wholeatom = np.array(wholeatom)
@@ -209,12 +202,14 @@ wholeasnr = np.array(wholeasnr)
 #731-1602 dnmt1
 #oder 650 - 1602
 
+differentsubunits = wholesubunit.unique()
+
 #get parts, that aren't wanted out of the PDB files
 
 #TODO hierüber nachdennken!!! was die Regionen sind, die gewählt werden
 
-UserChosenIgnoreRegions = None #default is none,being a LIST of tuples of (21, 832, 'A'), with subunit, and then interval including the ends
-IgnoreSubUnit = () #is a tupel with to be ignored subunits
+UserChosenIgnoreRegions = None #default is none, being a LIST of tuples of (21, 832, 'A'), with subunit, and then interval including the ends
+IgnoreSubUnit = differentsubunits[differentsubunits != subunitforwork] #is a tupel with to be ignored subunits
 IgnoreIndices = np.bool8(np.ones(np.size(wholeasnr)))
 
 #Ignoreindices True means the value is kept
@@ -225,7 +220,7 @@ if IgnoreSubUnit != None:
 
 if UserChosenIgnoreRegions != None:
     for RegionOnSubunit in UserChosenIgnoreRegions:
-        IgnoreIndices = IgnoreIndices & np.invert((wholeasnr < RegionOnSubunit[1]) & (wholeasnr > RegionOnSubunit[0]) &                                                     (wholesubunit == RegionOnSubunit[2]))
+        IgnoreIndices = IgnoreIndices & np.invert((wholeasnr < RegionOnSubunit[1]) & (wholeasnr > RegionOnSubunit[0]) &   (wholesubunit == RegionOnSubunit[2]))
 
 wholeatom = wholeatom[IgnoreIndices]
 wholeaminos = wholeaminos[IgnoreIndices]
@@ -245,32 +240,25 @@ anzahl = len(wholex)
 
 
 #let the user choose, what part should be circularized interests him.
-SubUnitChosen = "A"
-UserChosenStart = 731
-UserChosenEnd = 1602
+SubUnitChosen = subunitforwork
+UserChosenStart = None
+UserChosenEnd = None
+
+if UserChosenEnd == None:
+	UserChosenEnd =  np.max(wholeasnr[wholesubunit == SubUnitChosen])
+	
+if UserChosenStart == None:
+	UserChosenStart = np.min(wholeasnr[wholesubunit == SubUnitChosen])
 
 #non helical regions are called scars
-ScarsAtStartseq = "GGG"
+ScarsAtStartseq = "GG"
 ScarsAtStart = len(ScarsAtStartseq)
-ScarsAtEndseq = "DYKDDDDKLLETG"   #TODO richtige Sequenz!
+ScarsAtEndseq = "RGKCWE"   #TODO richtige Sequenz!
 ScarsAtEnd = len(ScarsAtEndseq)
 
 
 MissingAtStart = np.min(wholeasnr[wholesubunit == SubUnitChosen]) - UserChosenStart
 MissingAtEnd = UserChosenEnd - np.max(wholeasnr[wholesubunit == SubUnitChosen]) 
-
-if MissingAtStart > 0:
-    if MissingAtStart >= 5:
-        print "Your PDB File does not contain the beginning of the protein and there is missing that much, that even an estimation of the beginning would be really bad. Please find a better PDB file, or risk it"
-    else:
-        print "Your PDB File does not contain the beginning of the protein, but there are less than 5 Aminoacids missing, so the position of the beginning will be estimated. If there is a better PDB file, upload it"
-
-if MissingAtEnd > 0:
-    if MissingAtEnd >= 5:
-        print "Your PDB File does not contain the end of the protein and there is missing that much, that even an estimation of the beginning would be really bad. Please find a better PDB file, or risk it"
-    else:
-        print "Your PDB File does not contain the end of the protein, but there are less than 5 Aminoacids missing, so the position of the beginning will be estimated. If there is a better PDB file, upload it"
-
 
 PartToCircularizeBool = (((wholeasnr >= UserChosenStart) & (wholesubunit == SubUnitChosen)) & (wholeasnr <= UserChosenEnd)) #hier kann man einstellen, welche AS behalten werden sollen.
 
@@ -299,9 +287,12 @@ endpunkt = np.ravel(pkte[(InterestingAANr == InterestingAANr[-1]) & (Interesting
 AmountOfAtomsFirstAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[0]])  #anzahl an Atomen in der erstenas
 AmountOfAtomsLastAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[-1]])  #amount of atoms in last AS
 
-pickle.dump((pkte, InterestingAminos, InterestingAtom, InterestingAANr),            open("files/savepoints{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+#evtlraus
 
+pickle.dump((pkte, InterestingAminos, InterestingAtom, InterestingAANr),
+             open("files/savepoints{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
+#TODO Winkel einfügen
 
 #this dictionary contains the medium, the standrad-deviation and the sequence of all the angles
 angletosequence = [(45., 25., "AASGAA"),(79., 29., "AALAA"), (84., 11., "AAWAA"), (85., 19., "ASNA"),
@@ -315,20 +306,6 @@ for i in range(len(angletosequence)-1):
 angleseparators.append(180.)
 
 
-# In[6]:
-
-#das gedrehte darstellen, TODO muss noch auf pkte angepasst werden
-
-phi = np.pi / 2 #immer in vielfachen von pi wählen
-
-xgedr = dreheny(phi, wholex, wholey, wholez)[0]
-ygedr = dreheny(phi, wholex, wholey, wholez)[1]
-zgedr = dreheny(phi, wholex, wholey, wholez)[2]
-
-
-
-
-# In[7]:
 
 #Längenkalibration, wir wissen, dass der Abstand von c-c 154 pm ist.
 #Wir machen das am Glycin, weil das am einfachsten für uns ist.
@@ -350,8 +327,6 @@ except:
     kalibfehl = 0.
     print "There were no Glycines in the protein, a calibration was estimated as :" + str(kalib) + "+-" +str (kalibfehl) +" pm"
 
-
-# In[8]:
 
 #globale Variablen:
 
@@ -378,9 +353,8 @@ FLEXIBLEATENDKO = (MissingAtEnd + ScarsAtEnd) * LengthOfFlexibleAA
 
 abstandanfend = abstand(anfangspunkt, endpunkt)
 kantenlaenge = 4 * minabstand
-#print kantenlaenge
 wuerfeldiaghalbe = np.sqrt(3)/2 * kantenlaenge
-#print wuerfeldiaghalbe
+
 
 anzahlwuerfel = int(abstandanfend / wuerfeldiaghalbe) #wir setzen einen mehr ein, als wir müssten
 if anzahlwuerfel == 0:
@@ -398,9 +372,7 @@ elif anzahlwuerfel == 1:
     
 else:
     wuerfelabstand = (abstandanfend - (2* wuerfeldiaghalbe))/(anzahlwuerfel - 1)
-    
-    #print anzahlwuerfel
-    
+
     #nun die Verbindungsgerade zwischen den beiden Punkten. v = m * t + 0 mit normiertem m und t (Abstand*parameter)
     wuerfelmitten = []
     for i in range(0, anzahlwuerfel):
@@ -408,8 +380,6 @@ else:
         
     wuerfelmitten = np.array(wuerfelmitten)
     
-#print wuerfelmitten
-
 
 #minimale Abstand, den etwas haben muss, von Würfelmittelpunkt, ab dem wir sagen, dass was zu nah ist, das ist auch 
 #der Fehler den wir haben können.
@@ -420,15 +390,16 @@ derallernaechstepunkt = None
 #das Einschränken der Werte auf die Würfelinnereien
 if np.size(wuerfelmitten) == 3:
     mitte = wuerfelmitten
-    keep = ((PointsOfAllSubunits[:,0] > (mitte[0] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,0] < (mitte[0] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,1] > (mitte[1] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] < (mitte[1] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,2] > (mitte[2] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,2] < (mitte[2] + (kantenlaenge / 2))))   
-
+    keep = ((PointsOfAllSubunits[:,0] > (mitte[0] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,0] < (mitte[0] + (kantenlaenge / 2))) &
+            (PointsOfAllSubunits[:,1] > (mitte[1] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] < (mitte[1] + (kantenlaenge / 2))) & 
+            (PointsOfAllSubunits[:,2] > (mitte[2] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,2] < (mitte[2] + (kantenlaenge / 2))))
+            
     wuerfelpunkte = PointsOfAllSubunits[keep]
-    #print wuerfelpunkte
-    #print abstandarray(mitte, wuerfelpunkte)
+
     mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
-    #print mintemp
+
     if  mintemp < minabstandcalc:
-        print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "                 + str( mintemp * kalib) + " pm"
+        print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "  + str( mintemp * kalib) + " pm"
 
     else:
         if derallernaechstepunkt == None:
@@ -437,11 +408,11 @@ if np.size(wuerfelmitten) == 3:
             derallernaechstepunkt = mintemp
 
         else:
-            print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) +                   " pm entfernt ist."
+            print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) +  " pm entfernt ist."
 else:
 
     for mitte in wuerfelmitten:
-        keep = ((PointsOfAllSubunits[:,0] > (mitte[0] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,0] < (mitte[0] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,1] > (mitte[1] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] < (mitte[1] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,2] > (mitte[2] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,2] < (mitte[2] + (kantenlaenge / 2))))   
+        keep = ((PointsOfAllSubunits[:,0] > (mitte[0] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,0] < (mitte[0] + (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] > (mitte[1] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] < (mitte[1] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,2] > (mitte[2] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,2] < (mitte[2] + (kantenlaenge / 2))))   
 
         wuerfelpunkte = PointsOfAllSubunits[keep]
         #print wuerfelpunkte
@@ -449,7 +420,7 @@ else:
         mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
         #print mintemp
         if  mintemp < minabstandcalc:
-            print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "                     + str( mintemp * kalib) + " pm"
+            print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "  + str( mintemp * kalib) + " pm"
             break
 
         else:
@@ -459,20 +430,11 @@ else:
                 derallernaechstepunkt = mintemp
 
     else:
-        print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) +               " pm entfernt ist."
+        print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) + " pm entfernt ist."
     
     
-#FIXME, der Control Flow... Wenn es vorher feststellt, dass die Enden sehr nah beieinander sind, geht es dennoch durch das ganze 
-#untere wieder durch... Mal schauen, was sich da machen lässt.
-
 
 # Ob eine Region außen ist. Dafür werden von dem Punkt Strahlen in alle Richtungen in 5° Schritten gemacht und diese dann in eine Liste geschrieben, welche Winkel frei sind.
-
-# In[10]:
-
-#Test, ob die Enden auch außensind
-#Abstand zwischen Anfang und allen anderen Punkten in einem Array
-
 
 
 def punktebeigerade(minabstand, pkte, gerade, aufpunkt, laenge):
@@ -495,7 +457,7 @@ gibt True zurück, wenn kein Punkt in der Nähe der Geraden ist.
         
     wuerfelmitten = np.array(wuerfelmitten)
         
-    #print wuerfelmitten
+
     
     
     #minimale Abstand, den etwas haben muss, von Würfelmittelpunkt, ab dem wir sagen, dass was zu nah ist
@@ -504,7 +466,9 @@ gibt True zurück, wenn kein Punkt in der Nähe der Geraden ist.
     
     #das Einschränken der Werte auf die Würfelinnereien
     for mitte in wuerfelmitten:
-        keep = ((pkte[:,0] > (mitte[0] - (kantenlaenge / 2))) & (pkte[:,0] < (mitte[0] + (kantenlaenge / 2))) &                 (pkte[:,1] > (mitte[1] - (kantenlaenge / 2))) & (pkte[:,1] < (mitte[1] + (kantenlaenge / 2))) &                 (pkte[:,2] > (mitte[2] - (kantenlaenge / 2))) & (pkte[:,2] < (mitte[2] + (kantenlaenge / 2))))   
+        keep = ((pkte[:,0] > (mitte[0] - (kantenlaenge / 2))) & (pkte[:,0] < (mitte[0] + (kantenlaenge / 2))) & 
+               (pkte[:,1] > (mitte[1] - (kantenlaenge / 2))) & (pkte[:,1] < (mitte[1] + (kantenlaenge / 2))) & 
+               (pkte[:,2] > (mitte[2] - (kantenlaenge / 2))) & (pkte[:,2] < (mitte[2] + (kantenlaenge / 2))))   
         
         
         wuerfelpunkte = pkte[keep]
@@ -535,10 +499,6 @@ def test_accessible_angles(winkelarray, length, anfangspunkt, proteinpoints, ger
    
 
 
-# In[11]:
-
-
-
 #das sind nun 2592 Berechnungen...
 testwinkel = np.mgrid[0:180:5, 0:360:5] * np.pi/180 #Endwinkel nicht enthalten, null mit drinnen, das sind ja auch nur 70 Rechn extra
 winkelarray = np.reshape(np.ravel(testwinkel), (2592,2), 'F')    
@@ -564,7 +524,7 @@ moeglichewinkelanfang = winkelarray[moeglichewinkelanfangbool]
 moeglichewinkelende = winkelarray[moeglichewinkelendebool]
 if (np.size(moeglichewinkelanfangbool) == 0) | (np.size(moeglichewinkelendebool) == 0):
    #TODO, vielleicht noch mit flexiblem Linker verbindbar? Einfach der Test, ob es an der Oberfläche ist.
-   print "Ein Ende liegt leider innen, nicht zirkularisierbar!"
+   sys.exit("One end is covered in the protein, it is not circularizable")
 
 
 # Wir versuchen nun wirklich einen Linker zu finden. Dafür alle möglichen Linker, die zum Ziel führen erzeugen lassen. So ein Linker ist eindeutig bestimmt, durch die Punkte, durch die er durchgeht, das heißt man muss nur die Punkte abspeichern lassen. Die kann man dann auswerten im Endeffekt und so den besten Linker rausfinden.
@@ -586,9 +546,6 @@ if (np.size(moeglichewinkelanfangbool) == 0) | (np.size(moeglichewinkelendebool)
 # 
 # Mit dieser Methode sortieren wir um ungünstigsten Fall (kürzester Linker, schlechtester Punkt vom Protein, also ganz in der Mitte) noch Punkte aus, bei denen ein Punkt in 2d Entfernung vom Linker ist. Das ist ok, dafür dass das so eine einfache Methode ist.
 
-##### TODO: Irgendwie mit hineinnehmen, ob das Protein groß ist (verschieden lange Linker nehmen), ob man viele Winkel gleich am Anfang angreifen kann (eine Iteration vllt. herausnehmen) und was man so machen kann, um Rechenzeit zu sparen.
-
-# In[12]:
 
 #displacement ist wirklich die Verschiebung im 3d raum, deshalb müssen die Längen dreimal draufgemacht werden.
 def make_displacements(lengtharray, displacementarray):
@@ -602,9 +559,6 @@ def make_displacements(lengtharray, displacementarray):
     return disptiled * lengthshaped
     
     
-
-
-# In[13]:
 
 def sort_out_by_protein(startingarray, endingarray, proteinpoints, mindist, beforearray = None):
     '''
@@ -634,7 +588,7 @@ def sort_out_by_protein(startingarray, endingarray, proteinpoints, mindist, befo
     endprotlength = np.reshape(endprotlength, (oneaxis, twoaxis), "C")
     
     #make the slicingarray, True means sort out
-    connectpointbool = ((startprotlength < startendlength) & (endprotlength < startendlength) &     ((startprotlength + endprotlength) < (np.sqrt(np.square(startendlength)+mindist**2)+mindist)))
+    connectpointbool = ((startprotlength < startendlength) & (endprotlength < startendlength) & ((startprotlength + endprotlength) < (np.sqrt(np.square(startendlength)+mindist**2)+mindist)))
     connectpointbool = np.invert(connectpointbool.any(axis = 1) )  
     
     
@@ -644,12 +598,10 @@ def sort_out_by_protein(startingarray, endingarray, proteinpoints, mindist, befo
         else:
             return [np.float16(startingarray[connectpointbool]), np.float16(endingarray[connectpointbool])]
     else:
-        return (np.float16(beforearray[connectpointbool]), np.float16(startingarray[connectpointbool]),                np.float16(endingarray[connectpointbool]))
+        return (np.float16(beforearray[connectpointbool]), np.float16(startingarray[connectpointbool]), np.float16(endingarray[connectpointbool]))
 
 
 # Wir fangen sowohl vorne als auch hinten an, mit allen Winkeln, die möglich sind und allen Längen, die möglich sind. Wir bekommen dann Arrays von den ersten Punkten und den letzten Punkten nach dem Protein.
-
-# In[14]:
 
 def naechstepunkte(anfangsarray, verschiebungsarray):
     '''
@@ -678,8 +630,6 @@ def aussortierennachpunken(punktearray, proteinpunkte, minabstand, maxabstand):
     
 
 
-# In[68]:
-
 def gaussian_normed(x, sig, mu):
     return 1/(sig*np.sqrt(2*np.pi)) * np.exp(-0.5 * ((x-float(mu))/sig) ** 2)
 
@@ -706,7 +656,7 @@ def angle_function(StartingArray, MiddleArray, EndingArray):
     vecttemp1 = vect1[tocalculate]
     vecttemp2 = vect2[tocalculate]
     catchrounding = skalar_product(vecttemp1, vecttemp2)/(vectabsar(vecttemp1)*vectabsar(vecttemp2))
-    #get rounding arrors
+    #get rounding errors
     catchrounding[catchrounding > 1] = 1
     catchrounding[catchrounding < -1] = -1
     angles = np.arccos(catchrounding)
@@ -824,7 +774,7 @@ def distance_from_surface(beforearray, testarray, ProteinPoints, Afterpoint = No
     return Distancesret
 
 
-def weighing_function_rigids(StartPoint, FirstArray, SecondArray, ThirdArray, EndPoint,                      ProteinPoints, AminoacidNumberArray, ToBeWeighedAA, WeighingofAA = None, substratelist = None):
+def weighing_function_rigids(StartPoint, FirstArray, SecondArray, ThirdArray, EndPoint, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA, WeighingofAA = None, substratelist = None):
     
     LinkerLength = abstandpktzuarray(StartPoint, FirstArray) + abstandarrays(FirstArray, SecondArray)     + abstandarrays(SecondArray, ThirdArray) + abstandpktzuarray(EndPoint, ThirdArray) 
     
@@ -832,14 +782,14 @@ def weighing_function_rigids(StartPoint, FirstArray, SecondArray, ThirdArray, En
     
     #catch where there are no new points in the SecondArray
     SecondAngles = angle_function(FirstArray, SecondArray, ThirdArray)
-    SecondAngles[SecondAngles == 0] = angle_function(StartPoint, SecondArray[SecondAngles == 0],                                                     ThirdArray[SecondAngles == 0])
+    SecondAngles[SecondAngles == 0] = angle_function(StartPoint, SecondArray[SecondAngles == 0], ThirdArray[SecondAngles == 0])
     
     Angles = angle_function(StartPoint, FirstArray, SecondArray) + SecondAngles +     angle_function(SecondArray, ThirdArray, EndPoint)
     
     if ToBeWeighedAA == None:
         SiteInfluenceNormed = np.zeros(np.size(Angles))
     else:
-        SiteInfluenceNormed = unpreferable_places([StartPoint], FirstArray,                                                  ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
+        SiteInfluenceNormed = unpreferable_places([StartPoint], FirstArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                                                   WeighingofAA, substratelist) + \
         unpreferable_places(FirstArray, SecondArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                             WeighingofAA, substratelist) + \
@@ -858,7 +808,7 @@ def weighing_function_rigids(StartPoint, FirstArray, SecondArray, ThirdArray, En
             SiteInfluenceNormed, DistancesFromProtein)
 
 
-def weighing_function_flex(StartPoint, FirstArray, SecondArray, ThirdArray, EndPoint,                      ProteinPoints, AminoacidNumberArray, ToBeWeighedAA, WeighingofAA = None, substratelist = None):
+def weighing_function_flex(StartPoint, FirstArray, SecondArray, ThirdArray, EndPoint, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA, WeighingofAA = None, substratelist = None):
     
     LinkerLength = abstandpktzuarray(StartPoint, FirstArray) + abstandarrays(FirstArray, SecondArray)     + abstandarrays(SecondArray, ThirdArray) + abstandpktzuarray(EndPoint, ThirdArray) 
     
@@ -915,13 +865,12 @@ If nothing should be weighted, insert ""
         return np.array(ShouldBeWeighed), np.array(Weighingarray), substratelist
 
 
-# In[15]:
 
 #TODO die Länge genau bestimmen
 LengthOfAngle = 450 #in pm
 LENGTHOFANGLEKO = LengthOfAngle / kalib
 #hier muss man eintragen, welche Helix-linkerlängen in AS möglich sind.
-linkerdatenbank = np.array(["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK", "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKA",                   "AEAAAKEAAAKEAAAKEAAAKEAAAKA"])
+linkerdatenbank = np.array(["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK", "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKEAAAKA"])
 linkerlaengenAS = []
 
 for i in range(len(linkerdatenbank)):
@@ -949,8 +898,6 @@ maxlinkerKO = maxlinkerAS * 150/kalib
 anzahleckenmax = maxlinkerKO / np.max(linkerlaengenKO)
 anzahleckenmin = abstandanfend / np.min(linkerlaengenKO)
 
-
-# In[16]:
 
 
 def sort_out_by_angle (startingarray, middlearray, endingarray, angletosequence):
@@ -997,7 +944,6 @@ def sort_out_by_angle (startingarray, middlearray, endingarray, angletosequence)
             return startingarray, middlearray, endingarray
 
 
-# In[17]:
 
 def make_small_generator(PointArray, repetition, RAM, ProteinArray = None):
     '''
@@ -1023,8 +969,6 @@ def make_small_generator(PointArray, repetition, RAM, ProteinArray = None):
 
 
 
-# In[18]:
-
 #wie genau müssen sich die Stücke treffen wird durch hitgenauig bestimmt, es ist sin(5°) * maximale linkerlänge
 #+ einen Helixanteil
 #~500s
@@ -1044,8 +988,6 @@ def sort_out_by_distance(startingpoints, endingpoints, firstpoints, distance, va
     firsttemp = np.float16(np.repeat(firstpoints, np.size(endingpoints, axis=0), axis =0))
     return [firsttemp[keep], starttemp[keep], endtemp[keep]]
 
-
-# In[19]:
 
 def sort_out_by_length (comefrompoints, gotopoints, linkerlaengen):
     '''
@@ -1071,8 +1013,6 @@ def sort_out_by_length (comefrompoints, gotopoints, linkerlaengen):
 
 
 ##### Gestartet am 9.8. um 15:15 Uhr, 15:55 Uhr bei den Dreieckigen Linkern Versuch eines kompletten Durchlaufs, dann dreistunden für die dreieckigen Linker  Linkerohneeckeflex: 11000 erzeugt, bereits erstmal aussortiert. Linkermiteckeflex:  insgesamt 35000 flexible (also 24000 hinzugekommen)  erstepunkte 2200 erzeugt,  drittepunkte werden 850 000 erzeugt
-
-# In[74]:
 
 def length_to_sequence(lengtharray, linkerdatenbank, linkerlaengen):
     #prepare for adding strings always
@@ -1167,13 +1107,11 @@ def translate_paths_to_sequences(startpoint, firstflex, secondflex, thirdflex, f
     if (weightrig != None) | (weightflex != None):
         return sequence , retweight,    np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),    np.concatenate((thirdflex, thirdrig), axis = 0)
     else:
-        print "There were absolutely no linkers found."
+        sys.exit("There were absolutely no linkers found, that could be translated to sequences")
         return None, None, None, None, None
 
 
-#### Ab hier kann man nach oben starten, wenn es einen Fehler gab.
 
-# In[20]:
 
 #wir machen Arrays aus den Verschiebungen, für alle drei auf einmal, alle normiert
 startdisp = np.array([[0,0,0]])
@@ -1193,8 +1131,6 @@ for winkel in winkelarray:
 
 # We insert new possible linkers, these are either straight connections between the ends with flexible parts or with maximum one angle in the linker. The point is, that here the flexible ends are estimated better. 
 
-# In[21]:
-
 #without any edge, 
 #+1 because of range
 
@@ -1208,252 +1144,255 @@ if (ScarsAtEnd + MissingAtEnd) > 3:
 else:
     FLEXATEND = np.append(np.arange(2, (ScarsAtEnd + MissingAtEnd+1)), 1.5 ) * LengthOfFlexibleAA
 
-secondpointsflexible = firstpointsflexible = np.float16(make_displacements(FLEXATSTART, startdisp) + anfangspunkt)
-thirdpointsflexible = np.float16(make_displacements(FLEXATEND, enddisp) + endpunkt)
 
-amountofthirdpoints = np.size(thirdpointsflexible, axis = 0)
-amountofsecondpoints = np.size(secondpointsflexible, axis = 0)
+if functionnumber == "1":
 
-#reduce the amount of points in the protein, that should be checked, as a cylinder around start -> end
-heretousepoints = pkte[np.ravel(distance_from_connection([anfangspunkt], [endpunkt], pkte)[0] <                        (minabstand + np.max(np.concatenate((FLEXATSTART, FLEXATEND)))))]
+    secondpointsflexible = firstpointsflexible = np.float16(make_displacements(FLEXATSTART, startdisp) + anfangspunkt)
+    thirdpointsflexible = np.float16(make_displacements(FLEXATEND, enddisp) + endpunkt)
+
+    amountofthirdpoints = np.size(thirdpointsflexible, axis = 0)
+    amountofsecondpoints = np.size(secondpointsflexible, axis = 0)
+
+    #reduce the amount of points in the protein, that should be checked, as a cylinder around start -> end
+    heretousepoints = pkte[np.ravel(distance_from_connection([anfangspunkt], [endpunkt], pkte)[0] <                        (minabstand + np.max(np.concatenate((FLEXATSTART, FLEXATEND)))))]
 
 
-MakeSmall = make_small_generator(np.size(secondpointsflexible) * np.size(thirdpointsflexible),
-                                 1.5 , 6 , ProteinArray = heretousepoints)
+    MakeSmall = make_small_generator(np.size(secondpointsflexible) * np.size(thirdpointsflexible),
+                                     1.5 , RAMofclient , ProteinArray = heretousepoints)
 
-teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
+    teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
 
-for i in range(0,(MakeSmall)):
+    for i in range(0,(MakeSmall)):
 
-    temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[i*teiler:(i+1)*teiler], thirdpointsflexible,
-                                firstpointsflexible[i*teiler:(i+1)*teiler], abstandanfend, 300 / kalib) 
-    #300 ist etwa die Hälfte des Unterschieds zwischen zwei Linkerstücken
-    
-    keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
-    
-    temp1 = temp2 = temp2[keep]
-    temp3 = temp3[keep]
-    
-    if i == 0:
-        firstpointsflexibletemp, secondpointsflexibletemp, thirdpointsflexibletemp = temp1, temp2, temp3
+        temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[i*teiler:(i+1)*teiler], thirdpointsflexible,
+                                    firstpointsflexible[i*teiler:(i+1)*teiler], abstandanfend, 300 / kalib) 
+        #300 ist etwa die Hälfte des Unterschieds zwischen zwei Linkerstücken
+        
+        keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
+        
+        temp1 = temp2 = temp2[keep]
+        temp3 = temp3[keep]
+        
+        if i == 0:
+            firstpointsflexibletemp, secondpointsflexibletemp, thirdpointsflexibletemp = temp1, temp2, temp3
+        else:
+            firstpointsflexibletemp = np.concatenate((firstpointsflexibletemp, temp1), axis =0)
+            secondpointsflexibletemp = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
+            thirdpointsflexibletemp = np.concatenate((thirdpointsflexibletemp, temp3), axis =0)
+
+    if (i+1)*teiler < np.size(secondpointsflexible, axis=0):
+        temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[(i+1)*teiler:], thirdpointsflexible,
+                                    firstpointsflexible[(i+1)*teiler:], abstandanfend, 300 / kalib)
+
+        keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
+
+        temp1 = temp2 = temp2[keep]
+        temp3 = temp3[keep]
+
+        firstpointsflexible  = np.concatenate((firstpointsflexibletemp,  temp1), axis =0)
+        secondpointsflexible = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
+        thirdpointsflexible  = np.concatenate((thirdpointsflexibletemp,  temp3), axis =0)
     else:
-        firstpointsflexibletemp = np.concatenate((firstpointsflexibletemp, temp1), axis =0)
-        secondpointsflexibletemp = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
-        thirdpointsflexibletemp = np.concatenate((thirdpointsflexibletemp, temp3), axis =0)
-
-if (i+1)*teiler < np.size(secondpointsflexible, axis=0):
-    temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[(i+1)*teiler:], thirdpointsflexible,
-                                firstpointsflexible[(i+1)*teiler:], abstandanfend, 300 / kalib)
-
-    keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
-
-    temp1 = temp2 = temp2[keep]
-    temp3 = temp3[keep]
-
-    firstpointsflexible  = np.concatenate((firstpointsflexibletemp,  temp1), axis =0)
-    secondpointsflexible = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
-    thirdpointsflexible  = np.concatenate((thirdpointsflexibletemp,  temp3), axis =0)
-else:
-    firstpointsflexible  = firstpointsflexibletemp
-    secondpointsflexible = secondpointsflexibletemp
-    thirdpointsflexible  = thirdpointsflexibletemp
-
-
-# In[22]:
-
-np.shape(firstpointsflexible)
-
-
-# now it should be tried to link it with one edge in the linker.
-
-# In[23]:
-
-heretousepoints = pkte[abstandpktzuarray( (anfangspunkt + endpunkt) / 2., pkte) < (abstandanfend / 2. + 
-                                                                                   max(FLEXIBLEATSTARTKO, FLEXIBLEATENDKO))]
-#at about 3h running
-#calculate all the lengths that can produce the distance between beginning and end in an rectangular triangle
-linkertriangle = linkerlaengenKO[(linkerlaengenKO - LENGTHOFANGLEKO) < abstandanfend] - LENGTHOFANGLEKO
-linkertriangleone = np.repeat(linkertriangle, np.size(linkertriangle, axis = 0))
-linkertriangletwo = np.tile(linkertriangle, np.size(linkertriangle, axis = 0))
-
-linkertrianglehypoth = np.sqrt(linkertriangleone ** 2 + linkertriangletwo ** 2)
-
-keeptriangles = ((linkertrianglehypoth > (abstandanfend - FLEXIBLEATENDKO - FLEXIBLEATSTARTKO)) & 
-                 (linkertrianglehypoth < (abstandanfend + FLEXIBLEATENDKO + FLEXIBLEATSTARTKO)))
-
-linkertriangleone = linkertriangleone[keeptriangles]
-linkertriangletwo = linkertriangletwo[keeptriangles]
-
-triangleangles = np.around(np.arctan(linkertriangletwo / linkertriangleone), decimals=2)
-#now we produce all the possible points, that lie on a sphere
-
-displacements = dispnorm * abstandanfend / 2
-
-allpointsfortriangles =  (anfangspunkt + endpunkt) / 2. + displacements
-amountoftriangles = np.size(allpointsfortriangles, axis = 0)
-
-anglesintriangle = angle_between_connections_array(np.repeat([endpunkt], amountoftriangles, axis = 0),
-                                                   np.repeat([anfangspunkt], amountoftriangles, axis = 0),
-                                                   allpointsfortriangles)
-anglesintriangle = np.around(anglesintriangle, decimals=2)
-
-
-allpointsfortriangles = allpointsfortriangles[np.in1d(anglesintriangle, triangleangles)]
-#450 unique points
-
-#get the displacement angles
-  
-
-dispnormtribeg = np.array([0,0,0])
-for angle in moeglichewinkelanfang:
-    temp = drehenxy(angle[0], angle[1], np.array([0,0,1]))
-    dispnormtribeg = np.append(dispnorm, [temp], axis=0)
-    
-dispnormtriend = np.array([0,0,0])
-for angle in moeglichewinkelende:
-    temp = drehenxy(angle[0], angle[1], np.array([0,0,1]))
-    dispnormtriend = np.append(dispnorm, [temp], axis=0)
+        firstpointsflexible  = firstpointsflexibletemp
+        secondpointsflexible = secondpointsflexibletemp
+        thirdpointsflexible  = thirdpointsflexibletemp
+        
+    erstepunkte = None
+    zweitepunkte = None
+    drittepunkte = None
     
 
 
-triangleshiftsbeg = np.float16(make_displacements(FLEXATSTART, dispnormtribeg))
 
 
-amountoftriangleshiftsbeg = np.size(triangleshiftsbeg, axis = 0)
-triangleshiftsbeg = np.repeat(triangleshiftsbeg, np.size(allpointsfortriangles, axis = 0), axis = 0)
-allpointsfortriangles = np.tile(allpointsfortriangles, (amountoftriangleshiftsbeg, 1))
-
-firstpointstriangle  = np.float16(triangleshiftsbeg + anfangspunkt)
-secondpointstriangle = np.float16(triangleshiftsbeg + allpointsfortriangles)
-
-print np.shape(firstpointstriangle)
-
-keep = sort_out_by_length(firstpointstriangle, secondpointstriangle, linkertriangle)
-
-firstpointstriangle = firstpointstriangle[keep]
-secondpointstriangle = secondpointstriangle[keep]
+elif functionnumber == "2":
 
 
+    heretousepoints = pkte[abstandpktzuarray( (anfangspunkt + endpunkt) / 2., pkte) < (abstandanfend / 2. + 
+                                                                                       max(FLEXIBLEATSTARTKO, FLEXIBLEATENDKO))]
+    #at about 3h running
+    #calculate all the lengths that can produce the distance between beginning and end in an rectangular triangle
+    linkertriangle = linkerlaengenKO[(linkerlaengenKO - LENGTHOFANGLEKO) < abstandanfend] - LENGTHOFANGLEKO
+    linkertriangleone = np.repeat(linkertriangle, np.size(linkertriangle, axis = 0))
+    linkertriangletwo = np.tile(linkertriangle, np.size(linkertriangle, axis = 0))
+
+    linkertrianglehypoth = np.sqrt(linkertriangleone ** 2 + linkertriangletwo ** 2)
+
+    keeptriangles = ((linkertrianglehypoth > (abstandanfend - FLEXIBLEATENDKO - FLEXIBLEATSTARTKO)) & 
+                     (linkertrianglehypoth < (abstandanfend + FLEXIBLEATENDKO + FLEXIBLEATSTARTKO)))
+
+    linkertriangleone = linkertriangleone[keeptriangles]
+    linkertriangletwo = linkertriangletwo[keeptriangles]
+
+    triangleangles = np.around(np.arctan(linkertriangletwo / linkertriangleone), decimals=2)
+    #now we produce all the possible points, that lie on a sphere
+
+    displacements = dispnorm * abstandanfend / 2
+
+    allpointsfortriangles =  (anfangspunkt + endpunkt) / 2. + displacements
+    amountoftriangles = np.size(allpointsfortriangles, axis = 0)
+
+    anglesintriangle = angle_between_connections_array(np.repeat([endpunkt], amountoftriangles, axis = 0),
+                                                       np.repeat([anfangspunkt], amountoftriangles, axis = 0),
+                                                       allpointsfortriangles)
+    anglesintriangle = np.around(anglesintriangle, decimals=2)
 
 
-MakeSmall = make_small_generator(secondpointstriangle, 12, 6, ProteinArray = heretousepoints)
+    allpointsfortriangles = allpointsfortriangles[np.in1d(anglesintriangle, triangleangles)]
+    #450 unique points
 
-teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
+    #get the displacement angles
+      
 
-#about 250s per MakeSmall run
-
-for i in range(0, (MakeSmall +1)):
-    if i == MakeSmall:
-        temp1 = firstpointstriangle[i * teiler:]
-        temp2 = secondpointstriangle[i * teiler:]
-    else:
-        temp1 = firstpointstriangle[i*teiler:(i+1)*teiler]
-        temp2 = secondpointstriangle[i*teiler:(i+1)*teiler]
-    #at first sort all connections out, of which the anglepoint is too near, or too far away from the protein.
-
-    keep = aussortierennachpunken(temp2, heretousepoints, minabstand, maxabstand)
-    
-    temp1 = temp1[keep]    
-    temp2 = temp2[keep]
-    
-    #then sort out, if the connection is too near at the protein
-    keep = (distance_from_connection(temp1, temp2, heretousepoints)[0] >= minabstand).all(axis = 1)
-    
-    temp1 = temp1[keep]    
-    temp2 = temp2[keep]
-    
-    if i == 0:
-        firstpointstritemp, secondpointstritemp = temp1, temp2
-    else:
-        firstpointstritemp = np.concatenate((firstpointstritemp, temp1), axis =0)
-        secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
-
-    
-firstpointstriangle = firstpointstritemp
-secondpointstriangle = secondpointstritemp
-
-print np.shape(firstpointstriangle)
+    dispnormtribeg = np.array([0,0,0])
+    for angle in moeglichewinkelanfang:
+        temp = drehenxy(angle[0], angle[1], np.array([0,0,1]))
+        dispnormtribeg = np.append(dispnorm, [temp], axis=0)
+        
+    dispnormtriend = np.array([0,0,0])
+    for angle in moeglichewinkelende:
+        temp = drehenxy(angle[0], angle[1], np.array([0,0,1]))
+        dispnormtriend = np.append(dispnorm, [temp], axis=0)
+        
 
 
-# In[24]:
-
-triangleshiftsend = np.float16(make_displacements(FLEXATEND, dispnormtriend))
-#randomize between the ends and the beginning
-amountoftriangleshiftsbeg = np.size(firstpointstriangle, axis = 0)
-amountoftriangleshiftsend = np.size(triangleshiftsend, axis = 0)
-
-triangleshiftsend = np.tile(triangleshiftsend, (amountoftriangleshiftsbeg, 1))
-firstpointstriangle = np.repeat(firstpointstriangle, amountoftriangleshiftsend, axis = 0)
-secondpointstriangle = np.repeat(secondpointstriangle, amountoftriangleshiftsend, axis = 0)
+    triangleshiftsbeg = np.float16(make_displacements(FLEXATSTART, dispnormtribeg))
 
 
-# In[25]:
+    amountoftriangleshiftsbeg = np.size(triangleshiftsbeg, axis = 0)
+    triangleshiftsbeg = np.repeat(triangleshiftsbeg, np.size(allpointsfortriangles, axis = 0), axis = 0)
+    allpointsfortriangles = np.tile(allpointsfortriangles, (amountoftriangleshiftsbeg, 1))
 
-thirdpointstriangle  = np.float16(triangleshiftsend + endpunkt)
+    firstpointstriangle  = np.float16(triangleshiftsbeg + anfangspunkt)
+    secondpointstriangle = np.float16(triangleshiftsbeg + allpointsfortriangles)
 
-print np.shape(firstpointstriangle)
+    print np.shape(firstpointstriangle)
 
-keep = sort_out_by_length(secondpointstriangle, thirdpointstriangle, linkertriangle)
+    keep = sort_out_by_length(firstpointstriangle, secondpointstriangle, linkertriangle)
 
-firstpointstriangle = firstpointstriangle[keep]
-secondpointstriangle = secondpointstriangle[keep]
-thirdpointstriangle = thirdpointstriangle[keep]
-
-print np.shape(firstpointstriangle)
+    firstpointstriangle = firstpointstriangle[keep]
+    secondpointstriangle = secondpointstriangle[keep]
 
 
 
-MakeSmall = make_small_generator(secondpointstriangle, 15, 6, ProteinArray = heretousepoints)
 
-teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
+    MakeSmall = make_small_generator(secondpointstriangle, 12, RAMofclient, ProteinArray = heretousepoints)
 
-#about 250s per MakeSmall run
+    teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
 
-for i in range(0, (MakeSmall +1)):
-    if i == MakeSmall:
-        if (i * teiler) < np.size(secondpointstriangle, axis=0): 
+    #about 250s per MakeSmall run
+
+    for i in range(0, (MakeSmall +1)):
+        if i == MakeSmall:
             temp1 = firstpointstriangle[i * teiler:]
             temp2 = secondpointstriangle[i * teiler:]
-            temp3 = thirdpointstriangle[i * teiler:]
         else:
-            break
-    else:
-        temp1 = firstpointstriangle[i*teiler:(i+1)*teiler]
-        temp2 = secondpointstriangle[i*teiler:(i+1)*teiler]
-        temp3 = thirdpointstriangle[i*teiler:(i+1)*teiler]
+            temp1 = firstpointstriangle[i*teiler:(i+1)*teiler]
+            temp2 = secondpointstriangle[i*teiler:(i+1)*teiler]
+        #at first sort all connections out, of which the anglepoint is too near, or too far away from the protein.
 
-    
-    # sort out, if the connection is too near at the protein
-    keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
-    
-    temp1 = temp1[keep]    
-    temp2 = temp2[keep]
-    temp3 = temp3[keep]
-    
-    if i == 0:
-        firstpointstritemp, secondpointstritemp, thirdpointstritemp = temp1, temp2, temp3
-    else:
-        firstpointstritemp = np.concatenate((firstpointstritemp, temp1), axis =0)
-        secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
-        thirdpointstritemp = np.concatenate((thirdpointstritemp, temp3), axis =0)
+        keep = aussortierennachpunken(temp2, heretousepoints, minabstand, maxabstand)
+        
+        temp1 = temp1[keep]    
+        temp2 = temp2[keep]
+        
+        #then sort out, if the connection is too near at the protein
+        keep = (distance_from_connection(temp1, temp2, heretousepoints)[0] >= minabstand).all(axis = 1)
+        
+        temp1 = temp1[keep]    
+        temp2 = temp2[keep]
+        
+        if i == 0:
+            firstpointstritemp, secondpointstritemp = temp1, temp2
+        else:
+            firstpointstritemp = np.concatenate((firstpointstritemp, temp1), axis =0)
+            secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
 
+        
+    firstpointstriangle = firstpointstritemp
+    secondpointstriangle = secondpointstritemp
 
-firstpointsflexible  = np.concatenate((firstpointstritemp,  firstpointsflexible), axis =0)
-secondpointsflexible = np.concatenate((secondpointstritemp, secondpointsflexible), axis =0)
-thirdpointsflexible  = np.concatenate((thirdpointstritemp,  thirdpointsflexible), axis =0)
-
-
-# In[26]:
-
-pickle.dump((firstpointsflexible, secondpointsflexible, thirdpointsflexible),            open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+    print np.shape(firstpointstriangle)
 
 
-# In[27]:
+    # In[24]:
 
-np.shape(firstpointsflexible)
+    triangleshiftsend = np.float16(make_displacements(FLEXATEND, dispnormtriend))
+    #randomize between the ends and the beginning
+    amountoftriangleshiftsbeg = np.size(firstpointstriangle, axis = 0)
+    amountoftriangleshiftsend = np.size(triangleshiftsend, axis = 0)
+
+    triangleshiftsend = np.tile(triangleshiftsend, (amountoftriangleshiftsbeg, 1))
+    firstpointstriangle = np.repeat(firstpointstriangle, amountoftriangleshiftsend, axis = 0)
+    secondpointstriangle = np.repeat(secondpointstriangle, amountoftriangleshiftsend, axis = 0)
 
 
-# In[28]:
+    # In[25]:
+
+    thirdpointstriangle  = np.float16(triangleshiftsend + endpunkt)
+
+    print np.shape(firstpointstriangle)
+
+    keep = sort_out_by_length(secondpointstriangle, thirdpointstriangle, linkertriangle)
+
+    firstpointstriangle = firstpointstriangle[keep]
+    secondpointstriangle = secondpointstriangle[keep]
+    thirdpointstriangle = thirdpointstriangle[keep]
+
+    print np.shape(firstpointstriangle)
+
+
+
+    MakeSmall = make_small_generator(secondpointstriangle, 15, RAMofclient, ProteinArray = heretousepoints)
+
+    teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
+
+    #about 250s per MakeSmall run
+
+    for i in range(0, (MakeSmall +1)):
+        if i == MakeSmall:
+            if (i * teiler) < np.size(secondpointstriangle, axis=0): 
+                temp1 = firstpointstriangle[i * teiler:]
+                temp2 = secondpointstriangle[i * teiler:]
+                temp3 = thirdpointstriangle[i * teiler:]
+            else:
+                break
+        else:
+            temp1 = firstpointstriangle[i*teiler:(i+1)*teiler]
+            temp2 = secondpointstriangle[i*teiler:(i+1)*teiler]
+            temp3 = thirdpointstriangle[i*teiler:(i+1)*teiler]
+
+        
+        # sort out, if the connection is too near at the protein
+        keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis = 1)
+        
+        temp1 = temp1[keep]    
+        temp2 = temp2[keep]
+        temp3 = temp3[keep]
+        
+        if i == 0:
+            firstpointstritemp, secondpointstritemp, thirdpointstritemp = temp1, temp2, temp3
+        else:
+            firstpointstritemp = np.concatenate((firstpointstritemp, temp1), axis =0)
+            secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
+            thirdpointstritemp = np.concatenate((thirdpointstritemp, temp3), axis =0)
+
+
+    firstpointsflexible  = firstpointstritemp
+    secondpointsflexible = secondpointstritemp
+    thirdpointsflexible  = thirdpointstritemp
+    erstepunkte = None
+    zweitepunkte = None
+    drittepunkte = None
+
+
+#evtlraus?: bleiben die hier
+
+pickle.dump((firstpointsflexible, secondpointsflexible, thirdpointsflexible), open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+
+
+
+
 
 '''
 punktetemp = pickle.load( open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
@@ -1467,412 +1406,342 @@ thirdpointsflexible  = punktetemp[2]
 
 #### Flexible ends estimated to make the same as the rigid parts
 
-# In[30]:
+
 
 #die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
-
-versch = make_displacements(linkerlaengenKO, dispnorm)
-
-
-anfversch = make_displacements((linkerlaengenKO + FLEXIBLEATSTARTKO - LENGTHOFANGLEKO), startdisp)
-anfversch = anfversch[(anfversch != np.array([0,0,0])).all(axis = 1)]
+if functionnumber == "3":
+    angleforworkstart = float(angleforworkstart)
+    angleforworkend = float(angleforworkend)
     
-endversch = make_displacements((linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO), enddisp)
-endversch = endversch[(endversch != np.array([0,0,0])).all(axis = 1)]
+    versch = make_displacements(linkerlaengenKO, dispnorm)
 
-    
-#hier werden die Punkte generiert
-erstepunkte = np.float16(naechstepunkte([anfangspunkt], anfversch)[1])
-erstepunkte = erstepunkte[(erstepunkte == anfangspunkt).all(axis=1) |
-                          aussortierennachpunken(erstepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
 
-letztepunkte = np.float16(naechstepunkte([endpunkt], endversch)[1])
-letztepunkte = letztepunkte[(letztepunkte == endpunkt).all(axis=1) | 
-                            aussortierennachpunken(letztepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
+    anfversch = make_displacements((linkerlaengenKO + FLEXIBLEATSTARTKO - LENGTHOFANGLEKO), startdisp)
+    anfversch = anfversch[(anfversch != np.array([0,0,0])).all(axis = 1)]
+        
+    endversch = make_displacements((linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO), enddisp)
+    endversch = endversch[(endversch != np.array([0,0,0])).all(axis = 1)]
 
-#aussortieren, ob Punkte durch Protein gehen
-print np.shape(erstepunkte)
-#we just test with all as but not the first and last, because they are too close.
+        
+    #hier werden die Punkte generiert
+    erstepunkte = np.float16(naechstepunkte([anfangspunkt], anfversch)[1])
+    erstepunkte = erstepunkte[(erstepunkte == anfangspunkt).all(axis=1) |
+                              aussortierennachpunken(erstepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
 
-#TODO hier abfangen, falls gleich alle Punkte weggemacht werden und dann eine Ausgabe machen, dass das ziemlich schwierig
-#und dann aber weiterfortlaufen, das gleiche auch mit den letzten Punkten
+    letztepunkte = np.float16(naechstepunkte([endpunkt], endversch)[1])
+    letztepunkte = letztepunkte[(letztepunkte == endpunkt).all(axis=1) | 
+                                aussortierennachpunken(letztepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
 
+    #aussortieren, ob Punkte durch Protein gehen
+    #we just test with all as but not the first and last, because they are too close.
 
-'''
+    #TODO hier abfangen, falls gleich alle Punkte weggemacht werden und dann eine Ausgabe machen, dass das ziemlich schwierig
+    #und dann aber weiterfortlaufen, das gleiche auch mit den letzten Punkten
 
-#kann man eventuell mit hineinnehmen, wenn man ohnehin zu viel Zeug hat.
 
-if np.size(erstepunkte, axis = 0) > 5:
-    erstepunktetest = sort_out_by_protein([anfangspunkt], erstepunkte,\
-                                      np.concatenate((pkte[AmountOfAtomsFirstAA:-AmountOfAtomsLastAA], OtherPoints), \
-                                                     axis = 0), minabstand)[1]
-    if np.size(erstepunktetest) != 0:
-        erstepunkte = erstepunktetest
-   
-print np.shape(erstepunktetest)
-print np.shape(erstepunkte)
-'''
-'''
-if np.size(letztepunkte, axis = 0) > 5:
-    letztepunktetest = sort_out_by_protein([endpunkt], letztepunkte, \
-                                      np.concatenate((pkte[AmountOfAtomsFirstAA:-AmountOfAtomsLastAA],
-                                      OtherPoints), axis = 0), minabstand)[1]
-    if np.size(letztepunktetest) != 0:
-        letztepunkte = letztepunktetest
 
-print np.shape(letztepunktetest)
-print np.shape(letztepunkte)
-'''
+    #wir sortieren erstepunkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
+    #die doppelte längste Linkerlänge verbunden werden können
 
-#wir sortieren erstepunkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
-#die doppelte längste Linkerlänge verbunden werden können
+    temp = abstandpktzuarray(endpunkt, erstepunkte)
+    keep = temp < (3 * laengstesstueck)
+    erstepunkte = erstepunkte[keep]
 
-temp = abstandpktzuarray(endpunkt, erstepunkte)
-keep = temp < (3 * laengstesstueck)
-erstepunkte = erstepunkte[keep]
+    #wir sortieren erstepunkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
+    #die doppelte längste Linkerlänge verbunden werden können
 
-#wir sortieren erstepunkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
-#die doppelte längste Linkerlänge verbunden werden können
+    temp = abstandpktzuarray(anfangspunkt, letztepunkte)
+    keep = temp < (3 * laengstesstueck)
+    letztepunkte = letztepunkte[keep]
 
-temp = abstandpktzuarray(anfangspunkt, letztepunkte)
-keep = temp < (3 * laengstesstueck)
-letztepunkte = letztepunkte[keep]
+    #die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
+    #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
 
-#die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
-#davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
-
-if ((abstandanfend < 3*np.min(linkerlaengenKO)) & (np.max(linkerlaengenKO) * 2 > maxvonanfang)\
-    & (np.max(linkerlaengenKO) * 2 > maxvonende)):
-    zweitepunkte = erstepunkte
-else:
-    zweiteiteration = naechstepunkte(erstepunkte, versch)
-    zweitepunkte = np.float16(zweiteiteration[1])
-    erstepunkte = np.float16(zweiteiteration[0])
-
-print np.shape(erstepunkte)
-print np.shape(zweitepunkte)
-print np.shape(letztepunkte)
-
-
-# Wir sortieren nun alle Winkel aus, die kleiner als 15° sind. Das machen wir aber nicht für die Anfangs und Endpunkte, da nicht klar ist, wie dort die Alphahelix angesetzt wird.
-
-# In[31]:
-
-#Nach Winkeln aussortieren, von vorne.
-
-temp = sort_out_by_angle([anfangspunkt], erstepunkte, zweitepunkte, angletosequence)
-erstepunkte = temp[0]
-zweitepunkte = temp[1]
-
-
-# In[32]:
-
-print anzahleckenmax
-print anzahleckenmin
-
-
-# In[33]:
-
-#wir sortieren zweite Punkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
-#die doppelte längste Linkerlänge verbunden werden können
-
-temp = abstandpktzuarray(endpunkt, zweitepunkte)
-keep = temp < (2 * laengstesstueck)
-zweitepunkte = zweitepunkte[keep]
-erstepunkte = erstepunkte[keep]
-
-np.shape(zweitepunkte)
-
-
-# In[34]:
-
-#Läuft 82 sek, sortiert 60 000 Punkte aus
-#wir sortieren die Punkte aus, die zu weit oder zu nah im Protein sind
-
-MakeSmall = make_small_generator(zweitepunkte,1 , 6 , ProteinArray = PointsOfAllSubunits)
-teiler = np.size(zweitepunkte, axis = 0)/MakeSmall
-temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
-
-for i in range(1,MakeSmall):
-    temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[i*teiler:(i+1)*teiler],                                                        PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
-if ((i+1) * teiler) < np.size(zweitepunkte, axis=0): 
-    temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[(i+1)*teiler:],
-                                                        PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
-
-temp = np.array(temp)
-temp = np.ravel(temp, "C")
-
-zweitepunkte = zweitepunkte[temp]
-erstepunkte = erstepunkte[temp]
-print np.shape(erstepunkte)
-#save for saving calculationtime
-pickle.dump((erstepunkte, zweitepunkte, letztepunkte),            open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-
-
-# In[35]:
-
-"""
-punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-erstepunkte = punktetemp[0]
-zweitepunkte = punktetemp[1]
-letztepunkte = punktetemp[2]
-"""
-
-
-# In[36]:
-
-#läuft etwa 11 minuten, reduziert um die Hälfte
-MakeSmall = make_small_generator(zweitepunkte, 10 , 6 , ProteinArray = PointsOfAllSubunits)
-
-teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
-temp = sort_out_by_protein(erstepunkte[:teiler], zweitepunkte[:teiler], PointsOfAllSubunits, minabstand)
-erstetemp = temp[0]
-zweitetemp = temp[1]
-
-
-
-#das läuft zu lange...
-for i in range(1, MakeSmall):
-    temp = sort_out_by_protein(erstepunkte[i*teiler:(i+1)*teiler], zweitepunkte[i*teiler:(i+1)*teiler],                        PointsOfAllSubunits, minabstand)
-    
-    erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-    zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-    
-
-if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):    
-    temp = sort_out_by_protein(erstepunkte[(i+1)*teiler:], zweitepunkte[(i+1)*teiler:], PointsOfAllSubunits, minabstand)
-
-    erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
-    zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
-
-erstepunkte = np.float16(erstetemp)
-zweitepunkte = np.float16(zweitetemp)
-
-print np.size(erstepunkte, axis = 0)
-
-pickle.dump((erstepunkte, zweitepunkte, letztepunkte),             open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-
-
-# In[37]:
-
-print np.size(erstepunkte, axis = 0)
-print np.size(zweitepunkte, axis = 0)
-
-
-# In[38]:
-
-"""
-punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-erstepunkte = punktetemp[0]
-zweitepunkte = punktetemp[1]
-letztepunkte = punktetemp[2]
-"""
-
-
-###### Generierung der Verbindungen zwsichen den zweiten und den dritten Punkten
-
-
-
-MakeSmall = make_small_generator(zweitepunkte,8 , 6 , ProteinArray = letztepunkte)
-
-teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
-
-
-if os.path.exists('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName)):
-    os.remove('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName))
-h5f = h5py.File('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName), "w")
-
-
-for laenge in linkerlaengenKO:
-    
-    for i in range(0,(MakeSmall)):
-                  
-        temp = sort_out_by_distance(zweitepunkte[i*teiler:(i+1)*teiler], letztepunkte,                                    erstepunkte[i*teiler:(i+1)*teiler], laenge, hitgenauig)
-        if i == 0:
-            erstetemp = temp[0]
-            zweitetemp= temp[1]
-            drittetemp= temp[2]
+if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) & 
+    ((np.max(linkerlaengenKO) * 2 -(2 * LENGTHOFANGLEKO)) > maxvonanfang)
+    & (((np.max(linkerlaengenKO) * 2) - (2 * LENGTHOFANGLEKO)) > maxvonende)):
+        zweitepunkte = erstepunkte
+    else:
+        
+        sliceverschstart = int((np.size(versch, axis = 0) - 1) * (angleforworkstart / 100.))
+        if angleforworkend != 100:
+            sliceverschend = int((np.size(versch, axis = 0) - 1) * (angleforworkend / 100.))
         else:
+            sliceverschend = np.size(versch, axis = 0)
+        
+        zweiteiteration = naechstepunkte(erstepunkte, versch[sliceverschstart:sliceverschend])
+        zweitepunkte = np.float16(zweiteiteration[1])
+        erstepunkte = np.float16(zweiteiteration[0])
+
+    
+
+    #Nach Winkeln aussortieren, von vorne.
+
+    temp = sort_out_by_angle([anfangspunkt], erstepunkte, zweitepunkte, angletosequence)
+    erstepunkte = temp[0]
+    zweitepunkte = temp[1]
+
+
+    #wir sortieren zweite Punkte aus, die zu weit vom Ende entfernt liegen, sodass sie nicht mehr durch 
+    #die doppelte längste Linkerlänge verbunden werden können
+
+    temp = abstandpktzuarray(endpunkt, zweitepunkte)
+    keep = temp < (2 * laengstesstueck)
+    zweitepunkte = zweitepunkte[keep]
+    erstepunkte = erstepunkte[keep]
+
+    #Läuft 82 sek, sortiert 60 000 Punkte aus
+    #wir sortieren die Punkte aus, die zu weit oder zu nah im Protein sind
+
+    MakeSmall = make_small_generator(zweitepunkte,1 , RAMofclient , ProteinArray = PointsOfAllSubunits)
+    teiler = np.size(zweitepunkte, axis = 0)/MakeSmall
+    temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
+
+    for i in range(1,MakeSmall):
+        temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[i*teiler:(i+1)*teiler],                                                        PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
+    if ((i+1) * teiler) < np.size(zweitepunkte, axis=0): 
+        temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[(i+1)*teiler:],
+                                                            PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
+
+    temp = np.array(temp)
+    temp = np.ravel(temp, "C")
+
+    zweitepunkte = zweitepunkte[temp]
+    erstepunkte = erstepunkte[temp]
+   
+    #evtlraus
+    #save for saving calculationtime
+    pickle.dump((erstepunkte, zweitepunkte, letztepunkte),            open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+
+    """
+    punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    erstepunkte = punktetemp[0]
+    zweitepunkte = punktetemp[1]
+    letztepunkte = punktetemp[2]
+    """
+
+    #läuft etwa 11 minuten, reduziert um die Hälfte
+    MakeSmall = make_small_generator(zweitepunkte, 10 , RAMofclient , ProteinArray = PointsOfAllSubunits)
+
+    teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+    temp = sort_out_by_protein(erstepunkte[:teiler], zweitepunkte[:teiler], PointsOfAllSubunits, minabstand)
+    erstetemp = temp[0]
+    zweitetemp = temp[1]
+
+
+
+    #das läuft zu lange...
+    for i in range(1, MakeSmall):
+        temp = sort_out_by_protein(erstepunkte[i*teiler:(i+1)*teiler], zweitepunkte[i*teiler:(i+1)*teiler],                        PointsOfAllSubunits, minabstand)
+        
+        erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+        
+
+    if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):    
+        temp = sort_out_by_protein(erstepunkte[(i+1)*teiler:], zweitepunkte[(i+1)*teiler:], PointsOfAllSubunits, minabstand)
+
+        erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
+        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
+
+    erstepunkte = np.float16(erstetemp)
+    zweitepunkte = np.float16(zweitetemp)
+
+    #evtlraus
+
+    pickle.dump((erstepunkte, zweitepunkte, letztepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+
+
+
+
+    """
+    punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    erstepunkte = punktetemp[0]
+    zweitepunkte = punktetemp[1]
+    letztepunkte = punktetemp[2]
+    """
+
+
+    ###### Generierung der Verbindungen zwsichen den zweiten und den dritten Punkten
+
+
+
+    MakeSmall = make_small_generator(zweitepunkte,8 , RAMofclient , ProteinArray = letztepunkte)
+
+    teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
+
+    if os.path.exists('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName)):
+        os.remove('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName))
+    h5f = h5py.File('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName), "w")
+
+
+    for laenge in linkerlaengenKO:
+        
+        for i in range(0,(MakeSmall)):
+                      
+            temp = sort_out_by_distance(zweitepunkte[i*teiler:(i+1)*teiler], letztepunkte,                                    erstepunkte[i*teiler:(i+1)*teiler], laenge, hitgenauig)
+            if i == 0:
+                erstetemp = temp[0]
+                zweitetemp= temp[1]
+                drittetemp= temp[2]
+            else:
+                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+                drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
+                
+        if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):  
+            temp = sort_out_by_distance(zweitepunkte[(i+1)*teiler:], letztepunkte, erstepunkte[(i+1)*teiler:], laenge, hitgenauig)
+            erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+            drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
+        
+        count = 1
+        for array in [erstetemp, zweitetemp, drittetemp]:
+            h5f.create_dataset("dataset_{points}{linker}".format(points = count, linker = int(laenge)), data=array)
+            count +=1
+
+    h5f.close()
+
+
+
+    h5f = h5py.File('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName),'r')
+
+
+
+    for laenge in linkerlaengenKO:
+        
+        SizeOfArray = len(h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]) * 3
+        
+        
+        MakeSmall = make_small_generator(SizeOfArray,12 , RAMofclient , ProteinArray = PointsOfAllSubunits)
+        teiler = SizeOfArray/(MakeSmall * 3)
+        
+        
+        erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][:teiler]
+        zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][:teiler]
+        drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][:teiler]
+
+        temp = sort_out_by_protein(zweitepunkte, drittepunkte, PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
+        erstetemp = temp[0]
+        zweitetemp = temp[1]
+        drittetemp = temp[2]
+
+
+
+        
+        #das läuft zu lange, ein Durchlauf 2.5s, das heißt insgesamt: 30500~9hs
+        for i in range(1, MakeSmall):
+            erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][i * teiler:(i+1)*teiler]
+            zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][i * teiler:(i+1)*teiler]
+            drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][i * teiler:(i+1)*teiler]
+            temp = sort_out_by_protein(zweitepunkte, drittepunkte,                                PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
+
             erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
             drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
             
-    if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):  
-        temp = sort_out_by_distance(zweitepunkte[(i+1)*teiler:], letztepunkte, erstepunkte[(i+1)*teiler:], laenge, hitgenauig)
-        erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-        drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
-    
-    count = 1
-    for array in [erstetemp, zweitetemp, drittetemp]:
-        h5f.create_dataset("dataset_{points}{linker}".format(points = count, linker = int(laenge)), data=array)
-        count +=1
-
-h5f.close()
-
-    
+            
+        if ((i+1) * teiler) < (SizeOfArray / 3):  
+            erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
+            zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
+            drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][(i+1) * teiler:]
 
 
-# Aussortieren der Verbindungen, die durch das Protein gehen.
+            temp = sort_out_by_protein(zweitepunkte, drittepunkte,                                    PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
 
-# In[40]:
-
-h5f = h5py.File('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName),'r')
-
-
-
-for laenge in linkerlaengenKO:
-    
-    SizeOfArray = len(h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]) * 3
-    
-    
-    MakeSmall = make_small_generator(SizeOfArray,12 , 6 , ProteinArray = PointsOfAllSubunits)
-    teiler = SizeOfArray/(MakeSmall * 3)
-    
-    
-    erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][:teiler]
-    zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][:teiler]
-    drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][:teiler]
-
-    temp = sort_out_by_protein(zweitepunkte, drittepunkte,                                PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
-    erstetemp = temp[0]
-    zweitetemp = temp[1]
-    drittetemp = temp[2]
-
-
-
-    
-    #das läuft zu lange, ein Durchlauf 2.5s, das heißt insgesamt: 30500~9hs
-    for i in range(1, MakeSmall):
-        erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][i * teiler:(i+1)*teiler]
-        zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][i * teiler:(i+1)*teiler]
-        drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][i * teiler:(i+1)*teiler]
-        temp = sort_out_by_protein(zweitepunkte, drittepunkte,                                PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
-
-        erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-        drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
+            erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
+            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
+            drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
         
         
-    if ((i+1) * teiler) < (SizeOfArray / 3):  
-        erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
-        zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
-        drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][(i+1) * teiler:]
+
+    erstepunkte = np.float16(erstetemp)
+    zweitepunkte = np.float16(zweitetemp)
+    drittepunkte = np.float16(drittetemp)
+
+        
+        
+
+    h5f.close()
+        
+    print np.shape(erstepunkte)
 
 
-        temp = sort_out_by_protein(zweitepunkte, drittepunkte,                                    PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
 
-        erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
-        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
-        drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+
+
+    tempsize =  np.size(erstepunkte, axis = 0)
+    pickle.dump(erstepunkte[:tempsize/2],             open("files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "wb"))
+    pickle.dump(erstepunkte[tempsize/2:],             open("files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "wb"))
+    pickle.dump(zweitepunkte[:tempsize/2],             open("files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "wb"))
+    pickle.dump(zweitepunkte[tempsize/2:],             open("files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "wb"))
+    pickle.dump(drittepunkte[:tempsize/2],             open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "wb"))
+    pickle.dump(drittepunkte[tempsize/2:],             open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "wb"))
+    print tempsize
+
+
+    #evtlraus
+
+    '''
+    erstepunkteeins = pickle.load( open( "files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    erstepunktezwei = pickle.load( open( "files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    erstepunkte = np.concatenate((erstepunkteeins, erstepunktezwei), axis = 0)
+
+    zweitepunkteeins = pickle.load( open( "files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    zweitepunktezwei = pickle.load( open( "files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
+    zweitepunkte = np.concatenate((zweitepunkteeins, zweitepunktezwei), axis = 0)
+
+    drittepunkteeins = pickle.load( open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "rb"))
+    drittepunktezwei = pickle.load( open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "rb"))
+    drittepunkte = np.concatenate((drittepunkteeins, drittepunktezwei), axis = 0)
+    '''
+
+
+
+
+    if ((abstandanfend < 3*np.min(linkerlaengenKO)) & (np.max(linkerlaengenKO) * 2 > maxvonanfang)    & (np.max(linkerlaengenKO) * 2 > maxvonende)):
+        temp = sort_out_by_angle([anfangspunkt], zweitepunkte, drittepunkte, angletosequence)
+        erstepunkte = temp[0]
+        zweitepunkte = temp[0]
+        drittepunkte = temp[1]
+    else:
+        temp = sort_out_by_angle(erstepunkte, zweitepunkte, drittepunkte, angletosequence)
+        erstepunkte = temp[0]
+        zweitepunkte = temp[1]
+        drittepunkte = temp[2]
+
+
+    #evtlraus
+
+    pickle.dump((erstepunkte, zweitepunkte, drittepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
     
-    
-
-erstepunkte = np.float16(erstetemp)
-zweitepunkte = np.float16(zweitetemp)
-drittepunkte = np.float16(drittetemp)
-
-    
-    
-
-h5f.close()
-    
-print np.shape(erstepunkte)
+    firstpointsflexible = None
+    secondpointsflexible = None
+    thirdpointsflexible = None
 
 
-# In[41]:
 
-
-tempsize =  np.size(erstepunkte, axis = 0)
-pickle.dump(erstepunkte[:tempsize/2],             open("files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-pickle.dump(erstepunkte[tempsize/2:],             open("files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-pickle.dump(zweitepunkte[:tempsize/2],             open("files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-pickle.dump(zweitepunkte[tempsize/2:],             open("files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-pickle.dump(drittepunkte[:tempsize/2],             open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-pickle.dump(drittepunkte[tempsize/2:],             open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-print tempsize
-
-
-# In[42]:
-
-'''
-erstepunkteeins = pickle.load( open( "files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
-erstepunktezwei = pickle.load( open( "files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
-erstepunkte = np.concatenate((erstepunkteeins, erstepunktezwei), axis = 0)
-
-zweitepunkteeins = pickle.load( open( "files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
-zweitepunktezwei = pickle.load( open( "files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
-zweitepunkte = np.concatenate((zweitepunkteeins, zweitepunktezwei), axis = 0)
-
-drittepunkteeins = pickle.load( open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "rb"))
-drittepunktezwei = pickle.load( open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "rb"))
-drittepunkte = np.concatenate((drittepunkteeins, drittepunktezwei), axis = 0)
-'''
-
-
-# In[43]:
-
-if ((abstandanfend < 3*np.min(linkerlaengenKO)) & (np.max(linkerlaengenKO) * 2 > maxvonanfang)    & (np.max(linkerlaengenKO) * 2 > maxvonende)):
-    temp = sort_out_by_angle([anfangspunkt], zweitepunkte, drittepunkte, angletosequence)
-    erstepunkte = temp[0]
-    zweitepunkte = temp[0]
-    drittepunkte = temp[1]
-else:
-    temp = sort_out_by_angle(erstepunkte, zweitepunkte, drittepunkte, angletosequence)
-    erstepunkte = temp[0]
-    zweitepunkte = temp[1]
-    drittepunkte = temp[2]
-
-
-# In[44]:
-
-pickle.dump((erstepunkte, zweitepunkte, drittepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-
-
-# In[45]:
-
-
-#UserDefinedProjectName = "lambdalysozyme"
 '''
 punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
 erstepunkte = punktetemp[0]
 zweitepunkte = punktetemp[1]
 drittepunkte = punktetemp[2]
 '''
+
+
 '''
-erstepunkte = erstepunkte[::100]
-zweitepunkte = zweitepunkte[::100]
-drittepunkte = drittepunkte[::100]
-'''
-
-
-# In[46]:
-
 punktetemp = pickle.load( open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
 firstpointsflexible  = punktetemp[0]
 secondpointsflexible = punktetemp[1]
 thirdpointsflexible  = punktetemp[2]
-
-'''
-#veraltet
-erstepunkte  = np.concatenate((erstepunkte, firstpointsflexible), axis = 0)
-zweitepunkte = np.concatenate((zweitepunkte, secondpointsflexible), axis = 0)
-drittepunkte = np.concatenate((drittepunkte, thirdpointsflexible), axis = 0)
 '''
 
 
-# In[47]:
-
-'''
-firstpointsflexible = firstpointsflexible[::100]
-secondpointsflexible = secondpointsflexible[::100]
-thirdpointsflexible = thirdpointsflexible[::100]
-'''
 
 
-#### Das verbessern der Pfade, anpassen an die Linkerstücke
 
-# In[48]:
+
 
 #thirdpoints are to be shifted and given back
 def shift_points_to_linkerpatterns(secondpoints, thirdpoints, linkerlaengenKO):
@@ -1953,26 +1822,15 @@ def make_better_paths_flex(firstpoints, secondpoints, thirdpoints, endpoint):
     return firstpoints[sortouttemp], secondpoints[sortouttemp], thirdpoints[sortouttemp]
 
 
-# In[49]:
+if firstpointsflexible != None:
 
-print np.shape(firstpointsflexible)
-print np.shape(erstepunkte)
+    firstpointsflexible, secondpointsflexible, thirdpointsflexible = make_better_paths_flex(firstpointsflexible,
+                                                                                            secondpointsflexible,
+                                                                                            thirdpointsflexible, endpunkt)
+if erstepunkte != None:
+    erstepunkte, zweitepunkte, drittepunkte = make_better_paths_rigid(anfangspunkt, erstepunkte, zweitepunkte, drittepunkte,
+                                                                      endpunkt)
 
-
-# In[50]:
-
-firstpointsflexible, secondpointsflexible, thirdpointsflexible = make_better_paths_flex(firstpointsflexible,
-                                                                                        secondpointsflexible,
-                                                                                        thirdpointsflexible, endpunkt)
-
-erstepunkte, zweitepunkte, drittepunkte = make_better_paths_rigid(anfangspunkt, erstepunkte, zweitepunkte, drittepunkte,
-                                                                  endpunkt)
-
-
-# In[51]:
-
-print np.shape(firstpointsflexible)
-print np.shape(erstepunkte)
 
 
 #### Die Bewertungsfunktion 
@@ -1993,133 +1851,126 @@ print np.shape(erstepunkte)
 
 
 #UserdefinedWeighing = "19,10,10" #Lambdalysozyme
-UserdefinedWeighing = "1139-1616,1 1226,1"
+UserdefinedWeighing = ""
 
 
 
 ShouldBeWeighed, Weighingarray, substratelist = make_weighingarrays(UserdefinedWeighing)
 
-
-# In[70]:
-
-#weighting of linkers with flexible ends
-
-if np.size(secondpointsflexible, axis = 0) > 0:
+if secondpointsflexible != None:
+    if np.size(secondpointsflexible, axis = 0) > 0:
 
 
-    MakeSmall = make_small_generator(secondpointsflexible, 8 , 6 , ProteinArray = pkte)
+        MakeSmall = make_small_generator(secondpointsflexible, 8 , RAMofclient , ProteinArray = pkte)
 
-    teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
-    
-    print MakeSmall
-    temp = weighing_function_flex(anfangspunkt, firstpointsflexible[:teiler], secondpointsflexible[:teiler],
-                                    thirdpointsflexible[:teiler], endpunkt, pkte, InterestingAANr,\
-                          ShouldBeWeighed, Weighingarray, substratelist)
-
-    knull = temp[0]
-    keins = temp[1]
-    kzwei = temp[2]
-    kdrei = temp[3]
-    kvier = temp[4]
-
-
-    for i in range(1, MakeSmall):
-        temp = weighing_function_flex(anfangspunkt, firstpointsflexible[i * teiler:(i+1)*teiler],
-                                        secondpointsflexible[i * teiler:(i+1)*teiler], 
-                                        thirdpointsflexible[i * teiler:(i+1)*teiler],
-                                        endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
-
-        knull = np.concatenate((knull, temp[0]), axis =0)
-        keins = np.concatenate((keins, temp[1]), axis =0)
-        kzwei = np.concatenate((kzwei, temp[2]), axis =0)
-        kdrei = np.concatenate((kdrei, temp[3]), axis =0)
-        kvier = np.concatenate((kvier, temp[4]), axis =0)
+        teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
         
+        print MakeSmall
+        temp = weighing_function_flex(anfangspunkt, firstpointsflexible[:teiler], secondpointsflexible[:teiler],
+                                        thirdpointsflexible[:teiler], endpunkt, pkte, InterestingAANr,\
+                              ShouldBeWeighed, Weighingarray, substratelist)
+
+        knull = temp[0]
+        keins = temp[1]
+        kzwei = temp[2]
+        kdrei = temp[3]
+        kvier = temp[4]
 
 
-    if ((i+1) * teiler) < np.size(secondpointsflexible, axis=0):
-        temp = weighing_function_flex(anfangspunkt, firstpointsflexible[(i+1)*teiler:], 
-                                        secondpointsflexible[(i+1)*teiler:], thirdpointsflexible[(i+1)*teiler:],
-                                        endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+        for i in range(1, MakeSmall):
+            temp = weighing_function_flex(anfangspunkt, firstpointsflexible[i * teiler:(i+1)*teiler],
+                                            secondpointsflexible[i * teiler:(i+1)*teiler], 
+                                            thirdpointsflexible[i * teiler:(i+1)*teiler],
+                                            endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+
+            knull = np.concatenate((knull, temp[0]), axis =0)
+            keins = np.concatenate((keins, temp[1]), axis =0)
+            kzwei = np.concatenate((kzwei, temp[2]), axis =0)
+            kdrei = np.concatenate((kdrei, temp[3]), axis =0)
+            kvier = np.concatenate((kvier, temp[4]), axis =0)
+            
 
 
-        knull = np.concatenate((knull, temp[0]), axis =0)
-        keins = np.concatenate((keins, temp[1]), axis =0)
-        kzwei = np.concatenate((kzwei, temp[2]), axis =0)
-        kdrei = np.concatenate((kdrei, temp[3]), axis =0)
-        kvier = np.concatenate((kvier, temp[4]), axis =0)
+        if ((i+1) * teiler) < np.size(secondpointsflexible, axis=0):
+            temp = weighing_function_flex(anfangspunkt, firstpointsflexible[(i+1)*teiler:], 
+                                            secondpointsflexible[(i+1)*teiler:], thirdpointsflexible[(i+1)*teiler:],
+                                            endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+
+
+            knull = np.concatenate((knull, temp[0]), axis =0)
+            keins = np.concatenate((keins, temp[1]), axis =0)
+            kzwei = np.concatenate((kzwei, temp[2]), axis =0)
+            kdrei = np.concatenate((kdrei, temp[3]), axis =0)
+            kvier = np.concatenate((kvier, temp[4]), axis =0)
 
 
 
 
 
-    weightflex = np.array([knull, keins, kzwei, kdrei, kvier])
-    flexk = weightflex
+        weightflex = np.array([knull, keins, kzwei, kdrei, kvier])
+        flexk = weightflex
+    else:
+        weightflex = None
 else:
     weightflex = None
 
 
-# In[71]:
-
 #weighting of linkers without flexible ends
-if np.size(zweitepunkte, axis = 0) > 0:
+if zweitepunkte != None:
+    if np.size(zweitepunkte, axis = 0) > 0:
 
-    MakeSmall = make_small_generator(zweitepunkte, 8 , 6 , ProteinArray = pkte)
+        MakeSmall = make_small_generator(zweitepunkte, 8 , RAMofclient , ProteinArray = pkte)
 
-    teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
 
-    temp = weighing_function_rigids(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler],
-                                    drittepunkte[:teiler], endpunkt, pkte, InterestingAANr,\
-                          ShouldBeWeighed, Weighingarray, substratelist)
+        temp = weighing_function_rigids(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler],
+                                        drittepunkte[:teiler], endpunkt, pkte, InterestingAANr,\
+                              ShouldBeWeighed, Weighingarray, substratelist)
 
-    knull = temp[0]
-    keins = temp[1]
-    kzwei = temp[2]
-    kdrei = temp[3]
-    kvier = temp[4]
-
-
-    for i in range(1, MakeSmall):
-        temp = weighing_function_rigids(anfangspunkt, erstepunkte[i * teiler:(i+1)*teiler],
-                                        zweitepunkte[i * teiler:(i+1)*teiler], 
-                                        drittepunkte[i * teiler:(i+1)*teiler],
-                                        endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
-
-        knull = np.concatenate((knull, temp[0]), axis =0)
-        keins = np.concatenate((keins, temp[1]), axis =0)
-        kzwei = np.concatenate((kzwei, temp[2]), axis =0)
-        kdrei = np.concatenate((kdrei, temp[3]), axis =0)
-        kvier = np.concatenate((kvier, temp[4]), axis =0)
+        knull = temp[0]
+        keins = temp[1]
+        kzwei = temp[2]
+        kdrei = temp[3]
+        kvier = temp[4]
 
 
-    if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
-        temp = weighing_function_rigids(anfangspunkt, erstepunkte[(i+1)*teiler:], 
-                                        zweitepunkte[(i+1)*teiler:], drittepunkte[(i+1)*teiler: ],
-                                        endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+        for i in range(1, MakeSmall):
+            temp = weighing_function_rigids(anfangspunkt, erstepunkte[i * teiler:(i+1)*teiler],
+                                            zweitepunkte[i * teiler:(i+1)*teiler], 
+                                            drittepunkte[i * teiler:(i+1)*teiler],
+                                            endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+
+            knull = np.concatenate((knull, temp[0]), axis =0)
+            keins = np.concatenate((keins, temp[1]), axis =0)
+            kzwei = np.concatenate((kzwei, temp[2]), axis =0)
+            kdrei = np.concatenate((kdrei, temp[3]), axis =0)
+            kvier = np.concatenate((kvier, temp[4]), axis =0)
 
 
-        knull = np.concatenate((knull, temp[0]), axis =0)
-        keins = np.concatenate((keins, temp[1]), axis =0)
-        kzwei = np.concatenate((kzwei, temp[2]), axis =0)
-        kdrei = np.concatenate((kdrei, temp[3]), axis =0)
-        kvier = np.concatenate((kvier, temp[4]), axis =0)
+        if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
+            temp = weighing_function_rigids(anfangspunkt, erstepunkte[(i+1)*teiler:], 
+                                            zweitepunkte[(i+1)*teiler:], drittepunkte[(i+1)*teiler: ],
+                                            endpunkt, pkte, InterestingAANr, ShouldBeWeighed, Weighingarray, substratelist)
+
+
+            knull = np.concatenate((knull, temp[0]), axis =0)
+            keins = np.concatenate((keins, temp[1]), axis =0)
+            kzwei = np.concatenate((kzwei, temp[2]), axis =0)
+            kdrei = np.concatenate((kdrei, temp[3]), axis =0)
+            kvier = np.concatenate((kvier, temp[4]), axis =0)
 
 
 
 
-    weightrig = np.array([knull, keins, kzwei, kdrei, kvier])
-    k = weightrig
+        weightrig = np.array([knull, keins, kzwei, kdrei, kvier])
+        k = weightrig
+    else:
+        weightrig = None
 else:
     weightrig = None
 
 
-# Darstellen der Ergebnisse als Plots
-
-### Clustering of linkers
-
 # At first the different linkers are just analysed. Of course this could be done in the weighing step before, but this is not that calculation intensive and like this it is much more clear when it does what.
-
-# In[75]:
 
 sequences, weightingsall, firstpointsall, secondpointsall, thirdpointsall =translate_paths_to_sequences(anfangspunkt,firstpointsflexible, secondpointsflexible,
                                                     thirdpointsflexible, erstepunkte, zweitepunkte, drittepunkte, 
@@ -2127,84 +1978,22 @@ sequences, weightingsall, firstpointsall, secondpointsall, thirdpointsall =trans
                                                     angleseparators, weightflex, weightrig)
 
 
+f = open("resultsfile.txt", "w")
 
-# In[76]:
+f.write("sequence,erstepunkteallx,erstepunkteally,erstepunkteallz,zweitepunkteallx,zweitepunkteally,zweitepunkteallz,drittepunkteallx,drittepunkteally,drittepunkteallz,lengthofpath,weightingofangles,unpreferableplaces,distfromsurface\n")
+for i in range(np.size(sequences)):
+    writestring = sequences[i]
+    for j in range(3):
+        writestring += "," + firstpointsall[i][j]
+    for j in range(3):
+        writestring += "," + secondpointsall[i][j]
+    for j in range(3):
+        writestring += "," + thirdpointsall[i][j]
+    for j in range(1,np.size(weightingsall, axis = 1):
+        writestring += "," + weightingsall[j][i]
+    writestring += "\n"
+    
+    f.write(writestring)
+    
 
-sequencepool = np.unique(sequences)
-sequenceweightings = []
-for sequenceiter in sequencepool:
-    sequenceweightings.append(np.mean(weightingsall[0][sequences == sequenceiter]))
-
-bestsequenceindex = np.argmin(sequenceweightings)
-print sequencepool[bestsequenceindex]
-
-
-# In[77]:
-
-print firstpointsflexible[-1]
-print secondpointsflexible[-1]
-print thirdpointsflexible[-1]
-
-
-# In[78]:
-
-print sequencepool
-print np.shape(sequencepool)
-
-
-# In[ ]:
-
-print sequencepool
-
-
-# In[ ]:
-
-hierraus = sequences == 'GGAEAAAKEAAAKAEAAAKEAAAKEAAAKAAASGAAXXXKEACWE'
-
-#print erstepunkte[hierraus]
-#print zweitepunkte[hierraus]
-#print drittepunkte[hierraus]
-
-print abstandpktzuarray(endpunkt, drittepunkte[hierraus])
-
-np.set_printoptions(edgeitems = 100)
-print linkerlaengenKO + ScarsAtEnd * LengthOfFlexibleAA
-
-
-
-
-keep = np.argmin(weightingsall[0])
-
-#show a plot of one linker.
-bestpath = np.empty((3,3))
-
-bestpath[0] = firstpointsall[keep]
-bestpath[1] =  secondpointsall[keep]
-bestpath[2] = thirdpointsall[keep]
-
-print sequences[keep]
-print abstandanfend
-
-
-
-print abstand(bestpath[0], bestpath[1]), abstand(bestpath[2], bestpath[1]),abstand(bestpath[0], anfangspunkt), abstand(endpunkt, bestpath[2])
-
-### Linkerpimping
-
-# Wir passen die Aminosäuren in den Winkeln an, um die an die Oberfläche zu hängen. Das machen wir immer in einer Funktion auf nur einem Linker
-
-# In[ ]:
-
-AminoDict = {"ARG":"ASP", "ASP":"LYS", "HIS":"ASP", "LYS":"ASP", "GLU":"LYS", "SER":"THR", "THR":"SER",              "ASN":"GLN", "GLN":"ASN", "CYS":"CYS", "GLY":"XXX", "SEC":"XXX", "PRO":"XXX", "ALA":"LEU", "VAL":"LEU",              "ILE":"LEU", "LEU":"LEU", "MET":"LEU", "PHE":"PHE", "TRP":"TRP", "TYR":"TYR"}
-
-def glue_to_surface(StartPoint, EndPoint, ProteinPoints = pkte , ProteinAminos = InterestingAminos,                    MinDist = hitgenauig, AminoCombinations = AminoDict):
-    Dist = abstand(StartPoint, EndPoint)
-    StartToProtDist = abstandpktzuarray(StartPoint, ProteinPoints)
-    keep = (StartToProtDist < (Dist + MinDist)) & (StartToProtDist > (Dist - MinDist))
-    PossiblePoints = ProteinPoints[keep]
-    EndToPossible = abstandpktzuarray(EndPoint, PossiblePoints)
-    PossibleAminos = ProteinAminos[keep]
-    TheAmino = PossibleAminos[np.argmin(EndToPossible)]
-    return AminoCombinations[TheAmino]
-        
-
+f.close()
