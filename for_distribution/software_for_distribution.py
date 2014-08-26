@@ -160,6 +160,8 @@ line = f.readline()
 line = line.strip()
 pdbname, subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext, RAMofclient = f.split("," )
 
+RAMofclient = float(RAMofclient)	
+
 f.close()
 #PDB geht von N zu C Terminus     
     
@@ -253,7 +255,7 @@ if UserChosenStart == None:
 #non helical regions are called scars
 ScarsAtStartseq = "GG"
 ScarsAtStart = len(ScarsAtStartseq)
-ScarsAtEndseq = "RGKCWE"   #TODO richtige Sequenz!
+ScarsAtEndseq = natext   #TODO richtige Sequenz!
 ScarsAtEnd = len(ScarsAtEndseq)
 
 
