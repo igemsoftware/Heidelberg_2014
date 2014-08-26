@@ -154,22 +154,27 @@ Start or End can also be single points.
 #read the instructions file
 
 
-f = open(instructions.txt, "r")
+f = open("instructions.txt", "r")
 
 line = f.readline()
 line = line.strip()
-pdbname, subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext, RAMofclient = f.split("," )
+pdbname, subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext, RAMofclient = line.split("," )
 
-RAMofclient = float(RAMofclient)	
+RAMofclient = float(RAMofclient)    
 
 f.close()
+
+#make a directory for the files if not exists yet
+
+if (not os.path.exists("files")):
+    os.makedirs("files")
 #PDB geht von N zu C Terminus     
     
 
 UserDefinedProjectName = projectname #for saving of the files, für DNMT1daten einfach "" machen
 
 f = open(pdbname, 'r')
-#print pdbfile
+
 
 
 wholex = []
@@ -204,7 +209,7 @@ wholeasnr = np.array(wholeasnr)
 #731-1602 dnmt1
 #oder 650 - 1602
 
-differentsubunits = wholesubunit.unique()
+differentsubunits = np.unique(wholesubunit)
 
 #get parts, that aren't wanted out of the PDB files
 
@@ -247,10 +252,10 @@ UserChosenStart = None
 UserChosenEnd = None
 
 if UserChosenEnd == None:
-	UserChosenEnd =  np.max(wholeasnr[wholesubunit == SubUnitChosen])
-	
+    UserChosenEnd =  np.max(wholeasnr[wholesubunit == SubUnitChosen])
+    
 if UserChosenStart == None:
-	UserChosenStart = np.min(wholeasnr[wholesubunit == SubUnitChosen])
+    UserChosenStart = np.min(wholeasnr[wholesubunit == SubUnitChosen])
 
 #non helical regions are called scars
 ScarsAtStartseq = "GG"
@@ -291,8 +296,7 @@ AmountOfAtomsLastAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr
 
 #evtlraus
 
-pickle.dump((pkte, InterestingAminos, InterestingAtom, InterestingAANr),
-             open("files/savepoints{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+#pickle.dump((pkte, InterestingAminos, InterestingAtom, InterestingAANr), open("files/savepoints{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
 #TODO Winkel einfügen
 
@@ -323,11 +327,10 @@ try:
     kalib = 154. / np.mean(abstaendeeich) #pm
     kalibfehl = np.std(abstaendeeich) * kalib
 
-    print str(kalib) + "+-" +str (kalibfehl) +" pm"
 except:
     kalib = 100.
     kalibfehl = 0.
-    print "There were no Glycines in the protein, a calibration was estimated as :" + str(kalib) + "+-" +str (kalibfehl) +" pm"
+    
 
 
 #globale Variablen:
@@ -361,7 +364,7 @@ wuerfeldiaghalbe = np.sqrt(3)/2 * kantenlaenge
 anzahlwuerfel = int(abstandanfend / wuerfeldiaghalbe) #wir setzen einen mehr ein, als wir müssten
 if anzahlwuerfel == 0:
     if abstandanfend < (2* minabstand):
-        print "Die Enden sind extrem nah beieinander, einfach versuchen zu zyklieren mit Linker, der genau der Länge entspricht!"
+        sys.exit("The ends are too close")
     else:
         wuerfelmitten = np.array([(anfangspunkt-endpunkt)/2])
         kantenlaenge = abstandanfend / np.sqrt(3)
@@ -401,7 +404,7 @@ if np.size(wuerfelmitten) == 3:
     mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
 
     if  mintemp < minabstandcalc:
-        print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "  + str( mintemp * kalib) + " pm"
+        temp = 0
 
     else:
         if derallernaechstepunkt == None:
@@ -410,19 +413,17 @@ if np.size(wuerfelmitten) == 3:
             derallernaechstepunkt = mintemp
 
         else:
-            print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) +  " pm entfernt ist."
+            temp = 0
 else:
 
     for mitte in wuerfelmitten:
         keep = ((PointsOfAllSubunits[:,0] > (mitte[0] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,0] < (mitte[0] + (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] > (mitte[1] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,1] < (mitte[1] + (kantenlaenge / 2))) &                 (PointsOfAllSubunits[:,2] > (mitte[2] - (kantenlaenge / 2))) & (PointsOfAllSubunits[:,2] < (mitte[2] + (kantenlaenge / 2))))   
 
         wuerfelpunkte = PointsOfAllSubunits[keep]
-        #print wuerfelpunkte
-        #print abstandarray(mitte, wuerfelpunkte)
+
         mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
-        #print mintemp
+
         if  mintemp < minabstandcalc:
-            print "Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "  + str( mintemp * kalib) + " pm"
             break
 
         else:
@@ -432,7 +433,7 @@ else:
                 derallernaechstepunkt = mintemp
 
     else:
-        print "Es ist möglich einen direkten Linker zu machen, da der nächste Punkt vom Linker " + str(derallernaechstepunkt * kalib) + " pm entfernt ist."
+        temp = 0
     
     
 
@@ -952,7 +953,7 @@ def make_small_generator(PointArray, repetition, RAM, ProteinArray = None):
     RAM in GByte,
     repetition, how often is the largest array repeated
     '''
-    AvailableRAM = RAM * 1073741824 #in BytesWaBytesWarning
+    AvailableRAM = float(RAM) * 1073741824 #in BytesWaBytesWarning
     
     
     try:
@@ -967,7 +968,7 @@ def make_small_generator(PointArray, repetition, RAM, ProteinArray = None):
         
     UsedMem = PointSize * proteinsize * repetition
     
-    return (int(UsedMem) / AvailableRAM) + 1
+    return int(UsedMem / AvailableRAM) + 1
 
 
 
@@ -1096,21 +1097,25 @@ def translate_paths_to_sequences(startpoint, firstflex, secondflex, thirdflex, f
         if weightflex != None:
             sequence = np.concatenate((sequenceflex, sequencerig))
             retweight = np.concatenate((weightflex, weightrig), axis = 1)
+            sequence = sequence + ScarsAtEndseq
+            return sequence , retweight,    np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),    np.concatenate((thirdflex, thirdrig), axis = 0)
         else:
             sequence = sequencerig
             retweight = weightrig
+            sequence = sequence + ScarsAtEndseq
+            return sequence , retweight, firstrig, secondrig, thirdrig
     elif weightflex != None:
         sequence = sequenceflex
         retweight = weightflex
-    
-        
-    
-    sequence = sequence + ScarsAtEndseq
-    if (weightrig != None) | (weightflex != None):
-        return sequence , retweight,    np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),    np.concatenate((thirdflex, thirdrig), axis = 0)
+        sequence = sequence + ScarsAtEndseq
+        return sequence , retweight, firstflex, secondflex, thirdflex
     else:
         sys.exit("There were absolutely no linkers found, that could be translated to sequences")
-        return None, None, None, None, None
+        return None, None, None, None, None    
+        
+    
+
+
 
 
 
@@ -1268,7 +1273,6 @@ elif functionnumber == "2":
     firstpointstriangle  = np.float16(triangleshiftsbeg + anfangspunkt)
     secondpointstriangle = np.float16(triangleshiftsbeg + allpointsfortriangles)
 
-    print np.shape(firstpointstriangle)
 
     keep = sort_out_by_length(firstpointstriangle, secondpointstriangle, linkertriangle)
 
@@ -1314,7 +1318,6 @@ elif functionnumber == "2":
     firstpointstriangle = firstpointstritemp
     secondpointstriangle = secondpointstritemp
 
-    print np.shape(firstpointstriangle)
 
 
     # In[24]:
@@ -1333,7 +1336,6 @@ elif functionnumber == "2":
 
     thirdpointstriangle  = np.float16(triangleshiftsend + endpunkt)
 
-    print np.shape(firstpointstriangle)
 
     keep = sort_out_by_length(secondpointstriangle, thirdpointstriangle, linkertriangle)
 
@@ -1341,7 +1343,6 @@ elif functionnumber == "2":
     secondpointstriangle = secondpointstriangle[keep]
     thirdpointstriangle = thirdpointstriangle[keep]
 
-    print np.shape(firstpointstriangle)
 
 
 
@@ -1390,7 +1391,7 @@ elif functionnumber == "2":
 
 #evtlraus?: bleiben die hier
 
-pickle.dump((firstpointsflexible, secondpointsflexible, thirdpointsflexible), open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+#pickle.dump((firstpointsflexible, secondpointsflexible, thirdpointsflexible), open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
 
 
@@ -1459,9 +1460,7 @@ if functionnumber == "3":
     #die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
     #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
 
-if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) & 
-    ((np.max(linkerlaengenKO) * 2 -(2 * LENGTHOFANGLEKO)) > maxvonanfang)
-    & (((np.max(linkerlaengenKO) * 2) - (2 * LENGTHOFANGLEKO)) > maxvonende)):
+    if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) & ((np.max(linkerlaengenKO) * 2 -(2 * LENGTHOFANGLEKO)) > maxvonanfang) & (((np.max(linkerlaengenKO) * 2) - (2 * LENGTHOFANGLEKO)) > maxvonende)):
         zweitepunkte = erstepunkte
     else:
         
@@ -1513,7 +1512,7 @@ if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) &
    
     #evtlraus
     #save for saving calculationtime
-    pickle.dump((erstepunkte, zweitepunkte, letztepunkte),            open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+    #pickle.dump((erstepunkte, zweitepunkte, letztepunkte),            open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
     """
     punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
@@ -1551,7 +1550,7 @@ if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) &
 
     #evtlraus
 
-    pickle.dump((erstepunkte, zweitepunkte, letztepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+    #pickle.dump((erstepunkte, zweitepunkte, letztepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
 
 
@@ -1667,20 +1666,21 @@ if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) &
 
     h5f.close()
         
-    print np.shape(erstepunkte)
+
 
 
 
 
 
     tempsize =  np.size(erstepunkte, axis = 0)
+    '''
     pickle.dump(erstepunkte[:tempsize/2],             open("files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "wb"))
     pickle.dump(erstepunkte[tempsize/2:],             open("files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "wb"))
     pickle.dump(zweitepunkte[:tempsize/2],             open("files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "wb"))
     pickle.dump(zweitepunkte[tempsize/2:],             open("files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "wb"))
     pickle.dump(drittepunkte[:tempsize/2],             open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "wb"))
     pickle.dump(drittepunkte[tempsize/2:],             open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-    print tempsize
+    '''
 
 
     #evtlraus
@@ -1716,7 +1716,7 @@ if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) &
 
     #evtlraus
 
-    pickle.dump((erstepunkte, zweitepunkte, drittepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
+    #pickle.dump((erstepunkte, zweitepunkte, drittepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
     
     firstpointsflexible = None
     secondpointsflexible = None
@@ -1867,7 +1867,7 @@ if secondpointsflexible != None:
 
         teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
         
-        print MakeSmall
+
         temp = weighing_function_flex(anfangspunkt, firstpointsflexible[:teiler], secondpointsflexible[:teiler],
                                         thirdpointsflexible[:teiler], endpunkt, pkte, InterestingAANr,\
                               ShouldBeWeighed, Weighingarray, substratelist)
@@ -1991,7 +1991,7 @@ for i in range(np.size(sequences)):
         writestring += "," + secondpointsall[i][j]
     for j in range(3):
         writestring += "," + thirdpointsall[i][j]
-    for j in range(1,np.size(weightingsall, axis = 1):
+    for j in range(1,np.size(weightingsall, axis = 1)):
         writestring += "," + weightingsall[j][i]
     writestring += "\n"
     
