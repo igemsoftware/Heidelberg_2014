@@ -12,7 +12,7 @@
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a href="{{pathFor 'home'}}" class="navbar-brand">Home</a>
+				<a href="{{pathFor 'home'}}" class="navbar-brand">iGEM Heidelberg 2014</a>
 			</div>
 			<div class="collapse navbar-collapse" >
 					{{> navItems}}
@@ -34,44 +34,37 @@
 
 <template name='navItems'>
 	<ul class="nav navbar-nav">
-		<li class="dropdown {{activeIfInPath 't'}}" id="typeDropdown">
-			<a href="#" class="dropdown-toggle" data-toggle="dropdown">Types<b class="caret"></b></a>
-			<ul class="dropdown-menu">
-				<li><a href="{{pathFor 'newType'}}">Create new Type</a></li>
-				<li class="divider"></li>
-				{{#each types}}
-				<li><span><span class="pull-right"><a href="{{pathFor 'viewType' id=_id query='edit'}}" class="glyphicon glyphicon-pencil"></a></span><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a></span></li>
-				{{/each}}
-			</ul>
+		<li class="{{activeIfInPath 't'}}" id="typeDropdown">
+			<a href="{{pathFor 'typeList'}}">Types</a>
 		</li>
 		<li class="{{activeIfInPath 's'}}">
 			<a href="{{pathFor 'suppliesList'}}">
 				Supplies
 				{{#if suppliesForReview}}
-					<span class="label label-warning">{{suppliesForReview}} need review}}</span>
+					<span class="label label-warning">{{suppliesForReview}} need review</span>
 				{{/if}}
 			</a>
 		</li>
-		<li class="dropdown {{activeIfInPath '/p'}}" id="protocolDropdown">
-			<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+		<li class="dropdown {{activeIfInPath 'p'}}">
+			<a href="{{pathFor 'protocolList'}}">
 				Protocols
 				{{#if protocolsForReview}}
 					<span class="label label-warning">{{protocolsForReview}} need review</span>
 				{{/if}}
-				<span class="caret"></span>
 			</a>
-			<ul class="dropdown-menu">
-				<li><a href="{{pathFor 'newProtocol'}}">Create new Protocol</a></li>
-				<li class="divider"></li>
-				{{#each protocols}}
-				<li><span><span class="pull-right" ><a href="{{pathFor 'viewProtocol' id=_id query='edit'}}" class="glyphicon glyphicon-pencil"></a>&nbsp;<a href="{{pathFor 'performProtocol' id=_id}}" class="glyphicon glyphicon-play"></a></span><a href="{{pathFor 'viewProtocol' id=_id}}">{{name}}</a>&nbsp;</span></li>
+			<a href="{{pathFor 'protocolList'}}" class="dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></a>
+			<ul class="dropdown-menu dropdown-menu">
+				{{#each featuredProtocols}}
+					<li><span><span class="pull-right"><a href="{{pathFor 'viewProtocol' id=_id}}" class="glyphicon glyphicon-eye-open"></a></span><a href="{{pathFor 'performProtocol' id=_id}}"><span class="glyphicon glyphicon-play small"></span> {{name}}</a></span></li>
 				{{/each}}
+				<li class="divider"></li>
+				<li><span><span class="pull-right"><a href="{{pathFor 'newProtocol'}}" class="glyphicon glyphicon-plus"></a></span><a href="{{pathFor 'protocolList'}}">Browse all protocols</a></span></li>
 			</ul>
 		</li>
 		<li class="{{activeIfInPath 'x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
 	</ul>
 	<ul class="nav navbar-nav navbar-right">
-		{{> loginButtons }}
+		{{> loginButtons}}
 		<li class="{{activeIfInPath 'options'}}"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
 	</ul>
 

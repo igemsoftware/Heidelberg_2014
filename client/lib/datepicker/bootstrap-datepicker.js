@@ -480,9 +480,12 @@
 			return new Date(this.dates.get(-1));
 		},
 
+		udpateView: true,
 		setDates: function(){
-			var args = $.isArray(arguments[0]) ? arguments[0] : arguments;
+			var args = $.isArray(arguments[1]) ? arguments[0] : arguments;
+			this.updateView = false;
 			this.update.apply(this, args);
+			this.updateView = true;
 			this._trigger('changeDate');
 			this.setValue();
 		},
@@ -641,12 +644,14 @@
 			}, this), true);
 			this.dates.replace(dates);
 
-			if (this.dates.length)
-				this.viewDate = new Date(this.dates.get(-1));
-			else if (this.viewDate < this.o.startDate)
-				this.viewDate = new Date(this.o.startDate);
-			else if (this.viewDate > this.o.endDate)
-				this.viewDate = new Date(this.o.endDate);
+			if (this.updateView) {
+				if (this.dates.length)
+					this.viewDate = new Date(this.dates.get(-1));
+				else if (this.viewDate < this.o.startDate)
+					this.viewDate = new Date(this.o.startDate);
+				else if (this.viewDate > this.o.endDate)
+					this.viewDate = new Date(this.o.endDate);
+			}
 
 			if (fromArgs){
 				// setting date by clicking

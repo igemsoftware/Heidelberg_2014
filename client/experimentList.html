@@ -7,11 +7,12 @@
 					<h4 class="list-group-item-heading">{{protocol.name}} <small>{{performer}}</small><small class="pull-right">{{formatDate finishDate true}}</small></h4>
 					<div class="list-group-item-text">
 						<div class="list-really-inline">
-							<ul class="list-inline">
+							<dl class="list-inline">
 								{{#each protocol.products}}
-									<li>{{name}}: {{productText ..}}</li>
+									<dt>{{name}}</dt>
+									<dd>{{productText ..}}</dd>
 								{{/each}}
-							</ul>
+							</dl>
 						</div>
 					</div>
 				</a>

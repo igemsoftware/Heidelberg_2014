@@ -2,6 +2,7 @@
 
 function ExperimentsVM(dataContainer) {
 	var self = this;
+	self.manager = new OMManager();
 	self.editMode = dataContainer.editMode;
 	self.newMode = dataContainer.newMode;
 	var data = dataContainer.data();
@@ -10,8 +11,9 @@ function ExperimentsVM(dataContainer) {
 	self.oldVersion = data.experiment && typeof dataContainer.version() != 'undefined' && dataContainer.version() != data.experiment.v.length - 1;
 	self.performer = ko.observable(data.experiment && data.experiment.v[self.version].performer);
 
-	self.protocol = new Protocol(data.protocol, data.experiment && data.experiment.v[self.version].protocol.v);
-	self.experiments = ko.observableArray([ new ExperimentVM(self, data, self.version) ]);
+	var experiment = new ExperimentVM(self, data, self.version);
+	self.protocol = data.experiment ? experiment.protocol : self.manager.getProtocol(data.protocol._id, undefined, data.protocol);
+	self.experiments = ko.observableArray([experiment]);
 
 	self.versions = data.experiment && _.map(data.experiment.v, function(version, index){
 		return new VersionVM(version, index, Router.path('viewExperiment', { id: data.experiment._id }, { query: { v: index } }));
@@ -60,7 +62,7 @@ ExperimentsVM.prototype.displayVersions = function() {
 
 function ExperimentVM(rootVM, data, version) {
 	var self = this;
-	Experiment.call(this, data, ko.unwrap(data.version), rootVM.editMode());
+	Experiment.call(this, rootVM.manager, data, ko.unwrap(data.version), rootVM.editMode());
 
 	self.finishDateUpdate = !data.experiment && setInterval(function () {
 		self.finishDate(new Date());

@@ -1,17 +1,9 @@
 'use strict';
 
-UI.registerHelper('supplies', function () {
-	return Supplies.find({ }, { sort: { date: -1 } });
-});
-
-Template.suppliesList.text = function () {
-	return _.pluck(this.types, 'text').join('/');
-};
-
 function SupplyVM(data) {
 	var self = this;
 	self.editMode = data.editMode;
-	Supply.call(this, data.supply(), ko.unwrap(data.version), self.editMode());
+	Supply.call(this, new OMManager(), data.supply(), ko.unwrap(data.version), self.editMode());
 
 	self.versions = self.DBData ? _.map(self.DBData.v, function (version, index) {
 		return new VersionVM(version, index, Router.path('viewSupply', { id: self._id() }, { query: { v: index } }));

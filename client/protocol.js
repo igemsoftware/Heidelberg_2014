@@ -3,7 +3,7 @@
 function ProtocolVM(data) {
 	var self = this;
 	self.editMode = data.editMode;
-	Protocol.call(this, data.protocol(), ko.unwrap(data.version), self.editMode());
+	Protocol.call(this, new OMManager(), data.protocol(), ko.unwrap(data.version), self.editMode());
 
 	self.versions = self.DBData && _.map(self.DBData.v, function (version, index) {
 		return new VersionVM(version, index, Router.path('viewProtocol', { id: self._id() }, { query: { v: index } }));
