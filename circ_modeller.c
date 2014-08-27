@@ -51,14 +51,15 @@ int fileExists(char* name) {
 
 const char *used_filenames[] = {
 								"Test1.txt", 
+								"Test2.txt",
 								"\0"
 								};
 
 void print_error(char *place, char *msg, char *param){
 	if(param != NULL)
-		fprintf(stderr, "ERROR[%12.12s]: %s %s\n", place, msg, param);
+		fprintf(stderr, "ERROR[%-12.12s]: %s %s\n", place, msg, param);
 	else
-		fprintf(stderr, "ERROR[%12.12s]: %s\n", place, msg);
+		fprintf(stderr, "ERROR[%-12.12s]: %s\n", place, msg);
 }
 
 
@@ -153,10 +154,6 @@ int get_signature(char *filename, char *signature, int length) {
 			BIO_free_all(b64);
 			break;
 		}
-		#ifdef DEBUG
-		else
-			printf("%s != %s\n", filename, line);
-		#endif
 	}
 	fclose(sig_file);
 	return(bytes_read_total);
@@ -179,6 +176,7 @@ int check_file_signings(const char **filenames) {
 	OpenSSL_add_all_algorithms();
 	OPENSSL_config(NULL);
 	public_key = EVP_PKEY_new();
+	build_public_key(public_key);
 
 	while(**current_filename) {
 		if(boinc_resolve_filename(*current_filename, resolved_filename, MAX_PATH))
@@ -193,7 +191,7 @@ int check_file_signings(const char **filenames) {
 		file = fopen(resolved_filename, "rb");
 		fseek(file, 0L, SEEK_END);
 		filesize = ftell(file);
-		file_mem = (char *)malloc(filesize);
+		file_mem = (char *)OPENSSL_malloc(filesize);
 		if(file_mem == NULL)
 			{print_error("file_signing", "unable to reserve memory for file", *current_filename); error = TRUE; break;}
 		fseek(file, 0L, SEEK_SET);	//rewind to beginning of file
@@ -207,7 +205,6 @@ int check_file_signings(const char **filenames) {
 				{print_error("file_signing", "something strange happened", *current_filename); error = TRUE; break;}
 		}
 
-		build_public_key(public_key);
 
 		// Message Digest Context
 		if(!(mdctx = EVP_MD_CTX_create()))
@@ -227,11 +224,22 @@ int check_file_signings(const char **filenames) {
 		if(!EVP_DigestVerifyFinal(mdctx, signature, sig_length))
 			{print_error("file_signing", "unable to verify signature of file", *current_filename); error = TRUE; break;}
 
+		OPENSSL_free(file_mem);
+		EVP_MD_CTX_destroy(mdctx);
 		current_filename++;
 	}
-	if(file_mem) free(file_mem);
-	if(public_key) EVP_PKEY_free(public_key);
-	if(mdctx) EVP_MD_CTX_destroy(mdctx);
+
+	if(error) {
+		if(file_mem != NULL)
+			OPENSSL_free(file_mem);
+		if(mdctx != NULL)
+			EVP_MD_CTX_destroy(mdctx);
+	}
+
+
+	if(public_key != NULL) EVP_PKEY_free(public_key);
+
+	CONF_modules_free();
 	EVP_cleanup();
 	ERR_free_strings();
 	if(error)
@@ -370,8 +378,8 @@ void call_python(char *ProgramName, char *modeller_path, char *modeller_licence)
 
 int main(int argc, char **argv)
 {
-	char modeller_path[MAX_PATH];
-	char libs_path[MAX_PATH];
+	char modeller_path[MAX_PATH] = {0};
+	char libs_path[MAX_PATH] = {0};
 	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
 	char exec_path[MAX_PATH];
 
