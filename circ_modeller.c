@@ -7,7 +7,6 @@
 
 #include "Python.h"
 
-//#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +19,6 @@
 #include <openssl/engine.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
-//#include <modeller.h>
 
 /* BOINC */
 #include <boinc_api.h>
@@ -31,8 +29,11 @@
 
 #ifdef __linux
 #include "linux_functions.h"
+#define DIR_SLASH "/"
 #elif _WIN32
 #include "windows_functions.h"
+#pragma comment(lib, "crypt32.lib") 
+#define DIR_SLASH "\\"
 #endif
 
 #define RESOURCES_ZIP "modeller_res.zip"
@@ -50,8 +51,9 @@ int fileExists(char* name) {
 }
 
 const char *used_filenames[] = {
-								"Test1.txt", 
-								"Test2.txt",
+								"configfile.csv", 
+								"atomfile.pdb",
+								"inputsequencefile.ali",
 								"\0"
 								};
 
@@ -124,9 +126,8 @@ int get_signature(char *filename, char *signature, int length) {
 	char sig_filename[MAX_PATH];
 	FILE *sig_file;
 	char line[MAX_LINESIZE];
-	char *cur_pos, *end_line, *buffer_pos;
-	BIO *bio_in, *b64, *bio_out;
-	BUF_MEM *output_data;
+	char *cur_pos, *end_line;
+	BIO *bio_in, *b64;
 	int bytes_read_total = 0,bytes_read = 0;
 	boinc_resolve_filename(SIGNATURES_FILE, sig_filename, MAX_PATH);
 	sig_file = fopen(sig_filename, "r");
@@ -258,10 +259,10 @@ int unzip_resources(char *basedir) {
 
     /* Check if other process is already extracting */
     strncpy(unzip_lock_started, basedir, MAX_PATH);
-    strncat(unzip_lock_started, "/unzip_started", MAX_PATH-(strlen(basedir)+1));
+	strncat(unzip_lock_started, DIR_SLASH "unzip_started", MAX_PATH - (strlen(basedir) + 1));
     
     strncpy(unzip_lock_finished, basedir, MAX_PATH);
-    strncat(unzip_lock_finished, "/unzip_finished", MAX_PATH-(strlen(basedir)+1));
+	strncat(unzip_lock_finished, DIR_SLASH "unzip_finished", MAX_PATH - (strlen(basedir) + 1));
 
     if(!fileExists(unzip_lock_finished)) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
@@ -276,7 +277,9 @@ int unzip_resources(char *basedir) {
 			printf("No process extracting yet. Extracting %s...\n", unzip_file);
         	#endif
         	if(fileExists(unzip_file)) {
-				/*#ifdef USEWIN32IOAPI
+				/*
+				//Alternative implementation
+				#ifdef USEWIN32IOAPI
 					zlib_filefunc64_def ffunc;
 				#endif
 				#ifdef USEWIN32IOAPI
@@ -329,31 +332,59 @@ void simple_crypt(char *array, int array_size)
         array[i] ^= secret[i];
 }
 
-/* Exit, reporting the Modeller error, if one occurred. 
-void handle_error(int ierr)
-{
-  if (ierr != 0) {
-    GError *err = mod_error_get();
-    fprintf(stderr, "Modeller error: %s\n", err->message);
-    g_error_free(err);
-    boinc_finish(1);
-  }
-}*/
 
 void call_python(char *ProgramName, char *modeller_path, char *modeller_licence) {
 	PyObject *module, *modeller_init, *calc;
+	//char pythonhome[2*MAX_PATH] = { 0 };
 	char **argv;
+	
+	// Reserve space for resolved filenames
+	char *resolved_files[5];
+	char file1[MAX_PATH] = { 0 };
+	char file2[MAX_PATH] = { 0 };
+	char file3[MAX_PATH] = { 0 };
+	char file4[MAX_PATH] = { 0 };
+	resolved_files[0] = file1;
+	resolved_files[1] = file2;
+	resolved_files[2] = file3;
+	resolved_files[3] = file4;
+
 	argv = &ProgramName;
+	// Prevent import of site.py
+	Py_NoSiteFlag = 1;
+
 	Py_SetProgramName(ProgramName);
+	//Py_Initialize();
+	//strncat(pythonhome, modeller_path, 2 * MAX_PATH);
+/*#ifdef __linux
+	strncat(pythonhome, ":", (2 * MAX_PATH) - strlen(pythonhome));
+#elif _WIN32
+	strncat(pythonhome, ";", (2 * MAX_PATH) - strlen(pythonhome));
+#endif
+	strncat(pythonhome, modeller_path, (2 * MAX_PATH) - strlen(pythonhome));*/
+	//strncat(pythonhome, DIR_SLASH "lib", (2 * MAX_PATH) - strlen(pythonhome));
+	//printf("Setting PYTHONHOME to:\n%s\n", pythonhome);
+
+	Py_SetPythonHome(modeller_path);
+	//Py_InitializeEx(0);
 	Py_Initialize();
+	PySys_SetPath(modeller_path);
+	
+	// Setup Python sys path to include modeller Module
 	PySys_SetArgv(1, argv);
-	//PyRun_SimpleString("import python_modelling as pm");
-	//PyRun_SimpleString("import sys");
-	//PyRun_SimpleString("print sys.path");
-	module = PyImport_ImportModule("python_modelling");
+
+	module = PyImport_ImportModule("construct_circ_protein");
 	if(module == NULL){
-		printf("Error importing Module:\n");
-		PyErr_Print();
+		PyObject *ptype, *pvalue, *ptraceback;
+		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+		//pvalue contains error message
+		//ptraceback contains stack snapshot and many other information
+		//(see python traceback structure)
+
+		//Get error message
+		char *pStrErrorMessage = PyString_AsString(pvalue);
+		printf("Error importing Module:\n%s\n", pStrErrorMessage);
+		//PyErr_Print();
 		return;
 	}
 
@@ -371,7 +402,24 @@ void call_python(char *ProgramName, char *modeller_path, char *modeller_licence)
 		PyErr_Print();
 		return;
 	}
-	PyObject_CallFunction(calc, NULL);
+
+	for (int i = 0; i < 3; i++){
+		boinc_resolve_filename(used_filenames[i], resolved_files[i], MAX_PATH);
+	}
+
+	boinc_resolve_filename("output.pdb", resolved_files[3], MAX_PATH);
+
+	PyObject_CallFunction(calc, "ssss", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
+	
+	PyObject *exception = PyErr_Occurred();
+	if (exception != NULL){
+		PyObject *ptype, *pvalue, *ptraceback;
+		int errorcode;
+		errorcode = PyErr_ExceptionMatches(exception);
+		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+		printf("Errorcode: %i\n%s\nTraceback:\n%s\n", errorcode, PyString_AsString(pvalue), PyString_AsString(ptraceback));
+	}
+
 
 	Py_Finalize();
 }
@@ -381,7 +429,7 @@ int main(int argc, char **argv)
 	char modeller_path[MAX_PATH] = {0};
 	char libs_path[MAX_PATH] = {0};
 	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
-	char exec_path[MAX_PATH];
+	char exec_path[MAX_PATH] = { 0 };
 
 /*
 	struct mod_libraries *libs;
@@ -412,12 +460,16 @@ int main(int argc, char **argv)
 
 	/* Set Modeller environment variables correctly */
 	strncpy(libs_path, modeller_path, MAX_PATH);
-	strncat(libs_path, "/libs.lib", MAX_PATH-strlen(libs_path));
+	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
 	#ifdef __linux
 	setenv("LIBS_LIB9v14", libs_path, 1);
+	setenv("PYTHONPATH", "", 1);
 	#elif _WIN32
 	_putenv_s("LIBS_LIB9v14", libs_path);
+	_putenv_s("PYTHONPATH", "");
 	#endif
+
+
 	
 	#ifdef DEBUG
 		printf("Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
@@ -428,54 +480,8 @@ int main(int argc, char **argv)
 	/* Install encrypted licence */
 	simple_crypt(licence, strlen(licence));
 
-	//call_python(exec_path, modeller_path, licence);
+	call_python(exec_path, modeller_path, licence);
 
-	/*mod_license_key_set(licence);
-
-	mod_start(&ierr);
-	handle_error(ierr);
-	mod_header_write();
-
-	mod_log_set(2, 1);
-	libs = mod_libraries_new(NULL);
-	fh = mod_file_open("${LIB}/restyp.lib", "r");
-	if (fh) {
-		mod_libraries_read_libs(libs, fh, &ierr);
-		mod_file_close(fh, &ierr);
-	} else {
-		ierr = 1;
-	}
-	handle_error(ierr);
-	mod_libraries_rand_seed_set(libs, -8123);
-
-	mdl = mod_model_new(NULL);
-	io = mod_io_data_new();
-	boinc_resolve_filename("pdb_file", file_resolve, MAX_PATH);
-	fh = mod_file_open(file_resolve, "r");
-	if (fh) {
-		mod_model_read(mdl, io, libs, fh, "PDB", "FIRST:@LAST:  ", 7, &ierr);
-		mod_file_close(fh, &ierr);
-	} else {
-		ierr = 1;
-	}
-	handle_error(ierr);
-	printf("Model of %s solved at resolution %f, rfactor %f\n", mdl->seq.name,
-	     mdl->seq.resol, mdl->seq.rfactr);
-	boinc_resolve_filename("output", file_resolve, MAX_PATH);
-	fh = mod_file_open(file_resolve, "w");
-	if (fh) {
-		mod_selection_all(mdl, &sel1, &nsel1);
-		mod_model_write(mdl, libs, sel1, nsel1, fh, "MMCIF", 0, 1, "", &ierr);
-		g_free(sel1);
-		mod_file_close(fh, &ierr);
-	} else {
-		ierr = 1;
-	}
-	handle_error(ierr);
-	mod_libraries_free(libs);
-	mod_model_free(mdl);
-	mod_io_data_free(io);
-	//mod_end();*/
 	boinc_finish(0);
 	return -1;
 }
