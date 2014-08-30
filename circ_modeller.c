@@ -40,6 +40,7 @@
 #define STDERR_FILE "stderr.txt"
 #define STDOUT_FILE STDERR_FILE
 #define SIGNATURES_FILE "signatures"
+#define OUTPUT_FILE "output.pdb"
 #define MAX_LINESIZE 500
 #define MAX_SIG_SIZE 500
 
@@ -51,6 +52,7 @@ int fileExists(char* name) {
 }
 
 const char *used_filenames[] = {
+								"construct_circ_protein.pyd",
 								"configfile.csv", 
 								"atomfile.pdb",
 								"inputsequencefile.ali",
@@ -277,33 +279,6 @@ int unzip_resources(char *basedir) {
 			printf("No process extracting yet. Extracting %s...\n", unzip_file);
         	#endif
         	if(fileExists(unzip_file)) {
-				/*
-				//Alternative implementation
-				#ifdef USEWIN32IOAPI
-					zlib_filefunc64_def ffunc;
-				#endif
-				#ifdef USEWIN32IOAPI
-					fill_win32_filefunc64A(&ffunc);
-					uf = unzOpen2_64(unzip_file,&ffunc);
-				#else
-					uf = unzOpen64(unzip_file);
-				#endif
-				
-				if(getcwd(working_dir, MAX_PATH) == NULL)
-					printf("Warning: Unable to save working dir!\n");
-
-				#ifdef _WIN32
-					if (_chdir(basedir))
-				#else
-					if (chdir(basedir))
-				#endif
-        		{
-          		printf("Error changing into %s, aborting\n", basedir);
-          		return(-1);
-        		}
-
-           		rc = do_extract(uf, 0, 1, '\0');
-				*/
 				rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
 				#ifdef DEBUG
 				printf("Unzip routine returned %i\n", rc);
@@ -332,14 +307,47 @@ void simple_crypt(char *array, int array_size)
         array[i] ^= secret[i];
 }
 
+static PyObject *getLicence(PyObject *self, PyObject *args){
+	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
+	simple_crypt(licence, strlen(licence));
+	return Py_BuildValue("s", licence);
+}
 
-void call_python(char *ProgramName, char *modeller_path, char *modeller_licence) {
-	PyObject *module, *modeller_init, *calc;
-	//char pythonhome[2*MAX_PATH] = { 0 };
+static PyObject *getModellerPath(PyObject *self, PyObject *args){
+	char modeller_path[MAX_PATH] = {0};
+	getExecPath(modeller_path, MAX_PATH, 1);
+	return Py_BuildValue("s", modeller_path);
+}
+
+static PyObject *getJobname(PyObject *self, PyObject *args){
+	return Py_BuildValue("s", "circ_modeller");
+}
+
+static PyMethodDef loader_methods[] = {
+	{"getLicence", getLicence, METH_NOARGS, ""},
+	{"getModellerPath", getModellerPath, METH_NOARGS, ""},
+	{"getJobname", getJobname, METH_NOARGS, ""},
+	{NULL, NULL, 0, NULL}
+};
+
+void handle_pyerror(const char *errormsg){
+	PyObject *ptype, *pvalue, *ptraceback;
+	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	print_error("python", errormsg, PyString_AsString(pvalue));
+	if(ptraceback != NULL)
+		print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
+	Py_XDECREF(ptype);
+	Py_XDECREF(pvalue);
+	Py_XDECREF(ptraceback);
+	Py_Finalize();
+}
+
+int call_python(char *ProgramName, char *modeller_path) {
+	PyObject *module, *loader, *calc;
 	char **argv;
-	
+
 	// Reserve space for resolved filenames
-	char *resolved_files[5];
+	char *resolved_files[4];
 	char file1[MAX_PATH] = { 0 };
 	char file2[MAX_PATH] = { 0 };
 	char file3[MAX_PATH] = { 0 };
@@ -349,86 +357,80 @@ void call_python(char *ProgramName, char *modeller_path, char *modeller_licence)
 	resolved_files[2] = file3;
 	resolved_files[3] = file4;
 
+	int rc;
+
 	argv = &ProgramName;
 	// Prevent import of site.py
 	Py_NoSiteFlag = 1;
 
 	Py_SetProgramName(ProgramName);
-	//Py_Initialize();
-	//strncat(pythonhome, modeller_path, 2 * MAX_PATH);
-/*#ifdef __linux
-	strncat(pythonhome, ":", (2 * MAX_PATH) - strlen(pythonhome));
-#elif _WIN32
-	strncat(pythonhome, ";", (2 * MAX_PATH) - strlen(pythonhome));
-#endif
-	strncat(pythonhome, modeller_path, (2 * MAX_PATH) - strlen(pythonhome));*/
-	//strncat(pythonhome, DIR_SLASH "lib", (2 * MAX_PATH) - strlen(pythonhome));
-	//printf("Setting PYTHONHOME to:\n%s\n", pythonhome);
 
 	Py_SetPythonHome(modeller_path);
-	//Py_InitializeEx(0);
 	Py_Initialize();
-	PySys_SetPath(modeller_path);
-	
+
+	loader = Py_InitModule("loader", loader_methods);
+
+	if(loader == NULL){
+		handle_pyerror("importing loader module:\n");
+		return -1;
+	}
+
 	// Setup Python sys path to include modeller Module
 	PySys_SetArgv(1, argv);
 
 	module = PyImport_ImportModule("construct_circ_protein");
 	if(module == NULL){
-		PyObject *ptype, *pvalue, *ptraceback;
-		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-		//pvalue contains error message
-		//ptraceback contains stack snapshot and many other information
-		//(see python traceback structure)
-
-		//Get error message
-		char *pStrErrorMessage = PyString_AsString(pvalue);
-		printf("Error importing Module:\n%s\n", pStrErrorMessage);
-		//PyErr_Print();
-		return;
+		handle_pyerror("importing Module:\n");
+		Py_Finalize();
+		return -2;
 	}
-
-	modeller_init = PyObject_GetAttrString(module, "modeller_init");
-	if(modeller_init == NULL){
-		printf("Error getting Attribute modeller_init\n");
-		PyErr_Print();
-		return;
-	}
-	PyObject_CallFunction(modeller_init, "ss", modeller_path, modeller_licence);
 
 	calc = PyObject_GetAttrString(module, "calc");
 	if(calc == NULL){
-		printf("Error getting Attribute calc.\n");
-		PyErr_Print();
-		return;
+		handle_pyerror("getting Attribute calc:\n");
+		Py_Finalize();
+		return -3;
+	}
+	// Don't pass first file
+	for (int i = 1; i < 4; i++){
+		rc = boinc_resolve_filename(used_filenames[i], resolved_files[i-1], MAX_PATH);
+		if(rc)
+			print_error("resolve files", "unable to resolve filename: ", used_filenames[i]);
+		Py_Finalize();
+		return -4;
 	}
 
-	for (int i = 0; i < 3; i++){
-		boinc_resolve_filename(used_filenames[i], resolved_files[i], MAX_PATH);
+	rc = boinc_resolve_filename(OUTPUT_FILE, resolved_files[3], MAX_PATH);
+	if (rc){
+		print_error("resolve files", "unable to resolve filename: ", OUTPUT_FILE);
+		Py_Finalize();
+		return -5;
 	}
-
-	boinc_resolve_filename("output.pdb", resolved_files[3], MAX_PATH);
-
 	PyObject_CallFunction(calc, "ssss", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
 	
-	PyObject *exception = PyErr_Occurred();
-	if (exception != NULL){
-		PyObject *ptype, *pvalue, *ptraceback;
-		int errorcode;
-		errorcode = PyErr_ExceptionMatches(exception);
-		PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-		printf("Errorcode: %i\n%s\nTraceback:\n%s\n", errorcode, PyString_AsString(pvalue), PyString_AsString(ptraceback));
+
+	PyObject *ptype, *pvalue, *ptraceback;
+	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	if (!((ptype == NULL) && (pvalue == NULL) && (ptraceback == NULL))){
+		print_error("python", "in modeller execution: ", PyString_AsString(pvalue));
+		if(ptraceback != NULL)
+			print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
+		Py_XDECREF(ptype);
+		Py_XDECREF(pvalue);
+		Py_XDECREF(ptraceback);
+		Py_Finalize();
+		return -6;
 	}
 
 
 	Py_Finalize();
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	char modeller_path[MAX_PATH] = {0};
 	char libs_path[MAX_PATH] = {0};
-	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
 	char exec_path[MAX_PATH] = { 0 };
 
 /*
@@ -443,7 +445,7 @@ int main(int argc, char **argv)
 	boinc_init();
 	
 	#ifdef DEBUG
-	//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
+		freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
 	getExecPath(modeller_path, MAX_PATH, 1);
@@ -458,7 +460,9 @@ int main(int argc, char **argv)
 	if(check_file_signings((const char **)used_filenames))
 		{print_error("main", "verifying files failed!", NULL); boinc_finish(-1);}
 
-	/* Set Modeller environment variables correctly */
+	/*	Set Modeller environment variables correctly 						**
+	**	and reset PYTHONPATH to avoid loading of locally installed files 	*/
+
 	strncpy(libs_path, modeller_path, MAX_PATH);
 	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
 	#ifdef __linux
@@ -478,10 +482,14 @@ int main(int argc, char **argv)
 	
 
 	/* Install encrypted licence */
-	simple_crypt(licence, strlen(licence));
 
-	call_python(exec_path, modeller_path, licence);
 
+	rc = call_python(exec_path, modeller_path);
+	if (rc < 0){
+		print_error("main", "somthing went wrong in python, exiting with errorcode!", NULL);
+		fprintf(stderr, "Python Errorcode: %i\n", rc);
+		boinc_finish(-1);
+	}
 	boinc_finish(0);
 	return -1;
 }
