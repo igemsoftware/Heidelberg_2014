@@ -4,7 +4,7 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif /* __STDC_VERSION__ */
-
+#undef _DEBUG
 #include "Python.h"
 
 #include <stdio.h>
@@ -54,13 +54,12 @@ int fileExists(char* name) {
 }
 
 const char *used_filenames[] = {
-								"construct_circ_protein.pyd",
 								"configfile.csv", 
 								"atomfile.pdb",
 								"inputsequencefile.ali",
 								"\0"
 								};
-
+// TODO change to stderr
 void print_error(char *place, char *msg, char *param){
 	if(param != NULL)
 		fprintf(stderr, "ERROR[%-12.12s]: %s %s\n", place, msg, param);
@@ -344,7 +343,7 @@ void handle_pyerror(const char *errormsg){
 }
 
 int call_python(char *ProgramName, char *modeller_path) {
-	PyObject *module, *loader, *calc;
+	PyObject *module, *loader, *calc, *modeller;
 	char **argv;
 
 	// Reserve space for resolved filenames
@@ -369,6 +368,8 @@ int call_python(char *ProgramName, char *modeller_path) {
 	Py_SetPythonHome(modeller_path);
 	Py_Initialize();
 
+	PyRun_SimpleString("print \"hello\"");
+
 	loader = Py_InitModule("loader", loader_methods);
 
 	if(loader == NULL){
@@ -378,27 +379,31 @@ int call_python(char *ProgramName, char *modeller_path) {
 
 	// Setup Python sys path to include modeller Module
 	PySys_SetArgv(1, argv);
+	modeller = PyImport_ImportModule("_modeller");
+	if (modeller == NULL){
+		handle_pyerror("importing Modeller\n");
+		return -1;
+	}
 
 	module = PyImport_ImportModule("construct_circ_protein");
 	if(module == NULL){
-		handle_pyerror("importing Module:\n");
-		Py_Finalize();
+		handle_pyerror("importing Module\n");
 		return -2;
 	}
 
 	calc = PyObject_GetAttrString(module, "calc");
 	if(calc == NULL){
 		handle_pyerror("getting Attribute calc:\n");
-		Py_Finalize();
 		return -3;
 	}
 	// Don't pass first file
-	for (int i = 1; i < 4; i++){
-		rc = boinc_resolve_filename(used_filenames[i], resolved_files[i-1], MAX_PATH);
-		if(rc)
+	for (int i = 0; i < 3; i++){
+		rc = boinc_resolve_filename(used_filenames[i], resolved_files[i], MAX_PATH);
+		if (rc){
 			print_error("resolve files", "unable to resolve filename: ", used_filenames[i]);
-		Py_Finalize();
-		return -4;
+			Py_Finalize();
+			return -4;
+		}
 	}
 
 	rc = boinc_resolve_filename(OUTPUT_FILE, resolved_files[3], MAX_PATH);
@@ -446,7 +451,7 @@ int main(int argc, char **argv)
 	boinc_init();
 	
 	#ifdef DEBUG
-		freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
+		//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
 	getExecPath(modeller_path, MAX_PATH, 1);
@@ -458,8 +463,8 @@ int main(int argc, char **argv)
 		boinc_temporary_exit_wrapper(20, "Something went wrong while extracting!\n", FALSE);
 	}
 
-	if(check_file_signings((const char **)used_filenames))
-		{print_error("main", "verifying files failed!", NULL); boinc_finish(-1);}
+	//if(check_file_signings((const char **)used_filenames))
+	//	{print_error("main", "verifying files failed!", NULL); boinc_finish(-1);}
 
 	/*	Set Modeller environment variables correctly 						**
 	**	and reset PYTHONPATH to avoid loading of locally installed files 	*/
@@ -468,10 +473,10 @@ int main(int argc, char **argv)
 	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
 	#ifdef __linux
 	setenv("LIBS_LIB9v14", libs_path, 1);
-	setenv("PYTHONPATH", "", 1);
+	//setenv("PYTHONPATH", "", 1);
 	#elif _WIN32
 	_putenv_s("LIBS_LIB9v14", libs_path);
-	_putenv_s("PYTHONPATH", "");
+	//_putenv_s("PYTHONPATH", "");
 	#endif
 
 
