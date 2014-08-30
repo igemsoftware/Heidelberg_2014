@@ -65,15 +65,15 @@ if(UNIX)
 
 else(UNIX)
 	### BOINC ###
-	set_target_properties(boinc_zip PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_zip.lib")
-	set_target_properties(boinc_api PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_api.lib")
-	set_target_properties(boinc PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc.lib")
+	set_target_properties(boinc_zip PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinczip_staticcrt.lib")
+	set_target_properties(boinc_api PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboincapi_staticcrt.lib")
+	set_target_properties(boinc PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/res/libboinc_staticcrt.lib")
 
 	### OpenSSL Crypto libraries (libeay.lib, ssleay.lib) ###
-	set(OPENSSL_DIR "FILLME" CACHE PATH "Path to the compiled openssl files")
-	if(${OPENSSL_DIR} STREQUAL "FILLME")
+	set(OPENSSL_DIR "" CACHE PATH "Path to the compiled openssl files")
+	if("${OPENSSL_DIR}" STREQUAL "")
 		message(FATAL_ERROR "OPENSSL_DIR not set. Please set OPENSSL_DIR to the path of the compiled openssl binaries!")
-	endif(${OPENSSL_DIR} STREQUAL "FILLME")
+	endif("${OPENSSL_DIR}" STREQUAL "")
 
 	list(APPEND circ_modeller_includes PUBLIC "${OPENSSL_DIR}/include")
 	find_library(OPENSSL_LIBS_WIN32 NAMES libeay32 ssleay32 PATHS "${OPENSSL_DIR}/lib" PATH_SUFFIXES lib)
@@ -87,7 +87,8 @@ else(UNIX)
 	set(CONFIG_getExecPath "getExecPath_w")
 	set(CONFIG_createFailIfExists "createFailIfExists_w")
 
-	### Linking settings ###
+	### Linking settings 				###
+	### Needed because of OpenSSL Libs 	###
 	if(MSVC)
 		SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /SAFESEH:NO")
 		SET(CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "${CMAKE_EXE_LINKER_FLAGS_MINSIZEREL} /SAFESEH:NO")
