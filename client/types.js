@@ -6,7 +6,7 @@ UI.registerHelper('types', function () {
 
 function TypeVM(data, textCallback) {
 	var self = this;
-	Type.call(this, data.type(), ko.unwrap(data.version));
+	Type.call(this, new OMManager(), data.type(), ko.unwrap(data.version));
 
 	self.editMode = data.editMode;
 	self.versions = self.DBData ? _.map(self.DBData.v, function (version, index) {
