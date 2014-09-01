@@ -4,7 +4,7 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif /* __STDC_VERSION__ */
-
+#undef _DEBUG
 #include "Python.h"
 
 #include <stdio.h>
@@ -52,12 +52,13 @@ int fileExists(char* name) {
 }
 
 const char *used_filenames[] = {
-								"construct_circ_protein.pyd",
 								"configfile.csv", 
 								"atomfile.pdb",
 								"inputsequencefile.ali",
 								"\0"
 								};
+
+
 // TODO change to stderr
 void print_error(char *place, char *msg, char *param){
 	if(param != NULL)
@@ -171,7 +172,7 @@ int check_file_signings(const char **filenames) {
 	long int filesize;
 	FILE *file;
 	int bytes_written = 0, rc = 0, errorcode = 0,error = FALSE;
-	EVP_PKEY *public_key;
+	EVP_PKEY *public_key = NULL;
 	EVP_MD_CTX *mdctx = NULL;
 	
 	// Init openssl
@@ -192,6 +193,8 @@ int check_file_signings(const char **filenames) {
 			{print_error("file_signing", "no signature found for", *current_filename); error = TRUE; break;}
 
 		file = fopen(resolved_filename, "rb");
+		if (file == NULL)
+			{print_error("file_signing", "unable to open file", resolved_filename); error = TRUE; break;}
 		fseek(file, 0L, SEEK_END);
 		filesize = ftell(file);
 		file_mem = (char *)OPENSSL_malloc(filesize);
@@ -229,6 +232,8 @@ int check_file_signings(const char **filenames) {
 
 		OPENSSL_free(file_mem);
 		EVP_MD_CTX_destroy(mdctx);
+		file_mem = NULL;
+		mdctx = NULL;
 		current_filename++;
 	}
 
@@ -275,9 +280,6 @@ int unzip_resources(char *basedir) {
     	}
     	else {								// Lockfile does not exist --> extract data
     		boinc_resolve_filename(RESOURCES_ZIP, unzip_file, MAX_PATH);
-    		#ifdef DEBUG
-			printf("No process extracting yet. Extracting %s...\n", unzip_file);
-        	#endif
         	if(fileExists(unzip_file)) {
 				rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
 				#ifdef DEBUG
@@ -391,8 +393,8 @@ int call_python(char *ProgramName, char *modeller_path) {
 	}
 
 	// Don't pass first file
-	for (int i = 1; i < 4; i++){
-		rc = boinc_resolve_filename(used_filenames[i], resolved_files[i-1], MAX_PATH);
+	for (int i = 0; i < 3; i++){
+		rc = boinc_resolve_filename(used_filenames[i], resolved_files[i], MAX_PATH);
 		if (rc){
 			print_error("resolve files", "unable to resolve filename: ", used_filenames[i]);
 			Py_Finalize();
@@ -433,23 +435,19 @@ int main(int argc, char **argv)
 	char libs_path[MAX_PATH] = {0};
 	char exec_path[MAX_PATH] = { 0 };
 
-/*
-	struct mod_libraries *libs;
-	struct mod_model *mdl;
-	struct mod_io_data *io;
-	struct mod_file *fh;
-	int ierr, *sel1, nsel1, rc;
-	char file_resolve[MAX_PATH];
-*/
 	int rc;
+	getExecPath(modeller_path, MAX_PATH, 1);
+	getExecPath(exec_path, MAX_PATH, 0);
+
+//#ifdef DEBUG
+	// TODO, workaround for debugging in visual studio
+	//chdir(modeller_path);
+//#endif
 	boinc_init();
 	
 	#ifdef DEBUG
 		//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
-
-	getExecPath(modeller_path, MAX_PATH, 1);
-	getExecPath(exec_path, MAX_PATH, 0);
 
 	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
 	if(rc < 0){
