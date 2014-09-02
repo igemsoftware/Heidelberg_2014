@@ -1,9 +1,24 @@
 <template name="suppliesList">
 	<div class="row">
 		<div class="col-md-3">
-			<select class="form-control">
-				<option>All</option>
-			</select>
+			<h3>Filter</h3>
+			<div id="filter-accordion" class="panel-group">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title"><a href="#type-filter" data-toggle="collapse" data-parent="#filter-accordion">Type<span data-bind="text: ko.computed(function () { return typeFilter() === undefined ? '' : ': ' + typeFilter().name() })"></span></a></h4>
+					</div>
+					<div id="type-filter" class="panel-collapse panel-autoscroll collapse in">
+						<div class="panel-body">
+							<ul class="nav nav-pills nav-stacked nav-small">
+								<li data-bind="css: { active: typeFilter() === undefined }"><a href="" data-bind="click: typeFilter.bind(null, undefined)">Any</a></li>
+								<!-- ko foreach: types -->
+									<li data-bind="css: { active: $parent.typeFilter() === $data }"><a href="" data-bind="text: name, click: $parent.typeFilter"></a></li>
+								<!-- /ko -->
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<div class="col-md-9">
 			<div class="btn-toolbar space-bottom">
@@ -21,7 +36,7 @@
 						<span data-bind="text: text"></span>
 						<span class="label label-warning" data-bind="visible: needsReview">needs review</span>
 						<small data-bind="text: typeNames"></small>
-						<small class="pull-right" data-bind="text: ko.computed(function () { return formatDate(date()) })"></small>
+						<small class="pull-right" data-bind="text: ko.computed(function () { return formatDate(date(), true) })"></small>
 					</h4>
 					<div class="list-group-item-text">
 						<div class="list-really-inline">

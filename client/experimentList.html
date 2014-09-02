@@ -1,22 +1,56 @@
 <template name="experimentList">
-	<div id="experiments">
-		<h1>Experiments</h1>
-		<div class="list-group">
-			{{#each experiments}}
-				<a href="{{pathFor 'viewExperiment' id=_id}}" class="list-group-item">
-					<h4 class="list-group-item-heading">{{protocol.name}} <small>{{performer}}</small><small class="pull-right">{{formatDate finishDate true}}</small></h4>
+	<h1>Experiments</h1>
+	<div class="row">
+		<div class="col-md-3">
+			<h3>Filter</h3>
+			<div id="filter-accordion" class="panel-group">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title"><a href="#protocol-filter" data-toggle="collapse" data-parent="#filter-accordion">Protocol<span data-bind="text: ko.computed(function () { return protocolFilter() === undefined ? '' : ': ' + protocolFilter().name() })"></span></a></h4>
+					</div>
+					<div id="protocol-filter" class="panel-collapse panel-autoscroll collapse in">
+						<div class="panel-body">
+							<ul class="nav nav-pills nav-stacked nav-small">
+								<li data-bind="css: { active: protocolFilter() === undefined }"><a href="" data-bind="click: protocolFilter.bind(null, undefined)">Any</a></li>
+								<!-- ko foreach: protocols -->
+									<li data-bind="css: { active: $parent.protocolFilter() === $data }"><a href="" data-bind="text: name, click: $parent.protocolFilter"></a></li>
+								<!-- /ko -->
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-9">
+			<div class="btn-toolbar space-bottom">
+				<div class="dropdown pull-right">
+					<button class="btn btn-default dropdown-toggle pull" data-toggle="dropdown"><small>Sort:</small> <span data-bind="text: sort().text"></span> <span class="caret"></span></button>
+					<ul class="dropdown-menu dropdown-menu-right" role="menu" data-bind="foreach: sortOptions">
+						<li role="presentation"><a href="" role="menuitem" tabindex="-1" data-bind="text: text, click: $parent.sort.bind($parent)"></a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="list-group" data-bind="foreach: experiments">
+				<a class="list-group-item" data-bind="attr: { href: href }">
+					<h4 class="list-group-item-heading">
+						<span data-bind="text: protocol.name()"></span>
+						<small data-bind="text: performer"></small>
+						<small class="pull-right" data-bind="text: ko.computed(formatDate.bind(null, finishDate(), true))"></small>
+					</h4>
 					<div class="list-group-item-text">
 						<div class="list-really-inline">
-							<dl class="list-inline">
-								{{#each protocol.products}}
-									<dt>{{name}}</dt>
-									<dd>{{productText ..}}</dd>
-								{{/each}}
-							</dl>
+							<ul class="list-inline" data-bind="foreach: protocol.products()">
+								<li>
+									<dl class="list-inline nowrap">
+										<dt data-bind="text: name"></dt>
+										<dd data-bind="text: ko.computed($parent.productText.bind($parent, $data))"></dd>
+									</dl>
+								</li>
+							</ul>
 						</div>
 					</div>
 				</a>
-			{{/each}}
+			</div>
 		</div>
 	</div>
 </template>
