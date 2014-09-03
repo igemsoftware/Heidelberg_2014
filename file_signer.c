@@ -28,8 +28,9 @@ void usage(char *prog_name){
 
 
 int process_files(char **parameters, int param_count){
-	int i, siglen=0, success = 0;
-	long int filesize=0, bytes_written=0
+	int i, success = 0;
+	size_t siglen;
+	long int filesize=0, bytes_written=0;
 	unsigned char *signature, *file_mem;
 	char *boincname, *filename;
 	EVP_MD_CTX *mdctx = NULL;
@@ -64,7 +65,7 @@ int process_files(char **parameters, int param_count){
 			if(ferror(current_file))
 				{print_error("file_signing", "Error reading file", filename); goto err;}
 			else if(feof(current_file))
-				{printf("File: %s wrote %i of filesize %i", filename, bytes_written, filesize); goto err;}
+				{printf("File: %s wrote %li of filesize %li", filename, bytes_written, filesize); goto err;}
 			else
 				{print_error("file_signing", "something strange happened", filename); goto err;}
 		}
