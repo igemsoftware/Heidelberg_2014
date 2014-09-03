@@ -39,7 +39,6 @@ int process_files(char **parameters, int param_count){
 	printf("Boinc filename     Filename           Status\n");
 	printf("--------------------------------------------------------\n");
 	for(i = 0; i<param_count; i+=2){
-		printf("DEBUG: i=%i", i);
 		boincname = parameters[i];
 		filename = parameters[i+1];
 		printf("%-18.18s %-18.18s ", boincname, filename);
