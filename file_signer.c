@@ -28,7 +28,8 @@ void usage(char *prog_name){
 
 
 int process_files(char **parameters, int param_count){
-	int i, filesize, bytes_written, siglen, success = 0;
+	int i, siglen=0, success = 0;
+	long int filesize=0, bytes_written=0
 	unsigned char *signature, *file_mem;
 	char *boincname, *filename;
 	EVP_MD_CTX *mdctx = NULL;
@@ -37,6 +38,7 @@ int process_files(char **parameters, int param_count){
 	printf("Boinc filename     Filename           Status\n");
 	printf("--------------------------------------------------------\n");
 	for(i = 0; i<param_count; i+=2){
+		printf("DEBUG: i=%i", i);
 		boincname = parameters[i];
 		filename = parameters[i+1];
 		printf("%-18.18s %-18.18s ", boincname, filename);
@@ -132,7 +134,7 @@ int main(int argc, char **argv){
 
 	files = argv+3;
 	process_files(files, argc - 3);
-
+	
 	error:
 	CONF_modules_free();
 	EVP_cleanup();
