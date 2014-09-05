@@ -46,7 +46,7 @@
 #define MAX_LINESIZE 500
 #define MAX_SIG_SIZE 500
 
-//#define DEBUG
+#define DEBUG
 
 int fileExists(char* name) {
   struct stat buf;
@@ -310,6 +310,20 @@ void simple_crypt(char *array, int array_size)
         array[i] ^= secret[i];
 }
 
+void handle_pyerror(const char *errormsg){
+	PyObject *ptype, *pvalue, *ptraceback;
+	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	print_error("python", errormsg, PyString_AsString(ptype));
+	if (pvalue != NULL)
+		print_error("python", "pvalue:\n", PyString_AsString(pvalue));
+	if (ptraceback != NULL)
+		print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
+	Py_XDECREF(ptype);
+	Py_XDECREF(pvalue);
+	Py_XDECREF(ptraceback);
+	Py_Finalize();
+}
+
 static PyObject *getLicence(PyObject *self, PyObject *args){
 	char licence[] = {91, 122, 104, 2, 14, -8, -81, 59, 111, 4, -30, 0};
 	simple_crypt(licence, strlen(licence));
@@ -326,24 +340,73 @@ static PyObject *getJobname(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", "circ_modeller");
 }
 
+static PyObject *logToStderr(PyObject *self, PyObject *args){
+	char *logstring;
+	if (!PyArg_ParseTuple(args, "s", &logstring)){
+		handle_pyerror("Parsing args tuble in log function");
+		return 0;
+	}
+	int chars_written = fprintf(stderr, "%s", logstring);
+	return Py_BuildValue("i", chars_written);
+}
+
 static PyMethodDef loader_methods[] = {
 	{"getLicence", getLicence, METH_NOARGS, ""},
 	{"getModellerPath", getModellerPath, METH_NOARGS, ""},
 	{"getJobname", getJobname, METH_NOARGS, ""},
+	{"log", logToStderr, METH_VARARGS, "" },
 	{NULL, NULL, 0, NULL}
 };
+#ifdef DEBUG
+char* getPythonTraceback()
+{
+	// Python equivilant:
+	// import traceback, sys
+	// return "".join(traceback.format_exception(sys.exc_type,
+	//    sys.exc_value, sys.exc_traceback))
 
-void handle_pyerror(const char *errormsg){
-	PyObject *ptype, *pvalue, *ptraceback;
-	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-	print_error("python", errormsg, PyString_AsString(pvalue));
-	if(ptraceback != NULL)
-		print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
-	Py_XDECREF(ptype);
-	Py_XDECREF(pvalue);
-	Py_XDECREF(ptraceback);
-	Py_Finalize();
+	PyObject *type, *value, *traceback;
+	PyObject *tracebackModule;
+	char *chrRetval;
+
+	PyErr_Fetch(&type, &value, &traceback);
+
+	tracebackModule = PyImport_ImportModule("traceback");
+	if (tracebackModule != NULL)
+	{
+		PyObject *tbList, *emptyString, *strRetval;
+
+		tbList = PyObject_CallMethod(
+			tracebackModule,
+			"format_exception",
+			"OOO",
+			type,
+			value == NULL ? Py_None : value,
+			traceback == NULL ? Py_None : traceback);
+
+		emptyString = PyString_FromString("");
+		strRetval = PyObject_CallMethod(emptyString, "join",
+			"O", tbList);
+
+		chrRetval = strdup(PyString_AsString(strRetval));
+
+		Py_DECREF(tbList);
+		Py_DECREF(emptyString);
+		Py_DECREF(strRetval);
+		Py_DECREF(tracebackModule);
+	}
+	else
+	{
+		chrRetval = strdup("Unable to import traceback module.");
+	}
+
+	Py_DECREF(type);
+	Py_XDECREF(value);
+	Py_XDECREF(traceback);
+
+	return chrRetval;
 }
+#endif
 
 int call_python(char *ProgramName, char *modeller_path) {
 	PyObject *module, *loader, *calc;
@@ -374,22 +437,57 @@ int call_python(char *ProgramName, char *modeller_path) {
 	loader = Py_InitModule("loader", loader_methods);
 
 	if(loader == NULL){
+#ifdef DEBUG
+		char *traceback = getPythonTraceback();
+		print_error("python", "importing loader module", traceback);
+		free(traceback);
+		Py_Finalize();
+#else
 		handle_pyerror("importing loader module:\n");
+#endif
 		return -1;
 	}
 
 	// Setup Python sys path to include modeller Module
 	PySys_SetArgv(1, argv);
 
+	/*PyObject *logfunction = PyObject_GetAttrString(loader, "log");
+
+	if (logfunction == NULL){
+		handle_pyerror("getting logfunction\n");
+	}
+
+	if (NULL == PyObject_CallFunction(logfunction, "s", "Ultimativer Test!")){
+		handle_pyerror("unable to call method log\n");
+	}*/
+
+
+
 	module = PyImport_ImportModule("construct_circ_protein");
 	if(module == NULL){
+#ifdef DEBUG
+		char *traceback = getPythonTraceback();
+		print_error("python", "importing construce module", traceback);
+		free(traceback);
+		Py_Finalize();
+#else
 		handle_pyerror("importing Module\n");
+#endif
+		//handle_pyerror("importing Module\n");
+		//PyErr_Print();
 		return -2;
 	}
 
 	calc = PyObject_GetAttrString(module, "calc");
 	if(calc == NULL){
-		handle_pyerror("getting Attribute calc:\n");
+#ifdef DEBUG
+		char *traceback = getPythonTraceback();
+		print_error("python", "getting calc attribute", traceback);
+		free(traceback);
+		Py_Finalize();
+#else
+		handle_pyerror("getting calc attribute\n");
+#endif
 		return -3;
 	}
 
@@ -409,33 +507,32 @@ int call_python(char *ProgramName, char *modeller_path) {
 		Py_Finalize();
 		return -5;
 	}
+
 	PyObject_CallFunction(calc, "ssss", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
 	
-
-	PyObject *ptype, *pvalue, *ptraceback;
-	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-	if (!((ptype == NULL) && (pvalue == NULL) && (ptraceback == NULL))){
-		print_error("python", "in modeller execution: ", PyString_AsString(pvalue));
-		if(ptraceback != NULL)
-			print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
-		Py_XDECREF(ptype);
-		Py_XDECREF(pvalue);
-		Py_XDECREF(ptraceback);
+	if (PyErr_Occurred()!= NULL){
+#ifdef DEBUG
+		char *traceback = getPythonTraceback();
+		print_error("python", "in modeller execution", traceback);
+		free(traceback);
 		Py_Finalize();
+#else
+		handle_pyerror("in modeller execution\n");
+#endif
 		return -6;
 	}
-
 
 	Py_Finalize();
 	return 0;
 }
+
+FILE *logfile;
 
 int main(int argc, char **argv)
 {
 	char modeller_path[MAX_PATH] = {0};
 	char libs_path[MAX_PATH] = {0};
 	char exec_path[MAX_PATH] = { 0 };
-
 	int rc;
 	getExecPath(modeller_path, MAX_PATH, 1);
 	getExecPath(exec_path, MAX_PATH, 0);
@@ -445,8 +542,17 @@ int main(int argc, char **argv)
 	//chdir(modeller_path);
 //#endif
 	boinc_init();
-	
+
 	#ifdef DEBUG
+	/* get following error when used:
+		ERROR[python      ]: importing construce module Traceback (most recent call last):
+		  File "C:\Users\Max\iGEM\modeller_resources_win\packaging\bla\construct_circ_protein.py", line 1, in <module>
+			from modeller import *
+		  File "C:\Program Files (x86)\Modeller9.14\modlib\modeller\__init__.py", line 108, in <module>
+			print "Running in loader! Getting config from C functions."
+		IOError: (9, 'Bad file descriptor')
+		Reason: No Idea.. maybe because of different library versions when compiling (c-program / python 
+		*/
 		//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
@@ -482,6 +588,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Python Errorcode: %i\n", rc);
 		boinc_finish(-1);
 	}
+
 	boinc_finish(0);
 	return -1;
 }
