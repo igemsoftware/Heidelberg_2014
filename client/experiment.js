@@ -36,7 +36,6 @@ ExperimentsVM.prototype.edit = function () {
 	Router.go('viewExperiment', { id: this.experiments()[0]._id() }, { query: { edit: 1 } });
 };
 
-
 ExperimentsVM.prototype.save = function () {
 	var self = this;
 	_.each(this.experiments(), function (experiment) {
@@ -58,24 +57,72 @@ ExperimentsVM.prototype.cancel = function () {
 
 ExperimentsVM.prototype.displayVersions = function() {
 	$("#versionModal").modal();
-}
+};
+
+ExperimentsVM.prototype.cleanup = function () {
+	_.each(this.experiments(), function (experiment) {
+		experiment.cleanup();
+	});
+};
 
 function ExperimentVM(rootVM, data, version) {
 	var self = this;
-	Experiment.call(this, rootVM.manager, data, ko.unwrap(data.version), rootVM.editMode());
+	self.rootVM = rootVM;
+	Experiment.call(this, self.rootVM.manager, data, ko.unwrap(data.version), rootVM.editMode());
 
 	self.finishDateUpdate = !data.experiment && setInterval(function () {
 		self.finishDate(new Date());
 	}, 1000);
+
+	self.searchSuppliesCount = 0;
+	self.searchSuppliesComputation = null;
+
+	self.searchExperimentsCount = 0;
+	self.searchExperimentsComputation = null;
 }
 ExperimentVM.prototype = new Experiment();
 ExperimentVM.prototype.constructor = ExperimentVM;
 
 ExperimentVM.prototype.getParam = function (param) {
 	if (!this.params()[param.name()]) {
-		this.params()[param.name()] = param.multi() ? ko.observableArray() : ko.observable({ editable: ko.observable(true) });
+		this.params()[param.name()] = param.multi() ? ko.observableArray() : ko.observable(new ExperimentParamSourceNull());
 	}
 	return this.params()[param.name()];
+};
+
+ExperimentVM.prototype.querySourceSupplies = function (param, query, callback) {
+	var self = this;
+	var currentCount = ++self.searchSuppliesCount;
+	Meteor.call('searchSupplies', query, param.type()._id(), function (error, ids) {
+		if (!error) {
+			if (currentCount !== self.searchSuppliesCount) return;
+			if (self.searchSuppliesComputation) self.searchSuppliesComputation.stop();
+			self.searchSuppliesComputation = Deps.autorun(function () {
+				callback(_.map(ids, function (id) {
+					return new ExperimentParamSourceSupply(self.rootVM.manager.getSupply(id));
+				}));
+			});
+		}
+	});
+};
+
+ExperimentVM.prototype.querySourceExperiments = function (param, query, callback) {
+	var self = this;
+	var currentCount = ++self.searchExperimentsCount;
+	Meteor.call('searchExperiments', query, _.pluck(Protocols.find({ 'products.allTypes._id': param.type()._id() }).fetch(), '_id'), function (error, experimentProducts) {
+		if (!error) {
+			if (currentCount !== self.searchExperimentsCount) return;
+			if (self.searchExperimentsComputation) self.searchExperimentsComputation.stop();
+			self.searchExperimentsComputation = Deps.autorun(function () {
+				callback(_.map(experimentProducts, function (experimentProduct) {
+					var experiment = self.rootVM.manager.getExperiment(experimentProduct.experiment_id);
+					return new ExperimentParamSourceExperiment(experiment, _.find(experiment.protocol.products(), function (protocolProduct) {
+						return CryptoJS.MD5(protocolProduct.name()).toString() == experimentProduct.productMD5;
+					}));
+				}));
+			});
+		}
+	});
 };
 
 ExperimentVM.prototype.input = function (step, input) {
@@ -102,30 +149,25 @@ ExperimentVM.prototype.save = function (performer, redirect) {
 	}
 };
 
+ExperimentVM.prototype.cleanup = function () {
+	if (this.searchSuppliesComputation) this.searchSuppliesComputation.stop();
+	if (this.searchExperimentsComputation) this.searchExperimentsComputation.stop();
+};
+
 Template.experiment.rendered = function () {
 	var self = this;
 	self.vm = ko.computed(function () {
-		var vm = new ExperimentsVM(self.data);
-		return vm;
+		return new ExperimentsVM(self.data);
 	});
 
-	self.nodesToClean = [];
-	setTimeout(function () {
-		for (var node = self.firstNode; node; node = node.nextSibling) {
-			// apply bindings to each direct child element of the template
-			// this does not apply to comments, i. e. containerless binding syntax!
-			// to enable both, we'd need to parse the comments ourselves
-			if (node.nodeType == Node.ELEMENT_NODE) {
-				ko.applyBindings(self.vm, node);
-				self.nodesToClean.push(node);
-			}
-		}
-	}, 0);
+	self.nodesToClean = [self.find('#knockoutContainer')];
+	ko.applyBindings(self.vm, self.nodesToClean[0]);
 };
 
 Template.experiment.destroyed = function () {
 	_.each(this.nodesToClean, function (node) {
 		ko.cleanNode(node);
 	});
+	this.vm().cleanup();
 	this.vm.dispose();
 };

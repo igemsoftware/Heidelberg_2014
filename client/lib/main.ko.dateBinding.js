@@ -9,14 +9,14 @@ ko.bindingHandlers.datepicker = {
 
 		$(element).datepicker(options).on('change', function (ev) {
 			var newDate = new Date(ev.target.value);
-			var currentDate = new Date(modelValue());
+			var currentDate = new Date(modelValue() || new Date());
 			newDate.setHours(currentDate.getHours());
 			newDate.setMinutes(currentDate.getMinutes());
 			newDate.setSeconds(currentDate.getSeconds());
 			if (!isNaN(newDate.getHours())) {
-				modelValue(newDate);
+				ko.expressionRewriting.writeValueToProperty(modelValue, allBindings, 'value', newDate);
 			} else {
-				modelValue(currentDate);
+				ko.expressionRewriting.writeValueToProperty(modelValue, allBindings, 'value', currentDate);
 			}
 		});
 
@@ -45,9 +45,9 @@ ko.bindingHandlers.clockpicker = {
 			var parts = ev.target.value.split(':');
 			var newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), parseInt(parts[0]), parseInt(parts[1]));
 			if (!isNaN(newDate.getHours())) {
-				modelValue(newDate);
+				ko.expressionRewriting.writeValueToProperty(modelValue, allBindings, 'value', newDate);
 			} else {
-				modelValue(currentDate);
+				ko.expressionRewriting.writeValueToProperty(modelValue, allBindings, 'value', currentDate);
 			}
 		});
 

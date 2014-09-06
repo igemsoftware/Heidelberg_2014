@@ -51,8 +51,8 @@
 }
 
 .nav-small > li > a {
-    padding: 3px 5px;
-    font-size: 12px;
+	padding: 3px 5px;
+	font-size: 12px;
 }
 
 .clickable:hover {
@@ -80,6 +80,7 @@
 .hierarchical {
 	width: 100%;
 	counter-reset: ol0;
+	margin: 1em 0;
 }
 
 .hierarchical th {
@@ -150,14 +151,27 @@
 	display: list-item;
 }
 
+.form-control {
+	display: inline-block;
+}
+
+.input-group {
+	display: inline-table;
+}
+
+.input-group .form-control {
+	float: initial;
+}
+
 .datetime {
-	display: table;
+	display: inline-table;
 	width: 100%;
 	/*border-spacing: 3px;*/
 }
 
 .datetime > .datetime-date, .datetime > .datetime-time {
 	display: table-cell;
+	vertical-align: baseline;
 }
 
 .datetime-date {
@@ -208,9 +222,9 @@ dl.list-inline > dd:before {
 }
 
 .scrollable-menu {
-    height: auto;
-    max-height: 200px;
-    overflow-x: hidden;
+	height: auto;
+	max-height: 200px;
+	overflow-x: hidden;
 }
 
 .form-table {
@@ -228,16 +242,18 @@ dl.list-inline > dd:before {
 	padding: 2px;
 }
 
-#experimentsTable {
-	margin: 1em 0;
+table.hierarchical > * > th, table.hierarchical > * > td {
+	vertical-align: baseline;
 }
 
-#experimentsTable th, #experimentsTable td {
+table.hierarchical > * > td > textarea {
 	vertical-align: top;
+	margin-top: -7px; /* derived from 6px padding-top + 1px border */
 }
 
 .btn-square {
-	width: 32px;
+	width: 34px;
+	padding: 6px;
 }
 
 .inputList {
@@ -270,4 +286,8 @@ dl.list-inline > dd:before {
 .panel-autoscroll > .panel-body {
 	max-height: 400px;
 	overflow: auto;
+}
+
+.twitter-typeahead > .form-control {
+	display: block;
 }
