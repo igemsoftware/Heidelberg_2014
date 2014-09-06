@@ -24,6 +24,8 @@
 #include <boinc_api.h>
 #include <boinc_zip.h>
 
+#include <diagnostics.h>
+
 #include "circ_modeller.h"
 #include "config.h"
 
@@ -346,7 +348,7 @@ static PyObject *logToStderr(PyObject *self, PyObject *args){
 		handle_pyerror("Parsing args tuble in log function");
 		return 0;
 	}
-	int chars_written = fprintf(stderr, "%s", logstring);
+	int chars_written = fprintf(stderr, "%s\n", logstring);
 	return Py_BuildValue("i", chars_written);
 }
 
@@ -432,7 +434,7 @@ int call_python(char *ProgramName, char *modeller_path) {
 	Py_SetProgramName(ProgramName);
 
 	Py_SetPythonHome(modeller_path);
-	Py_Initialize();
+	Py_InitializeEx(0);
 
 	loader = Py_InitModule("loader", loader_methods);
 
@@ -467,7 +469,7 @@ int call_python(char *ProgramName, char *modeller_path) {
 	if(module == NULL){
 #ifdef DEBUG
 		char *traceback = getPythonTraceback();
-		print_error("python", "importing construce module", traceback);
+		print_error("python", "importing construct_circ_protein module", traceback);
 		free(traceback);
 		Py_Finalize();
 #else
@@ -509,12 +511,18 @@ int call_python(char *ProgramName, char *modeller_path) {
 	}
 
 	PyObject_CallFunction(calc, "ssss", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
-	
-	if (PyErr_Occurred()!= NULL){
-#ifdef DEBUG
-		char *traceback = getPythonTraceback();
-		print_error("python", "in modeller execution", traceback);
-		free(traceback);
+
+	PyObject *ptype, *pvalue, *ptraceback;
+	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	if (!((ptype == NULL) && (pvalue == NULL) && (ptraceback == NULL))){
+		print_error("python", "in modeller execution: ", PyString_AsString(ptype));
+		if (pvalue != NULL)
+			print_error("python", "pvalue: ", PyString_AsString(pvalue));
+		if(ptraceback != NULL)
+			print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
+		Py_XDECREF(ptype);
+		Py_XDECREF(pvalue);
+		Py_XDECREF(ptraceback);
 		Py_Finalize();
 #else
 		handle_pyerror("in modeller execution\n");
@@ -541,19 +549,11 @@ int main(int argc, char **argv)
 	// TODO, workaround for debugging in visual studio
 	//chdir(modeller_path);
 //#endif
+	boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_HEAPCHECKENABLED | BOINC_DIAG_MEMORYLEAKCHECKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
 	boinc_init();
 
 	#ifdef DEBUG
-	/* get following error when used:
-		ERROR[python      ]: importing construce module Traceback (most recent call last):
-		  File "C:\Users\Max\iGEM\modeller_resources_win\packaging\bla\construct_circ_protein.py", line 1, in <module>
-			from modeller import *
-		  File "C:\Program Files (x86)\Modeller9.14\modlib\modeller\__init__.py", line 108, in <module>
-			print "Running in loader! Getting config from C functions."
-		IOError: (9, 'Bad file descriptor')
-		Reason: No Idea.. maybe because of different library versions when compiling (c-program / python 
-		*/
-		//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
+		freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
 	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
@@ -586,8 +586,9 @@ int main(int argc, char **argv)
 	if (rc < 0){
 		print_error("main", "somthing went wrong in python, exiting with errorcode!", NULL);
 		fprintf(stderr, "Python Errorcode: %i\n", rc);
-		boinc_finish(-1);
+		boinc_finish(0);
 	}
+	fclose(stdout);
 
 	boinc_finish(0);
 	return -1;
