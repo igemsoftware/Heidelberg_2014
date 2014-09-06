@@ -27,6 +27,11 @@
 #include <diagnostics.h>
 
 #include "circ_modeller.h"
+
+// CMAKE vars: APP_NAME, APP_VERSION
+#define APP_NAME "circ_modeller"
+#define APP_VERSION "0.12"
+
 #include "config.h"
 
 #include "keys.h"
@@ -56,7 +61,7 @@ int fileExists(char* name) {
 }
 
 const char *used_filenames[] = {
-								"configfile.csv", 
+								"configfile.csv",
 								"atomfile.pdb",
 								"inputsequencefile.ali",
 								"\0"
@@ -259,11 +264,12 @@ int check_file_signings(const char **filenames) {
 	return 0;
 }
 
-int unzip_resources(char *basedir) {
+int unzip_resources(char *basedir, char *libs, char *mdt) {
 	char unzip_file[MAX_PATH] = {0};
 	char unzip_lock_started[MAX_PATH] = {0};
 	char unzip_lock_finished[MAX_PATH] = {0};
 	char working_dir[MAX_PATH] = {0};
+	int basedirrc = 0;
     int rc;
     FILE *lockfile;
     //unzFile uf;
@@ -274,8 +280,8 @@ int unzip_resources(char *basedir) {
     
     strncpy(unzip_lock_finished, basedir, MAX_PATH);
 	strncat(unzip_lock_finished, DIR_SLASH "unzip_finished", MAX_PATH - (strlen(basedir) + 1));
-
-    if(!fileExists(unzip_lock_finished)) {
+	basedirrc = mkdir(basedir);
+    if(!fileExists(unzip_lock_finished) || (basedirrc == 0)) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
     		/* Wait max 5 minutes for process to finish */
     		printf("Other process allready extracting...\n");
@@ -289,9 +295,15 @@ int unzip_resources(char *basedir) {
 				#ifdef DEBUG
 				printf("Unzip routine returned %i\n", rc);
 				#endif
+				if (rewrite_libs(libs) < 0) {
+					print_error("Unzip", "rewrite_libs (libs.lib) failed", NULL);
+				}
+				if (rewrite_libs(mdt) < 0) {
+					print_error("Unzip", "rewrite_libs (mdt.lib) failed", NULL);
+				}
+					
 				lockfile = fopen(unzip_lock_finished, "w");
 				fclose(lockfile);
-
 				return rc;
         	}
 			else {
@@ -453,18 +465,6 @@ int call_python(char *ProgramName, char *modeller_path) {
 	// Setup Python sys path to include modeller Module
 	PySys_SetArgv(1, argv);
 
-	/*PyObject *logfunction = PyObject_GetAttrString(loader, "log");
-
-	if (logfunction == NULL){
-		handle_pyerror("getting logfunction\n");
-	}
-
-	if (NULL == PyObject_CallFunction(logfunction, "s", "Ultimativer Test!")){
-		handle_pyerror("unable to call method log\n");
-	}*/
-
-
-
 	module = PyImport_ImportModule("construct_circ_protein");
 	if(module == NULL){
 #ifdef DEBUG
@@ -510,7 +510,29 @@ int call_python(char *ProgramName, char *modeller_path) {
 		return -5;
 	}
 
-	PyObject_CallFunction(calc, "ssss", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
+
+	fprintf(stderr, "Calling Python Method with Arguments: %s, %s, %s, %s\n", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
+
+	PyObject *retval = PyObject_CallFunction(calc, "sssss", APP_NAME "-" APP_VERSION, resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
+	
+	long cretval = PyInt_AsLong(retval);
+
+	if (cretval != -1){
+		print_error("python", "got ret value:", NULL);
+		fprintf(stderr, "%il\n", cretval);
+	}
+	else{
+		print_error("python", "unable to get return value", NULL);
+		if (PyErr_Occurred() != NULL){
+#ifdef DEBUG
+			char *traceback = getPythonTraceback();
+			print_error("python", "in modeller execution", traceback);
+			free(traceback);
+#else
+			handle_pyerror("in modeller execution\n");
+#endif
+		}
+	}
 
 	PyObject *ptype, *pvalue, *ptraceback;
 	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -534,29 +556,142 @@ int call_python(char *ProgramName, char *modeller_path) {
 	return 0;
 }
 
-FILE *logfile;
+char *str_replace(char *orig, char *rep, char *with) {
+	char *result; // the return string
+	char *ins;    // the next insert point
+	char *tmp;    // varies
+	int len_rep;  // length of rep
+	int len_with; // length of with
+	int len_front; // distance between rep and end of last rep
+	int count;    // number of replacements
+
+	if (!orig)
+		return NULL;
+	if (!rep)
+		rep = "";
+	len_rep = strlen(rep);
+	if (!with)
+		with = "";
+	len_with = strlen(with);
+
+	ins = orig;
+	for (count = 0; tmp = strstr(ins, rep); ++count) {
+		ins = tmp + len_rep;
+	}
+
+	// first time through the loop, all the variable are set correctly
+	// from here on,
+	//    tmp points to the end of the result string
+	//    ins points to the next occurrence of rep in orig
+	//    orig points to the remainder of orig after "end of rep"
+	tmp = result = malloc(strlen(orig) + (len_with - len_rep) * count + 1);
+
+	if (!result)
+		return NULL;
+
+	while (count--) {
+		ins = strstr(orig, rep);
+		len_front = ins - orig;
+		tmp = strncpy(tmp, orig, len_front) + len_front;
+		tmp = strcpy(tmp, with) + len_with;
+		orig += len_front + len_rep; // move to next "end of rep"
+	}
+	strcpy(tmp, orig);
+	return result;
+}
+
+int rewrite_libs(char *libs){
+	FILE *libs_file;
+	long filesize = 0;
+	char * file_mem;
+	int bytes_written = 0;
+	char *new_libs;
+
+	libs_file = fopen(libs, "r+");
+
+	if (libs_file == NULL)
+	{
+		print_error("rewrite_libs", "unable to open file", libs);
+		return -1;
+	}
+	fseek(libs_file, 0L, SEEK_END);
+	filesize = ftell(libs_file);
+	file_mem = (char *)malloc(filesize+1);
+	if (file_mem == NULL){
+		print_error("rewrite_libs", "unable to reserve memory for file", libs);
+		fclose(libs_file);
+		return -1;
+	}
+	
+	fseek(libs_file, 0L, SEEK_SET);	//rewind to beginning of file
+	bytes_written = fread(file_mem, 1, filesize, libs_file);
+	if (bytes_written != filesize){
+		if (ferror(libs_file))
+			print_error("rewrite_libs", "Error reading file", libs);
+		else if (feof(libs_file))
+			fprintf(stderr, "File: %s wrote %i of filesize %i", libs, bytes_written, filesize);
+		else
+			print_error("file_signing", "something strange happened", libs);
+
+		fclose(libs_file);
+		free(file_mem);
+		return -1;
+	}
+	*(file_mem + filesize + 1) = '\0';
+	new_libs = str_replace(file_mem, "VERSION", APP_NAME "-"APP_VERSION);
+	fseek(libs_file, 0L, SEEK_SET);
+	fwrite(new_libs, sizeof(char), strlen(new_libs), libs_file);
+	fflush(libs_file);
+	fclose(libs_file);
+	free(new_libs);
+	free(file_mem);
+	return 0;
+}
 
 int main(int argc, char **argv)
 {
 	char modeller_path[MAX_PATH] = {0};
 	char libs_path[MAX_PATH] = {0};
+	char mdt_path[MAX_PATH] = { 0 };
 	char exec_path[MAX_PATH] = { 0 };
+	char pylib_path[MAX_PATH] = { 0 };
 	int rc;
-	getExecPath(modeller_path, MAX_PATH, 1);
-	getExecPath(exec_path, MAX_PATH, 0);
 
+	boinc_init();
+
+	// Get Paths and append version path
+
+	getExecPath(modeller_path, MAX_PATH, 1);
+	strncat(modeller_path, DIR_SLASH APP_NAME "-"APP_VERSION, MAX_PATH-strlen(modeller_path));
+	strcpy(pylib_path, modeller_path);
+	strncat(pylib_path, DIR_SLASH "DLLs", MAX_PATH - strlen(pylib_path));
+	getExecPath(exec_path, MAX_PATH, 0);
+	strncat(exec_path, DIR_SLASH APP_NAME "-"APP_VERSION, MAX_PATH - strlen(exec_path));
+
+	strncpy(libs_path, modeller_path, MAX_PATH);
+	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
+
+	strncpy(mdt_path, modeller_path, MAX_PATH);
+	strncat(mdt_path, DIR_SLASH "mdt.lib", MAX_PATH - strlen(mdt_path));
 //#ifdef DEBUG
 	// TODO, workaround for debugging in visual studio
 	//chdir(modeller_path);
 //#endif
-	boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_HEAPCHECKENABLED | BOINC_DIAG_MEMORYLEAKCHECKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
-	boinc_init();
 
 	#ifdef DEBUG
-		freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
+	/* get following error when used:
+		ERROR[python      ]: importing construce module Traceback (most recent call last):
+		  File "C:\Users\Max\iGEM\modeller_resources_win\packaging\bla\construct_circ_protein.py", line 1, in <module>
+			from modeller import *
+		  File "C:\Program Files (x86)\Modeller9.14\modlib\modeller\__init__.py", line 108, in <module>
+			print "Running in loader! Getting config from C functions."
+		IOError: (9, 'Bad file descriptor')
+		Reason: No Idea.. maybe because of different library versions when compiling (c-program / python 
+		*/
+		//freopen(STDERR_FILE,"a",stdout); // also redirect stdout to stderr
 	#endif
 
-	rc = unzip_resources(modeller_path); // Extract modeller resource files if not existent
+	rc = unzip_resources(modeller_path, libs_path, mdt_path); // Extract modeller resource files if not existent
 	if(rc < 0){
 		printf("Temporary exiting...\n");
 		boinc_temporary_exit_wrapper(20, "Something went wrong while extracting!\n", FALSE);
@@ -568,14 +703,15 @@ int main(int argc, char **argv)
 	/*	Set Modeller environment variables correctly 						**
 	**	and reset PYTHONPATH to avoid loading of locally installed files 	*/
 
-	strncpy(libs_path, modeller_path, MAX_PATH);
-	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
+
 	#ifdef __linux
 	setenv("LIBS_LIB9v14", libs_path, 1);
-	setenv("PYTHONPATH", ,modeller_path, 1);
+	setenv("PYTHONPATH", modeller_path, 1);
+	setenv("NUITKA_IMPORT_PATH", pylib_path, 1);
 	#elif _WIN32
 	_putenv_s("LIBS_LIB9v14", libs_path);
 	_putenv_s("PYTHONPATH", modeller_path);
+	_putenv_s("NUITKA_IMPORT_PATH", pylib_path);
 	#endif
 	
 	#ifdef DEBUG
@@ -588,7 +724,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Python Errorcode: %i\n", rc);
 		boinc_finish(0);
 	}
-	fclose(stdout);
+
 
 	boinc_finish(0);
 	return -1;
