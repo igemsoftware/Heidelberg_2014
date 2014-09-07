@@ -1,4 +1,3 @@
-
 #if __STDC_VERSION__ >= 199901L
 #define _XOPEN_SOURCE 600
 #else
@@ -11,6 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
+#ifdef __linux
+#include <dirent.h>
+#elif _WIN32
+#include "dirent.h"
+#endif
 
 #include <openssl/conf.h>
 #include <openssl/evp.h>
@@ -29,12 +34,17 @@
 #include "circ_modeller.h"
 
 // CMAKE vars: APP_NAME, APP_VERSION
-#define APP_NAME "circ_modeller"
-#define APP_VERSION "0.12"
+
 
 #include "config.h"
 
+
 #include "keys.h"
+
+#define APP_NAME "circ_modeller"
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define APP_VERSION TOSTRING(APP_MAJOR) "." TOSTRING(APP_MINOR)
 
 #ifdef __linux
 #include "linux_functions.h"
@@ -53,7 +63,8 @@
 #define MAX_LINESIZE 500
 #define MAX_SIG_SIZE 500
 
-#define DEBUG
+//#define DEBUG
+
 
 int fileExists(char* name) {
   struct stat buf;
@@ -215,7 +226,7 @@ int check_file_signings(const char **filenames) {
 			if(ferror(file))
 				{print_error("file_signing", "Error reading file", *current_filename); error = TRUE; break;}
 			else if(feof(file))
-				{printf("File: %s wrote %i of filesize %i", *current_filename, bytes_written, filesize);}
+				{fprintf(stderr, "File: %s wrote %i of filesize %i", *current_filename, bytes_written, filesize);}
 			else
 				{print_error("file_signing", "something strange happened", *current_filename); error = TRUE; break;}
 		}
@@ -269,7 +280,6 @@ int unzip_resources(char *basedir, char *libs, char *mdt) {
 	char unzip_lock_started[MAX_PATH] = {0};
 	char unzip_lock_finished[MAX_PATH] = {0};
 	char working_dir[MAX_PATH] = {0};
-	int basedirrc = 0;
     int rc;
     FILE *lockfile;
     //unzFile uf;
@@ -280,11 +290,11 @@ int unzip_resources(char *basedir, char *libs, char *mdt) {
     
     strncpy(unzip_lock_finished, basedir, MAX_PATH);
 	strncat(unzip_lock_finished, DIR_SLASH "unzip_finished", MAX_PATH - (strlen(basedir) + 1));
-	basedirrc = mkdir(basedir);
-    if(!fileExists(unzip_lock_finished) || (basedirrc == 0)) {
+	mkdir(basedir);
+    if(!fileExists(unzip_lock_finished)) {
     	if(createFailIfExists(unzip_lock_started) < 0){	// Lockfile exists --> other process extracting
     		/* Wait max 5 minutes for process to finish */
-    		printf("Other process allready extracting...\n");
+    		fprintf(stderr, "Other process allready extracting...\n");
     		boinc_temporary_exit_wrapper(20, "Other process allready extracting\n", FALSE);
     		return -1; 
     	}
@@ -293,7 +303,7 @@ int unzip_resources(char *basedir, char *libs, char *mdt) {
         	if(fileExists(unzip_file)) {
 				rc = boinc_zip(UNZIP_IT, unzip_file, basedir);
 				#ifdef DEBUG
-				printf("Unzip routine returned %i\n", rc);
+				fprintf(stderr, "Unzip routine returned %i\n", rc);
 				#endif
 				if (rewrite_libs(libs) < 0) {
 					print_error("Unzip", "rewrite_libs (libs.lib) failed", NULL);
@@ -307,7 +317,7 @@ int unzip_resources(char *basedir, char *libs, char *mdt) {
 				return rc;
         	}
 			else {
-				printf("%s does not exist. Aborting...\n", unzip_file);
+				fprintf(stderr, "%s does not exist. Aborting...\n", unzip_file);
 				remove(unzip_lock_started);
 				return -1;
 	        }
@@ -354,7 +364,7 @@ static PyObject *getJobname(PyObject *self, PyObject *args){
 	return Py_BuildValue("s", "circ_modeller");
 }
 
-static PyObject *logToStderr(PyObject *self, PyObject *args){
+static PyObject *logFunction(PyObject *self, PyObject *args){
 	char *logstring;
 	if (!PyArg_ParseTuple(args, "s", &logstring)){
 		handle_pyerror("Parsing args tuble in log function");
@@ -362,13 +372,15 @@ static PyObject *logToStderr(PyObject *self, PyObject *args){
 	}
 	int chars_written = fprintf(stderr, "%s\n", logstring);
 	return Py_BuildValue("i", chars_written);
+
+	
 }
 
 static PyMethodDef loader_methods[] = {
 	{"getLicence", getLicence, METH_NOARGS, ""},
 	{"getModellerPath", getModellerPath, METH_NOARGS, ""},
 	{"getJobname", getJobname, METH_NOARGS, ""},
-	{"log", logToStderr, METH_VARARGS, "" },
+	{"log", logFunction, METH_VARARGS, "" },
 	{NULL, NULL, 0, NULL}
 };
 #ifdef DEBUG
@@ -425,6 +437,7 @@ char* getPythonTraceback()
 int call_python(char *ProgramName, char *modeller_path) {
 	PyObject *module, *loader, *calc;
 	char **argv;
+	long cretval = 0;
 
 	// Reserve space for resolved filenames
 	char *resolved_files[4];
@@ -446,7 +459,7 @@ int call_python(char *ProgramName, char *modeller_path) {
 	Py_SetProgramName(ProgramName);
 
 	Py_SetPythonHome(modeller_path);
-	Py_InitializeEx(0);
+	Py_Initialize();
 
 	loader = Py_InitModule("loader", loader_methods);
 
@@ -514,9 +527,10 @@ int call_python(char *ProgramName, char *modeller_path) {
 	fprintf(stderr, "Calling Python Method with Arguments: %s, %s, %s, %s\n", resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
 
 	PyObject *retval = PyObject_CallFunction(calc, "sssss", APP_NAME "-" APP_VERSION, resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
-	
-	long cretval = PyInt_AsLong(retval);
-
+	if (retval != Py_None)
+		cretval = PyInt_AsLong(retval);
+	/*
+#ifdef DEBUG
 	if (cretval != -1){
 		print_error("python", "got ret value:", NULL);
 		fprintf(stderr, "%il\n", cretval);
@@ -524,27 +538,19 @@ int call_python(char *ProgramName, char *modeller_path) {
 	else{
 		print_error("python", "unable to get return value", NULL);
 		if (PyErr_Occurred() != NULL){
-#ifdef DEBUG
 			char *traceback = getPythonTraceback();
 			print_error("python", "in modeller execution", traceback);
 			free(traceback);
-#else
-			handle_pyerror("in modeller execution\n");
-#endif
+			//handle_pyerror("in modeller execution\n");
+			return -6;
 		}
 	}
-
-	PyObject *ptype, *pvalue, *ptraceback;
-	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-	if (!((ptype == NULL) && (pvalue == NULL) && (ptraceback == NULL))){
-		print_error("python", "in modeller execution: ", PyString_AsString(ptype));
-		if (pvalue != NULL)
-			print_error("python", "pvalue: ", PyString_AsString(pvalue));
-		if(ptraceback != NULL)
-			print_error("python", "Traceback:\n", PyString_AsString(ptraceback));
-		Py_XDECREF(ptype);
-		Py_XDECREF(pvalue);
-		Py_XDECREF(ptraceback);
+#endif */
+	if (PyErr_Occurred() != NULL){
+#ifdef DEBUG
+		char *traceback = getPythonTraceback();
+		print_error("python", "in modeller execution", traceback);
+		free(traceback);
 		Py_Finalize();
 #else
 		handle_pyerror("in modeller execution\n");
@@ -607,7 +613,7 @@ int rewrite_libs(char *libs){
 	int bytes_written = 0;
 	char *new_libs;
 
-	libs_file = fopen(libs, "r+");
+	libs_file = fopen(libs, "rb+");
 
 	if (libs_file == NULL)
 	{
@@ -637,7 +643,7 @@ int rewrite_libs(char *libs){
 		free(file_mem);
 		return -1;
 	}
-	*(file_mem + filesize + 1) = '\0';
+	*(file_mem + filesize) = '\0';
 	new_libs = str_replace(file_mem, "VERSION", APP_NAME "-"APP_VERSION);
 	fseek(libs_file, 0L, SEEK_SET);
 	fwrite(new_libs, sizeof(char), strlen(new_libs), libs_file);
@@ -648,6 +654,41 @@ int rewrite_libs(char *libs){
 	return 0;
 }
 
+int delete_old_versions(char *basedir){
+	struct dirent *entry;
+	printf("Searching in dir %s for old versions\n", basedir);
+	char delete_path[MAX_PATH] = { 0 };
+	DIR *dir = { 0 };
+	int app_major = 0, app_minor = 0;
+
+	dir = opendir(basedir);
+	if (dir == NULL){
+		print_error("delete_old_files", "unable to open basedir", NULL);
+		return -1;
+	}
+	while (entry = readdir(dir)){
+		if (entry->d_type == DT_DIR){
+			app_major = app_minor = 0;
+			int count = sscanf(entry->d_name, APP_NAME"-%i.%i", &app_major, &app_minor);
+			if (count == 2)
+			{	
+				if (app_major <= APP_MAJOR){
+					if (app_minor < APP_MINOR || app_major < APP_MAJOR){
+						strncpy(delete_path, basedir, MAX_PATH);
+						strncat(delete_path, DIR_SLASH, MAX_PATH - strlen(delete_path));
+						strncat(delete_path, entry->d_name, MAX_PATH - strlen(delete_path));
+						print_error("delete_old_files", "Deleting: ", delete_path);
+						DeleteDirectory(delete_path, 1);
+					}
+				}
+
+			}
+		}
+	}
+	closedir(dir);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	char modeller_path[MAX_PATH] = {0};
@@ -655,6 +696,7 @@ int main(int argc, char **argv)
 	char mdt_path[MAX_PATH] = { 0 };
 	char exec_path[MAX_PATH] = { 0 };
 	char pylib_path[MAX_PATH] = { 0 };
+	//char resolved_logfile[MAX_PATH] = { 0 };
 	int rc;
 
 	boinc_init();
@@ -662,11 +704,12 @@ int main(int argc, char **argv)
 	// Get Paths and append version path
 
 	getExecPath(modeller_path, MAX_PATH, 1);
+	delete_old_versions(modeller_path);
 	strncat(modeller_path, DIR_SLASH APP_NAME "-"APP_VERSION, MAX_PATH-strlen(modeller_path));
 	strcpy(pylib_path, modeller_path);
 	strncat(pylib_path, DIR_SLASH "DLLs", MAX_PATH - strlen(pylib_path));
 	getExecPath(exec_path, MAX_PATH, 0);
-	strncat(exec_path, DIR_SLASH APP_NAME "-"APP_VERSION, MAX_PATH - strlen(exec_path));
+	//strncat(exec_path, DIR_SLASH APP_NAME "-"APP_VERSION, MAX_PATH - strlen(exec_path));
 
 	strncpy(libs_path, modeller_path, MAX_PATH);
 	strncat(libs_path, DIR_SLASH "libs.lib", MAX_PATH - strlen(libs_path));
@@ -715,16 +758,29 @@ int main(int argc, char **argv)
 	#endif
 	
 	#ifdef DEBUG
-		printf("Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
+		fprintf(stderr, "Setting Modeller install dir: \"%s\"\nSetting path to libs file: \"%s\"\n", modeller_path, libs_path);
 	#endif
-
+	/*
+	boinc_resolve_filename(LOGFILE, resolved_logfile, MAX_PATH);
+	mylogfile = fopen(resolved_logfile, "w");
+	if (mylogfile == NULL){
+		print_error("main", "unable to open logfile!", NULL);
+	}
+	*/
 	rc = call_python(exec_path, modeller_path);
 	if (rc < 0){
+		//if(mylogfile != NULL)
+		//	fclose(mylogfile);
 		print_error("main", "somthing went wrong in python, exiting with errorcode!", NULL);
 		fprintf(stderr, "Python Errorcode: %i\n", rc);
-		boinc_finish(0);
+		boinc_finish(-1);
 	}
 
+	/*
+	if (mylogfile != NULL)
+		fclose(mylogfile);
+	remove(resolved_logfile);
+	*/
 
 	boinc_finish(0);
 	return -1;

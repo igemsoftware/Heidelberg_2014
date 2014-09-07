@@ -18,6 +18,9 @@ set(BUILD_SHARED_LIBS OFF)
 
 set( BOINC_DIR "$ENV{BOINC_HOME}" CACHE PATH "Path to Boinc Sourcecode")
 
+set(CONFIG_APP_MAJOR 0 CACHE INTEGER "App major version")
+set(CONFIG_APP_MINOR 14 CACHE INTEGER "App minor version")
+
 ### Python ###
 set(Python_ADDITIONAL_VERSIONS 2.7)
 find_package(PythonLibs)

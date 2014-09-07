@@ -25,3 +25,30 @@ int createFailIfExists_w(char *file){
 		return 0;	// Files does not exist
 	}
 }
+
+int DeleteDirectory(char *lpszDir, int noRecycleBin)
+{
+	int len = strlen(lpszDir);
+	char *pszFrom = (char *)malloc(len + 2);
+	strcpy(pszFrom, lpszDir);
+	pszFrom[len] = 0;
+	pszFrom[len + 1] = 0;
+
+	SHFILEOPSTRUCT fileop;
+	fileop.hwnd = NULL;    // no status display
+	fileop.wFunc = FO_DELETE;  // delete operation
+	fileop.pFrom = pszFrom;  // source file name as double null terminated string
+	fileop.pTo = NULL;    // no destination needed
+	fileop.fFlags = FOF_NOCONFIRMATION | FOF_SILENT;  // do not prompt the user
+
+	if (!noRecycleBin)
+		fileop.fFlags |= FOF_ALLOWUNDO;
+
+	fileop.fAnyOperationsAborted = FALSE;
+	fileop.lpszProgressTitle = NULL;
+	fileop.hNameMappings = NULL;
+
+	int ret = SHFileOperation(&fileop);
+	free(pszFrom);
+	return (ret == 0);
+}
