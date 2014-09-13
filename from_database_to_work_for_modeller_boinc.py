@@ -6,7 +6,7 @@
 import subprocess
 import glob
 import os
-
+import numpy as np
 
 # Merken:
 # 
@@ -50,29 +50,38 @@ templist = None
 
 
 # In[5]:
-
-#create helicalrangelist
-helicalrange = []
-for linker in LINKERS:
-    seq = []
-    helixcount = 0
-    for i in range(len(linker)):
-        if ((linker[i] == "A") | (linker[i] == "E") | (linker[i] == "K")):
-            helixcount += 1
-        else:
-            helixcount = 0
-        if (i < (len(linker) -2)):
-            if ((helixcount > 5) & (linker[i +1] != "A") & (linker[i + 1] != "E") & (linker[i + 1] != "K")):
+def create_helicalrangelist(linkerlist):
+    '''
+    returns a list of the helical ranges of the linker.
+    Always a list of twolists, with start and end of helix
+    '''
+    
+    #create helicalrangelist
+    helicalrange = []
+    for linker in linkerlist:
+        seq = []
+        helixcount = 0
+        for i in range(len(linker)):
+            if ((linker[i] == "A") | (linker[i] == "E") | (linker[i] == "K")):
+                helixcount += 1
+            else:
+                helixcount = 0
+            if (i < (len(linker) -2)):
+                if ((helixcount > 5) & (linker[i +1] != "A") & (linker[i + 1] != "E") & (linker[i + 1] != "K")):
+                    seq = seq + [i - helixcount + 3, i]
+                    helixcount = 0
+            elif ((helixcount > 5) & (i == (len(linker) -2))):
+                seq = seq + [i - helixcount + 3, i + 1]
+                helixcount = 0
+            elif ((helixcount > 5) & (i == (len(linker) -1))):
                 seq = seq + [i - helixcount + 3, i]
                 helixcount = 0
-        elif ((helixcount > 5) & (i == (len(linker) -2))):
-            seq = seq + [i - helixcount + 3, i + 1]
-            helixcount = 0
-        elif ((helixcount > 5) & (i == (len(linker) -1))):
-            seq = seq + [i - helixcount + 3, i]
-            helixcount = 0
-            
-    helicalrange.append(seq)
+                
+        helicalrange.append(seq)
+    return helicalrange
+    
+    
+exchangedict = {"RGKCWE":["RGKCWE"]}
 
 
 # In[19]:
@@ -89,7 +98,65 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
     pdbfname = pdbname + ".pdb"
     subunit = folder[offset + 5]
     
+    sequencesfromlinker = []
+    lengtoflinker = []
+    if os.path.exists(folder + "resultsfromlinkers/"):
+        for resultfile in glob.glob(folder + "resultsfromlinkers/*"):
+            header = True
+            for line in resultsfile:
+                if header:
+                    header = False
+                else:
+                    line = line.strip()
+                    cols = line.split()
+                    sequencesfromlinker.append(cols[0])
+                    lengthoflinker.append(cols[10])
+        sequencesfromlinker = np.array(sequencesfromlinker)
+        lengthoflinker = np.array(lengthoflinker)
+        
+        sequencepool = np.unique(sequencesfromlinker)
+        sequenceweightings = []
+        for sequenceiter in sequencepool:
+            sequenceweightings.append(np.mean(weightingsall[0][sequences == sequenceiter]))
+            
+        sequenceweightings = np.array(sequenceweightings)
+        
+        sortarray = np.argsort(sequenceweightings)
+        sequencepool = sequencepool[sortarray]
+        
+        if np.size(sequencepool) > 100:
+            sequencepool = sequencepool[100]
+        allsequences = []
+        #das verändern der Sequenzen:
+        for sequence in sequencepool:
+            for i in range(1,4):
+                for key in exchangedict:
+                    for otherstring in exchangedict[key]:
+                        allsequences.append(replace(sequence, key, otherstring, i)
+        f = open(folder + "linkers.txt", "w")
+        for linker in allsequences:
+            if linker == allsequences[0]:
+                writestring = linker
+            else:
+                writestring += ("," + linker)
+        f.write(writestring + "\n")
+        
+        helicalrange = create_helicalrangelist(allsequences)
+        writestring = ""
+        for linkerrange in helicalrange:
+            for bond in linkerrange:
+                writestring += (str(bond) + " ")
+            writestring += ","
+        writestring = writestring[:-1] + "\n"
+        f.write(writestring)
+        f.close()
+        
+    
+    
     if not os.path.exists(folder + "linkers.txt"):
+        
+        helicalrange = create_helicalrangelist(LINKERS)
+        
         f = open(folder + "linkers.txt", "w")
         for linker in LINKERS:
             if linker == LINKERS[0]:
@@ -134,7 +201,7 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 
     seqlength = len(sequence)
     for i in range(len(linkerlist)):
-        uniqueforwu = pdbname + "_" + subunit + "linker_" + str(i)
+        uniqueforwu = pdbname + "_" + subunit + "_modeller_ " + "linker_" + str(i)
         alifname = uniqueforwu + ".ali"
         f = open(folder + alifname, "w")
         f.write(">P1;" + uniqueforwu + "\n")

@@ -73,23 +73,33 @@ def skalar_product (ar1, ar2):
     return (ar1[:,0]*ar2[:,0])+(ar1[:,1]*ar2[:,1])+(ar1[:,2]*ar2[:,2])
 
 
-def angle_between_connections_array(StartArray, MiddleArray, EndArray):
+def angle_between_connections_array(startingarray, middlearray, endingarray):
     '''
-    returns value between [0,pi] an array of size Startarray with the angles. If there is no displacement, it returns zero as value
+    returns value between [0,pi] an array of size Startarray with the angles. If there is no displacement,
+    it returns zero as value
+    MiddleArray should never be of just one point
     '''
-    vect1 = (StartArray - MiddleArray)
-    vect2 = (EndArray - MiddleArray)
+    
+    if np.size(startingarray, axis = 0) == 1:
+        startingexp = np.repeat(startingarray, np.size(middlearray, axis=0), axis =0)
+    else:
+        startingexp = startingarray
+    vect1 = (startingexp - middlearray)
+    vect2 = (endingarray - middlearray)
     #catch if there is 0 displacement
     tocalculate = ((vect1 != np.array([0,0,0])).any(1)) & ((vect2 != np.array([0,0,0])).any(1))
-    vect1 = vect1[tocalculate]
-    vect2 = vect2[tocalculate]
-    catchrounding = skalar_product(vect1, vect2)/(vectabsar(vect1)*vectabsar(vect2))
-    #get rounding arrors
-    catchrounding[catchrounding > 1] = 1
-    catchrounding[catchrounding < -1] = -1
-    angles = np.arccos(catchrounding)
-    returnangles = np.zeros(np.size(StartArray, axis = 0))
-    returnangles[tocalculate] = angles
+    if tocalculate.any():
+        vect1 = vect1[tocalculate]
+        vect2 = vect2[tocalculate]
+        catchrounding = skalar_product(vect1, vect2)/(vectabsar(vect1)*vectabsar(vect2))
+        #get rounding arrors
+        catchrounding[catchrounding > 1] = 1
+        catchrounding[catchrounding < -1] = -1
+        angles = np.arccos(catchrounding)
+        returnangles = np.zeros(np.size(middlearray, axis = 0))
+        returnangles[tocalculate] = angles
+    else:
+        returnangles = np.zeros(np.size(middlearray, axis = 0))
     return returnangles
 
 
@@ -154,7 +164,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     line = f.readline()
     line = line.strip()
-    subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext = line.split(",")
+    subunitforwork, projectname, functionnumber, angleforworkstart, angleforworkend, natext, shortpath = line.split(",")
 
     RAMOFMACHINE = float(RAMOFMACHINE)
 
@@ -165,7 +175,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     #if (not os.path.exists("files")):
     #    os.makedirs("files")
     #PDB geht von N zu C Terminus
-
+    
+    if shortpath == "1":
+        shortpath = True
+    else:
+        shortpath = False
 
     UserDefinedProjectName = projectname
 
@@ -1003,7 +1017,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             proteinsize = 1
 
         UsedMem = PointSize * proteinsize * repetition
-        return int(UsedMem / (AvailableRAM - inramsize)) + 1
+        if (AvailableRAM - inramsize) > 0:
+            return int(UsedMem / (AvailableRAM - inramsize)) + 1
+        else :
+            sys.exit("not enough RAM available for next calculation")
 
 
     # In[21]:
@@ -1160,13 +1177,26 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         elif weightflex != None:
             sequence = sequenceflex
             retweight = weightflex
+        elif (weightflex == None) & (weightrig == None):
+            loader.exit("There were absolutely no linkers found, that could be translated to sequences")            
 
 
 
 
-        sequence = sequence + ScarsAtEndseq
+        
         if (weightrig != None) | (weightflex != None):
-            return sequence , retweight,    np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),    np.concatenate((thirdflex, thirdrig), axis = 0)
+            sequence = sequence + ScarsAtEndseq
+            if firstrig != None:
+                if firstflex != None:
+                    return sequence , retweight, np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),  np.concatenate((thirdflex, thirdrig), axis = 0)
+                else:
+                    return sequence, retweight, firstrig, secondrig, thirdrig
+            elif firstflex != None:
+                return sequence, retweight, firstflex, secondflex, thirdflex     
+            
+            
+            
+            
         else:
             loader.exit("There were absolutely no linkers found, that could be translated to sequences")
 
@@ -1218,8 +1248,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         heretousepoints = pkte[np.ravel(distance_from_connection([anfangspunkt], [endpunkt], pkte)[0] <                        (minabstand + np.max(np.concatenate((FLEXATSTART, FLEXATEND)))))]
 
 
-        MakeSmall = make_small_generator(np.size(secondpointsflexible) * np.size(thirdpointsflexible),
-                                         1.5 , RAMOFMACHINE , ProteinArray = heretousepoints)
+        MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible], 
+                                            np.size(secondpointsflexible) * np.size(thirdpointsflexible),
+                                            2 , RAMOFMACHINE , ProteinArray = heretousepoints)
 
         teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
 
@@ -1336,13 +1367,16 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-        MakeSmall = make_small_generator(secondpointstriangle, 12, RAMOFMACHINE, ProteinArray = heretousepoints)
+        MakeSmall = make_small_generator_offset([firstpointstriangle, secondpointstriangle],
+                                        secondpointstriangle, 12, RAMOFMACHINE, ProteinArray = heretousepoints)
 
         teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
 
         #about 250s per MakeSmall run
 
         for i in range(0, (MakeSmall +1)):
+            
+
             if i == MakeSmall:
                 temp1 = firstpointstriangle[i * teiler:]
                 temp2 = secondpointstriangle[i * teiler:]
@@ -1402,7 +1436,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-        MakeSmall = make_small_generator(secondpointstriangle, 15, RAMOFMACHINE, ProteinArray = heretousepoints)
+        MakeSmall = make_small_generator_offset([firstpointstriangle, secondpointstriangle, thirdpointstriangle],
+                                        secondpointstriangle, 15, RAMOFMACHINE, ProteinArray = heretousepoints)
 
         teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
 
@@ -1457,6 +1492,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
     elif functionnumber == "3":
+        firstpointsflexible  = None
+        secondpointsflexible = None
+        thirdpointsflexible  = None
+        
+
+        
         angleforworkstart = float(angleforworkstart)
         angleforworkend = float(angleforworkend)
 
@@ -1503,18 +1544,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
         #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
-        shortpath = False
+        
 
-        if ((abstandanfend < ((3*np.min(linkerlaengenKO)) - (2 * LENGTHOFANGLEKO))) &
-            ((np.max(linkerlaengenKO) * 2 -(2 * LENGTHOFANGLEKO)) > maxvonanfang)\
-            & (((np.max(linkerlaengenKO) * 2) - (2 * LENGTHOFANGLEKO)) > maxvonende)):
+        if shortpath:
             zweitepunkte = erstepunkte
-            shortpath = True
         else:
-
-            sliceverschstart = int((np.size(versch, axis = 0) - 1) * (angleforworkstart / 100.))
-            if angleforworkend != 100:
-                sliceverschend = int((np.size(versch, axis = 0) - 1) * (angleforworkend / 100.))
+            sliceverschstart = int((np.size(versch, axis = 0) - 1) * (angleforworkstart / 300.))
+            if angleforworkend != 300:
+                sliceverschend = int((np.size(versch, axis = 0) - 1) * (angleforworkend / 300.))
             else:
                 sliceverschend = np.size(versch, axis = 0)
 
@@ -1547,7 +1584,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
 
         for i in range(1,MakeSmall):
-            temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[i*teiler:(i+1)*teiler],                                                        PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
+            temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[i*teiler:(i+1)*teiler], PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
         if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
             temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[(i+1)*teiler:],
                                                                 PointsOfAllSubunits, minabstand, maxabstand)), axis = 0)
@@ -1571,7 +1608,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #das läuft zu lange...
         for i in range(1, MakeSmall):
-            temp = sort_out_by_protein(erstepunkte[i*teiler:(i+1)*teiler], zweitepunkte[i*teiler:(i+1)*teiler],                        PointsOfAllSubunits, minabstand)
+            temp = sort_out_by_protein(erstepunkte[i*teiler:(i+1)*teiler], zweitepunkte[i*teiler:(i+1)*teiler], PointsOfAllSubunits, minabstand)
 
             erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
@@ -1606,7 +1643,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
             for i in range(0,(MakeSmall)):
 
-                temp = sort_out_by_distance(zweitepunkte[i*teiler:(i+1)*teiler], letztepunkte,                                    erstepunkte[i*teiler:(i+1)*teiler], laenge, hitgenauig)
+                temp = sort_out_by_distance(zweitepunkte[i*teiler:(i+1)*teiler], letztepunkte, erstepunkte[i*teiler:(i+1)*teiler], laenge, hitgenauig)
                 if i == 0:
                     erstetemp = temp[0]
                     zweitetemp= temp[1]
@@ -1622,66 +1659,74 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
                 drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
 
-            count = 1
-            #for array in [erstetemp, zweitetemp, drittetemp]:
-            #    h5f.create_dataset("dataset_{points}{linker}".format(points = count, linker = int(laenge)), data=array)
-            #    count +=1
-
-        #h5f.close()
-
-
+        erstepunkte = np.float16(erstetemp)
+        zweitepunkte = np.float16(zweitetemp)
+        drittepunkte = np.float16(drittetemp)
+        
+        erstetemp = zweitetemp = drittetemp = None
+        
 
 
 
 
 
-        for laenge in linkerlaengenKO:
-
-            #SizeOfArray = len(h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]) * 3
-
-            #removed sizeofarray
-
-            MakeSmall = make_small_generator(zweitepunkte,13 , RAMOFMACHINE , ProteinArray = PointsOfAllSubunits)
-            teiler = np.size(zweitepunkte, axis=0)/(MakeSmall * 3)
 
 
-            #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]
-            #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][:teiler]
-            #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][:teiler]
+        #sort out the connections between second and third points by protein.
 
+        #SizeOfArray = len(h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]) * 3
+
+        #removed sizeofarray
+
+        MakeSmall = make_small_generator_offset([erstepunkte, zweitepunkte, drittepunkte, firstpointsflexible, secondpointsflexible, thirdpointsflexible],
+                                                zweitepunkte, 13 , RAMOFMACHINE , ProteinArray = PointsOfAllSubunits)
+                                                
+        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
+
+        #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]
+        #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][:teiler]
+        #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][:teiler]
+
+        temp = sort_out_by_protein(zweitepunkte[:teiler], drittepunkte[:teiler], PointsOfAllSubunits, minabstand, beforearray = erstepunkte[:teiler])
+        erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis = 0)
+        zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
+        drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
+        erstetemp = temp[0]
+        zweitetemp = temp[1]
+        drittetemp = temp[2]
+
+
+
+
+        #das läuft zu lange, ein Durchlauf 2.5s, das heißt insgesamt: 30500~9hs
+        for i in range(1, MakeSmall):
+            #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][i * teiler:(i+1)*teiler]
+            #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][i * teiler:(i+1)*teiler]
+            #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][i * teiler:(i+1)*teiler]
             temp = sort_out_by_protein(zweitepunkte[:teiler], drittepunkte[:teiler], PointsOfAllSubunits, minabstand, beforearray = erstepunkte[:teiler])
-            erstetemp = temp[0]
-            zweitetemp = temp[1]
-            drittetemp = temp[2]
+            erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis = 0)
+            zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
+            drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
+
+            erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+            drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
+            
 
 
+        
+            #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
+            #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
+            #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][(i+1) * teiler:]
 
+        if np.shape(zweitepunkte) != (0,3):
+            temp = sort_out_by_protein(zweitepunkte, drittepunkte, PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
+                
 
-            #das läuft zu lange, ein Durchlauf 2.5s, das heißt insgesamt: 30500~9hs
-            for i in range(1, MakeSmall):
-                #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][i * teiler:(i+1)*teiler]
-                #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][i * teiler:(i+1)*teiler]
-                #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][i * teiler:(i+1)*teiler]
-                temp = sort_out_by_protein(zweitepunkte[i * teiler:(i+1)*teiler], drittepunkte[i * teiler:(i+1)*teiler],
-                                           PointsOfAllSubunits, minabstand, beforearray = erstepunkte[i * teiler:(i+1)*teiler])
-
-                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-                drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
-
-
-            if ((i+1) * teiler) < (SizeOfArray / 3):
-                #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
-                #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
-                #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][(i+1) * teiler:]
-
-
-                temp = sort_out_by_protein(zweitepunkte[(i+1) * teiler:], drittepunkte[(i+1) * teiler:],
-                                           PointsOfAllSubunits, minabstand, beforearray = erstepunkte[(i+1) * teiler:])
-
-                erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
-                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
-                drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+            erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
+            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
+            drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
 
 
 
@@ -1689,10 +1734,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = np.float16(zweitetemp)
         drittepunkte = np.float16(drittetemp)
 
+        erstetemp = zweitetemp = drittetemp = None
 
-
-
-        #h5f.close()
 
 
 
@@ -1753,7 +1796,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             drittetemp = temp[2]
             temp = None
 
-        bla = time.time()
+        
 
         for i in range(1, MakeSmall):
             if shortpath:
@@ -1781,17 +1824,19 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         if shortpath:
-            temp = sort_out_by_angle([anfangspunkt], zweitepunkte, drittepunkte, angletosequence)
-            erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-            zweitetemp = erstetemp
-            drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
-            temp = None
+            if np.shape(zweitepunkte) != (0,3):
+                temp = sort_out_by_angle([anfangspunkt], zweitepunkte, drittepunkte, angletosequence)
+                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+                zweitetemp = erstetemp
+                drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+                temp = None
         else:
-            temp = sort_out_by_angle(erstepunkte, zweitepunkte, drittepunkte, angletosequence)
-            erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-            drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
-            temp = None
+            if np.shape(erstepunkte) != (0,3):
+                temp = sort_out_by_angle(erstepunkte, zweitepunkte, drittepunkte, angletosequence)
+                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+                drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+                temp = None
 
 
         erstepunkte = np.float16(erstetemp)
@@ -1802,7 +1847,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-
+    ###HERE all the generation of linkers is finished.###
 
 
     #thirdpoints are to be shifted and given back
@@ -1831,9 +1876,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             shifts = np.zeros(arraylengthtemp)
             #we calculate the shifts, to be sure we shift a bit farther than we need in the end.
             shifts[toberefinedlengths > 0] = -1 * (toberefinedlengths[toberefinedlengths > 0] -
-                                                   LENGTHACCURACYKO + LENGTHACCURACYKO / 10.)
+                                                   LENGTHACCURACYKO + LENGTHACCURACYKO / 5.)
             shifts[toberefinedlengths < 0] = -1 * (toberefinedlengths[toberefinedlengths < 0] +
-                                                   LENGTHACCURACYKO - LENGTHACCURACYKO / 10.)
+                                                   LENGTHACCURACYKO - LENGTHACCURACYKO / 5.)
             shifts = np.reshape(np.repeat(shifts, 3), (arraylengthtemp,3))
             lengthestemp = abstandarrays(thirdpoints[toberefinedbool] , secondpoints[toberefinedbool])
             lengthestemp = np.reshape(np.repeat(lengthestemp, 3), (arraylengthtemp,3))
@@ -1847,147 +1892,157 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     def make_better_paths_rigid(startpoint, firstpoints, secondpoints, thirdpoints, endpoint):
-        linkerlaengenKOtemp = np.append(linkerlaengenKO, 0.)
-        lonetemp = abstandpktzuarray(startpoint, firstpoints)
+        if np.shape(secondpoints) == (0,3):
+            firstpoints = secondpoints = thirdpoints = None
+            return firstpoints, secondpoints, thirdpoints
+        else:
+            '''
+            makes all the shiftings that should be needed in the rigid linkers, so that they can be easily translated in the end.
 
-        arraylengthtemp = np.size(lonetemp)
-        #True bleibt
+            returns:
+            firstpoints, secondpoints, thirdpoints    
+            '''
+            linkerlaengenKOtemp = np.append(linkerlaengenKO, 0.)
+            lonetemp = abstandpktzuarray(startpoint, firstpoints)
 
-        keep = sort_out_by_length(startpoint, firstpoints, linkerlaengenKO + FLEXIBLEATSTARTKO - LENGTHOFANGLEKO)
-        firstpoints = firstpoints[keep]
-        secondpoints = secondpoints[keep]
-        thirdpoints = thirdpoints[keep]
+            arraylengthtemp = np.size(lonetemp)
+            #True bleibt
 
-        thirdpoints = shift_points_to_linkerpatterns(secondpoints, thirdpoints, linkerlaengenKOtemp)
+            keep = sort_out_by_length(startpoint, firstpoints, linkerlaengenKO + FLEXIBLEATSTARTKO - LENGTHOFANGLEKO)
+            firstpoints = firstpoints[keep]
+            secondpoints = secondpoints[keep]
+            thirdpoints = thirdpoints[keep]
 
-        keep = sort_out_by_length(thirdpoints, endpoint, linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO)
-        firstpoints = firstpoints[keep]
-        secondpoints = secondpoints[keep]
-        thirdpoints = thirdpoints[keep]
+            thirdpoints = shift_points_to_linkerpatterns(secondpoints, thirdpoints, linkerlaengenKOtemp)
 
-        return firstpoints, secondpoints, thirdpoints
+            keep = sort_out_by_length(thirdpoints, endpoint, linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO)
+            firstpoints = firstpoints[keep]
+            secondpoints = secondpoints[keep]
+            thirdpoints = thirdpoints[keep]    
 
-
+            return firstpoints, secondpoints, thirdpoints
+        
+        
     def make_better_paths_flex(firstpoints, secondpoints, thirdpoints, endpoint):
-        linkerlaengenKOtemp = np.append(linkerlaengenKO, 2*LENGTHOFANGLEKO)
+        if np.shape(firstpoints) == (0,3):
+            firstpoints = secondpoints = thirdpoints = None
+            return firstpoints, secondpoints, thirdpoints
+        else:
+            
+            linkerlaengenKOtemp = np.append(linkerlaengenKO, 2*LENGTHOFANGLEKO)
 
-        noanglebool = (firstpoints == secondpoints).all(1)
-        thirdpoints[noanglebool] = shift_points_to_linkerpatterns(secondpoints[noanglebool],
-                                                                  thirdpoints[noanglebool], linkerlaengenKOtemp -
-                                                                  2 * LENGTHOFANGLEKO)
+            noanglebool = (firstpoints == secondpoints).all(1)
+            thirdpoints[noanglebool] = shift_points_to_linkerpatterns(secondpoints[noanglebool],
+                                                                      thirdpoints[noanglebool], linkerlaengenKOtemp - 
+                                                                      2 * LENGTHOFANGLEKO)
 
-        #keep Trues
-        arraylengthtemp = np.size(noanglebool)
-        sortouttemp = np.bool8(np.ones(arraylengthtemp))
-        sortouttemp[noanglebool] = (abstandpktzuarray(endpoint, thirdpoints[noanglebool]) < FLEXIBLEATENDKO)
+            #keep Trues
+            arraylengthtemp = np.size(noanglebool)
+            sortouttemp = np.bool8(np.ones(arraylengthtemp))
+            sortouttemp[noanglebool] = (abstandpktzuarray(endpoint, thirdpoints[noanglebool]) < FLEXIBLEATENDKO)
 
-        return firstpoints[sortouttemp], secondpoints[sortouttemp], thirdpoints[sortouttemp]
-
-
-
-
-    if firstpointsflexible != None:
-
-
-        MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
-                                                 erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 , 6)
+            return firstpoints[sortouttemp], secondpoints[sortouttemp], thirdpoints[sortouttemp]
 
 
 
-        teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
+
+    if (firstpointsflexible != None):
+        if np.shape(firstpointsflexible != (0,3)):
 
 
-        temp = make_better_paths_flex(firstpointsflexible[:teiler], secondpointsflexible[:teiler], thirdpointsflexible[:teiler], endpunkt)
-        firstpointsflexible  = np.delete(firstpointsflexible, np.arange(teiler), axis = 0)
-        secondpointsflexible = np.delete(secondpointsflexible, np.arange(teiler), axis = 0)
-        thirdpointsflexible  = np.delete(thirdpointsflexible, np.arange(teiler), axis = 0)
+            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+                                                     erstepunkte, zweitepunkte, drittepunkte], secondpointsflexible, 20 , 6)
 
-        firsttemp = temp[0]
-        secondtemp = temp[1]
-        thirdtemp = temp[2]
 
-        bla = time.time()
 
-        for i in range(1, MakeSmall):
+            teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
 
-            temp = make_better_paths_flex(firstpointsflexible[:teiler], secondpointsflexible[:teiler],
-                                          thirdpointsflexible[:teiler], endpunkt)
+
+            temp = make_better_paths_flex(firstpointsflexible[:teiler], secondpointsflexible[:teiler], thirdpointsflexible[:teiler], endpunkt)
             firstpointsflexible  = np.delete(firstpointsflexible, np.arange(teiler), axis = 0)
             secondpointsflexible = np.delete(secondpointsflexible, np.arange(teiler), axis = 0)
             thirdpointsflexible  = np.delete(thirdpointsflexible, np.arange(teiler), axis = 0)
 
-            firsttemp = np.concatenate((firsttemp, temp[0]), axis =0)
-            secondtemp = np.concatenate((secondtemp, temp[1]), axis =0)
-            thirdtemp = np.concatenate((thirdtemp, temp[2]), axis = 0)
+            firsttemp = temp[0]
+            secondtemp = temp[1]
+            thirdtemp = temp[2]
 
 
+            for i in range(1, MakeSmall):
 
-        temp = make_better_paths_flex(firstpointsflexible, secondpointsflexible, thirdpointsflexible, endpunkt)
-        firsttemp = np.concatenate((firsttemp, temp[0]), axis =0)
-        secondtemp = np.concatenate((secondtemp, temp[1]), axis =0)
-        thirdtemp = np.concatenate((thirdtemp, temp[2]), axis = 0)
+                temp = make_better_paths_flex(firstpointsflexible[:teiler], secondpointsflexible[:teiler],
+                                              thirdpointsflexible[:teiler], endpunkt)
+                firstpointsflexible  = np.delete(firstpointsflexible, np.arange(teiler), axis = 0)
+                secondpointsflexible = np.delete(secondpointsflexible, np.arange(teiler), axis = 0)
+                thirdpointsflexible  = np.delete(thirdpointsflexible, np.arange(teiler), axis = 0)
+
+                firsttemp = np.concatenate((firsttemp, temp[0]), axis =0)
+                secondtemp = np.concatenate((secondtemp, temp[1]), axis =0)
+                thirdtemp = np.concatenate((thirdtemp, temp[2]), axis = 0)
 
 
-        firstpointsflexible = np.float16(firsttemp)
-        secondpointsflexible = np.float16(secondtemp)
-        thirdpointsflexible = np.float16(thirdtemp)
+            if np.shape(firstpointsflexible) != (0,3):
+                temp = make_better_paths_flex(firstpointsflexible, secondpointsflexible, thirdpointsflexible, endpunkt)
+                firsttemp = np.concatenate((firsttemp, temp[0]), axis =0)
+                secondtemp = np.concatenate((secondtemp, temp[1]), axis =0)
+                thirdtemp = np.concatenate((thirdtemp, temp[2]), axis = 0)
 
-        #clear var.
-        firsttemp = secondtemp = thirdtemp = None
 
-        print bla - time.time()
-        print np.size(firstpointsflexible, axis = 0)
+            firstpointsflexible = np.float16(firsttemp)
+            secondpointsflexible = np.float16(secondtemp)
+            thirdpointsflexible = np.float16(thirdtemp)
+
+            #clear var.
+            firsttemp = secondtemp = thirdtemp = None
 
 
     if erstepunkte != None:
-        MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
-                                                 erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 , RAMOFMACHINE )
+        if np.shape(erstepunkte != (0,3)):
+            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+                                                     erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 , RAMOFMACHINE )
 
 
-        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+            teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
 
 
-        temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler], endpunkt)
+            temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler], endpunkt)
 
-        erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis = 0)
-        zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
-        drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
-
-        erstetemp = temp[0]
-        zweitetemp = temp[1]
-        drittetemp = temp[2]
-
-        bla = time.time()
-
-        for i in range(1, MakeSmall):
-
-            temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler],
-                                           endpunkt)
             erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis = 0)
             zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
             drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
 
-            erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-            zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-            drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+            erstetemp = temp[0]
+            zweitetemp = temp[1]
+            drittetemp = temp[2]
 
 
+            for i in range(1, MakeSmall):
 
-        temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler],
-                                       endpunkt)
-        erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
-        zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-        drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
+                temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler],
+                                               endpunkt)
+                erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis = 0)
+                zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
+                drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
+
+                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+                drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
 
 
-        erstepunkte = np.float16(erstetemp)
-        zweitepunkte = np.float16(zweitetemp)
-        drittepunkte = np.float16(drittetemp)
+            if np.shape(erstepunkte) != (0,3):
+                temp = make_better_paths_rigid(anfangspunkt, erstepunkte, zweitepunkte, drittepunkte,
+                                               endpunkt)
+                erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
+                zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
+                drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
 
-        erstetemp = zweitetemp = drittetemp = None
-        print bla - time.time()
-        print np.size(erstepunkte, axis = 0)
 
+            erstepunkte = np.float16(erstetemp)
+            zweitepunkte = np.float16(zweitetemp)
+            drittepunkte = np.float16(drittetemp)
+
+            erstetemp = zweitetemp = drittetemp = None
+            
 
    
 
@@ -2138,7 +2193,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     # At first the different linkers are just analysed. Of course this could be done in the weighing step before, but this is not that calculation intensive and like this it is much more clear when it does what.
-
+    
     sequences, weightingsall, firstpointsall, secondpointsall, thirdpointsall =translate_paths_to_sequences(anfangspunkt,firstpointsflexible, secondpointsflexible,
                                                         thirdpointsflexible, erstepunkte, zweitepunkte, drittepunkte,
                                                         endpunkt, linkerdatenbank, linkerlaengenKO, angletosequence,
@@ -2156,7 +2211,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             writestring += "," + str(secondpointsall[i][j])
         for j in range(3):
             writestring += "," + str(thirdpointsall[i][j])
-        for j in range(1,np.size(weightingsall, axis = 0)):
+        for j in range(1,5):
             writestring += "," + str(weightingsall[j][i])
         writestring += "\n"
 
