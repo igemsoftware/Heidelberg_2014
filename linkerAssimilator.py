@@ -11,9 +11,10 @@ class linkerAssimilator(Assimilator):
 		Assimilator.__init__(self)
 		self.appname = 'linker_gen'
 		self.update_db = False
-		self.basedir = "./results/linker_gen"
-		if !os.path.isdir(self.basedir):
+		self.basedir = "./results"
+		if not os.path.isdir(self.basedir):
 			os.mkdir(self.basedir)
+
 
 	def assimilate_handler(self, wu, results, canonical_result):
 		print "Resultfiles for %s: " % wu.name

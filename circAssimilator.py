@@ -9,7 +9,6 @@ class linkerAssimilator(Assimilator):
 	def __init__(self):
 		Assimilator.__init__(self)
 		self.appname = 'circ_modeller'
-		self.update_db = False
 		self.basedir = "./results"
 		if not os.path.isdir(self.basedir):
 			os.mkdir(self.basedir)
@@ -65,6 +64,8 @@ class linkerAssimilator(Assimilator):
 			f = open(pdbfolder+"/resubmit", 'w')
 			f.write(wu.name+"\n")
 			f.close()
+
+		self.report_errors(wu)
 
 
 
