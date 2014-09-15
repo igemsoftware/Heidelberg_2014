@@ -3,22 +3,53 @@ from Boinc.tools import *
 from Boinc.boinc_db import *
 import shutil
 import os
+import xml.etree.ElementTree as ET
+from subprocess import check_output
 
-
-class linkerAssimilator(Assimilator):
+class circModeller_Assimilator(Assimilator):
 	def __init__(self):
 		Assimilator.__init__(self)
 		self.appname = 'circ_modeller'
-		self.basedir = "./results"
+		self.basedir = "./database"
 		if not os.path.isdir(self.basedir):
 			os.mkdir(self.basedir)
-		self.basedir = self.basedir + "/" + self.appname
+		self.basedir += "/finished_"
+		self.basedir = self.basedir + self.appname
 
 		if not os.path.isdir(self.basedir):
 			os.mkdir(self.basedir)
+
+		self.save_pdbs = False
+
+	def save_inputfiles(self, wu, path, files): # Gets a tuble with input filenames (unresolved) to save from workunit
+		root = ET.fromstring("<root>" + wu.xml_doc + "</root>")
+		for file in root.findall("./workunit/file_ref"):
+			boincname = file.find("open_name").text
+			if boincname in files:
+				resname = file.find("file_name").text
+				# Get filepath via dir_hier_path and remove tailing spaces and newlines
+				filepath = check_output(['bin/dir_hier_path', resname])
+				filepath = filepath.strip('\n ')
+				
+				if os.path.isfile(filepath):
+					self.logDebug("Copying %s to %s\n" % (filepath, path))
+					shutil.copy(filepath, path)
+				else:
+					self.logCritical("Unable to copy %s: %s, file does not exist.\n" % (boincname, filepath))
+			
+			elif boincname == "atomfile.pdb" and self.save_pdbs:
+				resname = file.find("file_name").text
+				if not os.path.exists(path+"/"+resname):
+					filepath = check_output(['bin/dir_hier_path', resname])
+					filepath = filepath.strip('\n ')
+					if os.path.isfile(filepath):
+						self.logDebug("Saving pdb %s\n" % filepath)
+						shutil.copy(filepath, path)
+					else:
+						self.logCritical("Unable to save pdb %s, file does not exist.\n")
+
 
 	def assimilate_handler(self, wu, results, canonical_result):
-		print "Resultfiles for %s: " % wu.name
 		pdbfolder = self.basedir + "/" + wu.name[:6]
 		if not os.path.isdir(pdbfolder):
 			os.mkdir(pdbfolder)
@@ -27,40 +58,47 @@ class linkerAssimilator(Assimilator):
 		if not os.path.isdir(resultpath):
 			os.mkdir(resultpath)
 
+		self.save_inputfiles(wu, resultpath, ["configfile.csv","inputsequencefile.ali"])
+		
 		valid_count = 0
-
+		
 		for result in results:
 			if result.validate_state == VALIDATE_STATE_VALID:
-				print "valid result:"
+				'''
+				We only get one resultfile, which is normally named resultname_0, as it is the first file.
+				Save result pdb as resultname.pdb and stderr as resultname_stderr.txt in the pdbfolder.
+				'''
 				filename = "%s_0" % result.name
 				savepath = resultpath
 				resultfile = get_output_file_path(filename)
-				print "   Filename: %s" % filename
-				print "   Filepath: %s" % resultfile
+				targetfile = os.path.split(resultfile)[1] #remove path
+				targetfile = "_".join(targetfile.split("_")[:-1])+".pdb" #removes terminal _0
 				try:
-					shutil.copy2(resultfile, resultpath+"/"+os.path.basename(resultfile)[:-2]+".pdb")
+					shutil.copy(resultfile, resultpath+"/"+targetfile)
 				except:
-					print "   Resultfile missing... only saving stderr"
+					self.logCritical("Resultfile of #%s: %s missing... only saving stderr\n" % (str(result.id), result.name) )
 					savepath = pdbfolder + "/missing"
 					if not os.path.isdir(savepath):
 						os.mkdir(savepath)
 
-				f = open(savepath+"/"+os.path.basename(resultfile)[:-2]+"_stderr.txt", 'w')
+				f = open(savepath+"/"+os.path.basename(targetfile)+"_stderr.txt", 'w')
 				f.write(result.stderr_out)
 				f.close()
 				valid_count += 1
-				print
 			else:
+				'''
+				Save the stderr of failed results into the subdir errors in the pdbfolder
+				'''
 				errorpath = pdbfolder+"/errors"
 				if not os.path.isdir(errorpath):
 					os.mkdir(errorpath)
-				print "invalid result"
+				self.logNormal("Result #%s: %s contains errors, saving stderr\n" % (str(result.id), result.name) )
 				f = open(errorpath+"/"+result.name+"_stderr.txt", 'w')
 				f.write(result.stderr_out)
 				f.close()
-				print
 
 		if(valid_count == 0):
+			self.logCritical("Workunit #%s: %s has no valid result, adding to resubmit file\n" % (str(result.id), result.name) )
 			f = open(pdbfolder+"/resubmit", 'w')
 			f.write(wu.name+"\n")
 			f.close()
@@ -68,7 +106,6 @@ class linkerAssimilator(Assimilator):
 		self.report_errors(wu)
 
 
-
 if __name__ == '__main__':
-    asm = linkerAssimilator()
+    asm = circModeller_Assimilator()
     asm.run()

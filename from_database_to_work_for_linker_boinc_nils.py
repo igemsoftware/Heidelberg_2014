@@ -6,6 +6,9 @@
 import subprocess
 import glob
 import numpy as np
+from Boinc.setup_project import *
+from Boinc import database
+import igemathome_database as igemdb
 
 
 def return_shortpath(pdbfile, subunit):
@@ -60,9 +63,11 @@ startlist = ["GG"]
 
 databasefolder = "./import_files/"
 
-
+database.connect()
+igemdb.connect()
 
 ####Hier kann man einfach hinter glob.glob() ein [:10] setzen, um das erstmal auf wengier laufen zu lassen und zu testen
+
 
 for folder in glob.glob(databasefolder + "*/")[:1]:
     pdbname = folder[offset:offset + 4]
@@ -74,6 +79,15 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
     #stage the PDB
     subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
     
+    proteinjob = igemdb.Job(protein=pdbname, email="maexlich@gmail.com")
+    proteinjob.commit()
+    jobid = proteinjob.id
+    wus = dict()
+
+    def setWuByName(wuname, state):
+		workunit = database.Workunits.find1(name=wuname)
+		wus[workunit.id] = state
+
     #create instructions
     for extein in exteinlist:
 		for nr in range(1,4):
@@ -87,27 +101,35 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 						f.close()
 						subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
 						subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
-					 "templates/circ_modeller.input-template", "--result_template", "templates/circ_modeller.result-template",
+					 "templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", jobid,
 					 "--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
+						
+						setWuByName(uniqueforwu, igemdb.INIT)
 				else:
 					uniqueforwu = pdbname + "_" + subunit + "_" + "linker" +"_" + extein + str(nr) + "_" + "shortpath"
 			
-						f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-						f.write(subunit +"," + uniqueforwu + "," + "1" + ",0,300" + "," + extein, "1")
-						f.close()
-						subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
-						subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
-					 "templates/circ_modeller.input-template", "--result_template", "templates/circ_modeller.result-template",
-					 "--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
-					
-			else:
-				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + str(nr) +"_"+ "0_1"
-		
 					f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-					f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein, "0")
+					f.write(subunit +"," + uniqueforwu + "," + "1" + ",0,300" + "," + extein, "1")
 					f.close()
 					subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
 					subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
-				 "templates/circ_modeller.input-template", "--result_template", "templates/circ_modeller.result-template",
-				 "--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
+				 	"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", jobid,
+				 	"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
+					
+					setWuByName(uniqueforwu, igemdb.INIT)
 
+			else:
+				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + str(nr) +"_"+ "0_1"
+		
+				f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
+				f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein, "0")
+				f.close()
+				subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
+				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
+			 	"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", jobid,
+			 	"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
+
+				setWuByName(uniqueforwu, igemdb.INIT)
+
+	proteinjob.setWus('linker', wus)
+	proteinjob.commit()
