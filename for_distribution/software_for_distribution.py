@@ -3,7 +3,7 @@
 
 #einlesen des PDB files. die Dateien sollten in proteine gespeichert werden
 import numpy as np
-import cPickle as pickle       #zum Zwischenspeichern vor Abstürzen, um Zeit zu sparen.
+
 import h5py                    #zum Zwischenspeichern der Ergebnisse in der Generation der neuen Punkte
 import sys                      #kann man vielleicht durch os erstetzen, wird nur für exit gebraucht
 #das kann vielleicht noch raus
@@ -294,9 +294,6 @@ endpunkt = np.ravel(pkte[(InterestingAANr == InterestingAANr[-1]) & (Interesting
 AmountOfAtomsFirstAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[0]])  #anzahl an Atomen in der erstenas
 AmountOfAtomsLastAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[-1]])  #amount of atoms in last AS
 
-#evtlraus
-
-#pickle.dump((pkte, InterestingAminos, InterestingAtom, InterestingAANr), open("files/savepoints{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
 #TODO Winkel einfügen
 
@@ -1110,8 +1107,7 @@ def translate_paths_to_sequences(startpoint, firstflex, secondflex, thirdflex, f
         sequence = sequence + ScarsAtEndseq
         return sequence , retweight, firstflex, secondflex, thirdflex
     else:
-        sys.exit("There were absolutely no linkers found, that could be translated to sequences")
-        return None, None, None, None, None    
+        sys.exit("There were absolutely no linkers found, that could be translated to sequences")   
         
     
 
@@ -1389,30 +1385,18 @@ elif functionnumber == "2":
     drittepunkte = None
 
 
-#evtlraus?: bleiben die hier
-
-#pickle.dump((firstpointsflexible, secondpointsflexible, thirdpointsflexible), open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
 
 
 
 
 
-'''
-punktetemp = pickle.load( open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-firstpointsflexible  = punktetemp[0]
-secondpointsflexible = punktetemp[1]
-thirdpointsflexible  = punktetemp[2]
-'''
+
+    #### Flexible ends estimated to make the same as the rigid parts
 
 
 
-
-#### Flexible ends estimated to make the same as the rigid parts
-
-
-
-#die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
-if functionnumber == "3":
+    #die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
+elif functionnumber == "3":
     angleforworkstart = float(angleforworkstart)
     angleforworkend = float(angleforworkend)
     
@@ -1510,16 +1494,6 @@ if functionnumber == "3":
     zweitepunkte = zweitepunkte[temp]
     erstepunkte = erstepunkte[temp]
    
-    #evtlraus
-    #save for saving calculationtime
-    #pickle.dump((erstepunkte, zweitepunkte, letztepunkte),            open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-
-    """
-    punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    erstepunkte = punktetemp[0]
-    zweitepunkte = punktetemp[1]
-    letztepunkte = punktetemp[2]
-    """
 
     #läuft etwa 11 minuten, reduziert um die Hälfte
     MakeSmall = make_small_generator(zweitepunkte, 10 , RAMofclient , ProteinArray = PointsOfAllSubunits)
@@ -1548,19 +1522,6 @@ if functionnumber == "3":
     erstepunkte = np.float16(erstetemp)
     zweitepunkte = np.float16(zweitetemp)
 
-    #evtlraus
-
-    #pickle.dump((erstepunkte, zweitepunkte, letztepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-
-
-
-
-    """
-    punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    erstepunkte = punktetemp[0]
-    zweitepunkte = punktetemp[1]
-    letztepunkte = punktetemp[2]
-    """
 
 
     ###### Generierung der Verbindungen zwsichen den zweiten und den dritten Punkten
@@ -1615,7 +1576,7 @@ if functionnumber == "3":
         SizeOfArray = len(h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]) * 3
         
         
-        MakeSmall = make_small_generator(SizeOfArray,12 , RAMofclient , ProteinArray = PointsOfAllSubunits)
+        MakeSmall = make_small_generator(SizeOfArray,13 , RAMofclient , ProteinArray = PointsOfAllSubunits)
         teiler = SizeOfArray/(MakeSmall * 3)
         
         
@@ -1673,31 +1634,8 @@ if functionnumber == "3":
 
 
     tempsize =  np.size(erstepunkte, axis = 0)
-    '''
-    pickle.dump(erstepunkte[:tempsize/2],             open("files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-    pickle.dump(erstepunkte[tempsize/2:],             open("files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-    pickle.dump(zweitepunkte[:tempsize/2],             open("files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-    pickle.dump(zweitepunkte[tempsize/2:],             open("files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-    pickle.dump(drittepunkte[:tempsize/2],             open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "wb"))
-    pickle.dump(drittepunkte[tempsize/2:],             open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "wb"))
-    '''
 
 
-    #evtlraus
-
-    '''
-    erstepunkteeins = pickle.load( open( "files/save{projectname}ersteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    erstepunktezwei = pickle.load( open( "files/save{projectname}erstezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    erstepunkte = np.concatenate((erstepunkteeins, erstepunktezwei), axis = 0)
-
-    zweitepunkteeins = pickle.load( open( "files/save{projectname}zweiteeins.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    zweitepunktezwei = pickle.load( open( "files/save{projectname}zweitezwei.p".format(projectname = UserDefinedProjectName), "rb" ) )
-    zweitepunkte = np.concatenate((zweitepunkteeins, zweitepunktezwei), axis = 0)
-
-    drittepunkteeins = pickle.load( open("files/save{projectname}dritteeins.p".format(projectname = UserDefinedProjectName), "rb"))
-    drittepunktezwei = pickle.load( open("files/save{projectname}drittezwei.p".format(projectname = UserDefinedProjectName), "rb"))
-    drittepunkte = np.concatenate((drittepunkteeins, drittepunktezwei), axis = 0)
-    '''
 
 
 
@@ -1714,30 +1652,12 @@ if functionnumber == "3":
         drittepunkte = temp[2]
 
 
-    #evtlraus
-
-    #pickle.dump((erstepunkte, zweitepunkte, drittepunkte), open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "wb"))
-    
     firstpointsflexible = None
     secondpointsflexible = None
     thirdpointsflexible = None
 
 
 
-'''
-punktetemp = pickle.load( open("files/save{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-erstepunkte = punktetemp[0]
-zweitepunkte = punktetemp[1]
-drittepunkte = punktetemp[2]
-'''
-
-
-'''
-punktetemp = pickle.load( open("files/saveflexibles{projectname}.p".format(projectname = UserDefinedProjectName), "rb" ) )
-firstpointsflexible  = punktetemp[0]
-secondpointsflexible = punktetemp[1]
-thirdpointsflexible  = punktetemp[2]
-'''
 
 
 
@@ -1986,13 +1906,13 @@ f.write("sequence,erstepunkteallx,erstepunkteally,erstepunkteallz,zweitepunkteal
 for i in range(np.size(sequences)):
     writestring = sequences[i]
     for j in range(3):
-        writestring += "," + firstpointsall[i][j]
+        writestring += "," + str(firstpointsall[i][j])
     for j in range(3):
-        writestring += "," + secondpointsall[i][j]
+        writestring += "," + str(secondpointsall[i][j])
     for j in range(3):
-        writestring += "," + thirdpointsall[i][j]
-    for j in range(1,np.size(weightingsall, axis = 1)):
-        writestring += "," + weightingsall[j][i]
+        writestring += "," + str(thirdpointsall[i][j])
+    for j in range(1,np.size(weightingsall, axis = 0)):
+        writestring += "," + str(weightingsall[j][i])
     writestring += "\n"
     
     f.write(writestring)
