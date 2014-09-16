@@ -79,13 +79,29 @@ def angle_between_connections_array(startingarray, middlearray, endingarray):
     it returns zero as value
     MiddleArray should never be of just one point
     '''
-    
-    if np.size(startingarray, axis = 0) == 1:
-        startingexp = np.repeat(startingarray, np.size(middlearray, axis=0), axis =0)
+
+    if np.shape(startingarray) == (3,):
+        startingexp = np.repeat([startingarray], np.size(middlearray, axis=0), axis =0)
     else:
         startingexp = startingarray
+
+    if np.shape(endingarray) == (3,):
+        endingexp = np.repeat([endingarray], np.size(middlearray, axis=0), axis =0)
+    else:
+        endingexp  = endingarray
+
     vect1 = (startingexp - middlearray)
-    vect2 = (endingarray - middlearray)
+    vect2 = (endingexp - middlearray)
+    return angle_between_vectors(vect1, vect2)
+
+
+def angle_between_vectors(vect1, vect2):
+    '''
+    returns the angles between two vectors.
+    Works always on complete arrays, if the vectors are 0, it returns 0 as angle for them.
+    based on the arccos
+    '''
+    lengthofarrays = np.size(vect1, axis = 0)
     #catch if there is 0 displacement
     tocalculate = ((vect1 != np.array([0,0,0])).any(1)) & ((vect2 != np.array([0,0,0])).any(1))
     if tocalculate.any():
@@ -96,10 +112,10 @@ def angle_between_connections_array(startingarray, middlearray, endingarray):
         catchrounding[catchrounding > 1] = 1
         catchrounding[catchrounding < -1] = -1
         angles = np.arccos(catchrounding)
-        returnangles = np.zeros(np.size(middlearray, axis = 0))
+        returnangles = np.zeros(lengthofarrays)
         returnangles[tocalculate] = angles
     else:
-        returnangles = np.zeros(np.size(middlearray, axis = 0))
+        returnangles = np.zeros(lengthofarrays)
     return returnangles
 
 
@@ -110,13 +126,19 @@ takes a connection from Startarray to Endarray nnd calculates the perpendicular 
 Returns an array of size (start * points) with all perpendicular distances or distances of the endpoints.
 Start or End can also be single points.
     '''
-    if np.size(Startarray, axis = 0) ==1:
-        Starttemp = np.repeat(Startarray, np.size(Endarray, axis = 0), axis = 0)
+    if np.shape(Startarray) == (3,):
+        if np.shape(Endarray) != (3,):
+            Starttemp = np.repeat([Startarray], np.size(Endarray, axis = 0), axis = 0)
+        else:
+            Starttemp = np.reshape(Startarray, (1,3))
     else:
         Starttemp = Startarray
 
-    if np.size(Endarray, axis = 0) ==1:
-        Endtemp = np.repeat(Endarray, np.size(Startarray, axis = 0), axis = 0)
+    if np.shape(Endarray) == (3,):
+        if np.shape(Startarray) != (3,):
+            Endtemp = np.repeat([Endarray], np.size(Startarray, axis = 0), axis = 0)
+        else:
+            Endtemp = np.reshape(Endarray, (1,3))
     else:
         Endtemp = Endarray
 
@@ -577,8 +599,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         startingarray must be an array of (x,3) shape. so add it as: [startingarray]
         beforearray is used, if also arrays before the connection need to be sliced. Then the boolarray is returned.
         '''
-        if np.size(startingarray, axis=0) == 1:
-            starttemp = np.repeat(startingarray, np.size(endingarray, axis=0), axis =0)
+        if np.shape(startingarray) == (3,):
+            starttemp = np.repeat([startingarray], np.size(endingarray, axis=0), axis =0)
         else:
             starttemp = startingarray
         oneaxis = np.size(endingarray, axis = 0)
@@ -605,12 +627,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         if beforearray == None:
-            if np.size(startingarray, axis=0) == 1:
+            if np.shape(startingarray) == (3,):
                 return [np.float16(startingarray), np.float16(endingarray[connectpointbool])]
             else:
                 return [np.float16(startingarray[connectpointbool]), np.float16(endingarray[connectpointbool])]
         else:
-            return (np.float16(beforearray[connectpointbool]), np.float16(startingarray[connectpointbool]), np.float16(endingarray[connectpointbool]))
+            return (np.float16(beforearray[connectpointbool]), np.float16(startingarray[connectpointbool]),                np.float16(endingarray[connectpointbool]))
 
 
     # Wir fangen sowohl vorne als auch hinten an, mit allen Winkeln, die möglich sind und allen Längen, die möglich sind. Wir bekommen dann Arrays von den ersten Punkten und den letzten Punkten nach dem Protein.
@@ -680,11 +702,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     #TODO: Start can be array or just points, End has to be an array...
     def unpreferable_places(Start, End, ProteinPoints, AminoacidNumberArray, ToBeWeighedAAInput, WeighingofAA, substratelist):
-        if np.size(Start, axis = 0) ==1:
-            Start = np.repeat(Start, np.size(End, axis = 0), axis = 0)
+        if np.shape(Start) == (3,):
+            Start = np.repeat([Start], np.size(End, axis = 0), axis = 0)
 
-        if np.size(End, axis = 0) ==1:
-            End = np.repeat(End, np.size(Start, axis = 0), axis = 0)
+        if np.shape(End) == (3,):
+            End = np.repeat([End], np.size(Start, axis = 0), axis = 0)
 
         #all the normal aminoacids from the arrays
         SliceToBeWeighed = np.in1d(ToBeWeighedAAInput, AminoacidNumberArray)
@@ -760,8 +782,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         testsize = np.size(testarray, axis = 0)
 
 
-        if np.size(beforearray, axis = 0) == 1:
-            beforearray = np.repeat(beforearray, testsize, axis = 0)
+        if np.shape(beforearray) == (3,):
+            beforearray = np.repeat([beforearray], testsize, axis = 0)
 
         calc = (beforearray != testarray).any(axis = 1)
         if Afterpoint != None:
@@ -801,16 +823,16 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if ToBeWeighedAA == None:
             SiteInfluenceNormed = np.zeros(np.size(Angles))
         else:
-            SiteInfluenceNormed = unpreferable_places([StartPoint], FirstArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
+            SiteInfluenceNormed = unpreferable_places(StartPoint, FirstArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                                                       WeighingofAA, substratelist) + \
             unpreferable_places(FirstArray, SecondArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                                 WeighingofAA, substratelist) + \
             unpreferable_places(SecondArray, ThirdArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                                 WeighingofAA, substratelist) + \
-            unpreferable_places([EndPoint], ThirdArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
+            unpreferable_places(EndPoint, ThirdArray, ProteinPoints, AminoacidNumberArray, ToBeWeighedAA,
                                 WeighingofAA, substratelist)
 
-        DistancesFromProtein = (distance_from_surface([StartPoint], FirstArray, ProteinPoints) +
+        DistancesFromProtein = (distance_from_surface(StartPoint, FirstArray, ProteinPoints) +
                                 distance_from_surface(FirstArray, SecondArray, ProteinPoints) +
                                 distance_from_surface(SecondArray, ThirdArray, ProteinPoints, [EndPoint]))
 
@@ -916,9 +938,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         '''
         returns a boolian array which paths to keep, middle and endingarray must have same dimension, startingarray is only one
         entry
+        If startingarray is only one point, it returns only middlearray and endingarray, else all three arrays are returned
         '''
-        if np.size(startingarray, axis = 0) == 1:
-            startingexp = np.repeat(startingarray, np.size(middlearray, axis=0), axis =0)
+
+        if np.shape(startingarray) == (3,):
+            startingexp = np.repeat([startingarray], np.size(middlearray, axis=0), axis =0)
         else:
             startingexp = startingarray
         vect1 = (startingexp - middlearray)
@@ -947,23 +971,23 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             tempmid = np.concatenate((tempmid[keep], middlearray[tocalctemp]), axis = 0)
             tempend = np.concatenate((tempend[keep], endingarray[tocalctemp]), axis = 0)
 
-            if np.size(startingarray, axis = 0) == 1:
+            if np.shape(startingarray) == (3,):
                 return (tempmid, tempend)
             else:
                 tempstart = np.concatenate((tempstart[keep], startingarray[tocalctemp]), axis = 0)
                 return tempstart, tempmid, tempend
         else:
-            if np.size(startingarray, axis = 0) == 1:
+            if np.shape(startingarray) == (3,):
                 return middlearray, endingarray
             else:
                 return startingarray, middlearray, endingarray
 
-
-
-    def make_small_generator(PointArray, repetition, RAM, ProteinArray = None):
+    def make_small_generator(PointArray, repetition, RAM, tobesplitlength, ProteinArray = None):
         '''
         RAM in GByte,
         repetition, how often is the largest array repeated
+
+        returns MakeSmall and teiler
         '''
 
         bytespergig = 1073741824
@@ -982,13 +1006,19 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         UsedMem = PointSize * proteinsize * repetition
 
-        return int(UsedMem / AvailableRAM) + 1
+        premakesmall = int(UsedMem / AvailableRAM) + 1
+
+        teiler = tobesplitlength / premakesmall
+
+        if teiler != 0:
+            MakeSmall = tobesplitlength / teiler
+        else:
+            MakeSmall = premakesmall
+
+        return MakeSmall, teiler
 
 
-
-    # In[20]:
-
-    def make_small_generator_offset(listofarraysinRAM, PointArray, repetition, RAM, ProteinArray = None):
+    def make_small_generator_offset(listofarraysinRAM, PointArray, repetition, RAM, tobesplitlength,  ProteinArray = None):
         '''
         In the listofarraysinRAM can be either just the arrays or the size of the arrays, same for PointArray
 
@@ -1017,10 +1047,18 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             proteinsize = 1
 
         UsedMem = PointSize * proteinsize * repetition
+
         if (AvailableRAM - inramsize) > 0:
-            return int(UsedMem / (AvailableRAM - inramsize)) + 1
+            premakesmall = int(UsedMem / (AvailableRAM - inramsize)) + 1
+            teiler = tobesplitlength / premakesmall
+            if teiler != 0:
+                MakeSmall = tobesplitlength / teiler
+            else:
+                MakeSmall = premakesmall
+            return MakeSmall, teiler
         else :
-            sys.exit("not enough RAM available for next calculation")
+            loader.exit("not enough RAM available for next calculation")
+
 
 
     # In[21]:
@@ -1069,10 +1107,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         comefrompoints can be either an x * 3 array or just a three array, then it is elongated
         '''
 
-        if np.size(comefrompoints) == 3:
+        if np.shape(comefrompoints) == (3,):
             comefrompoints = np.repeat([comefrompoints], np.size(gotopoints, axis = 0), axis = 0)
         else:
-            if np.size(gotopoints) == 3:
+            if np.shape(gotopoints) == (3,):
                 gotopoints = np.repeat([gotopoints], np.size(comefrompoints, axis = 0), axis = 0)
 
         arraylengthtemp = np.size(comefrompoints, axis = 0)
@@ -1090,37 +1128,41 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     def length_to_sequence(lengtharray, linkerdatenbank, linkerlaengen):
-        #prepare for adding strings always
-        addsequencearray = np.zeros(np.size(lengtharray), dtype=str)
-        addsequencearray = np.array(addsequencearray, dtype=np.object)
+        if np.size(lengtharray) == 0:
+            return ""
+        else:
+            #prepare for adding strings always
+            addsequencearray = np.zeros(np.size(lengtharray), dtype=str)
+            addsequencearray = np.array(addsequencearray, dtype=np.object)
 
-        for i in range(len(linkerlaengen)):
-            setseqbool = ((lengtharray >= linkerlaengen[i] - LENGTHACCURACYKO) &
-                          (lengtharray <= (linkerlaengen[i] + LENGTHACCURACYKO)))
-            addsequencearray[setseqbool] = addsequencearray[setseqbool] + linkerdatenbank[i]
+            for i in range(len(linkerlaengen)):
+                setseqbool = ((lengtharray >= linkerlaengen[i] - LENGTHACCURACYKO) &
+                              (lengtharray <= (linkerlaengen[i] + LENGTHACCURACYKO)))
+                addsequencearray[setseqbool] = addsequencearray[setseqbool] + linkerdatenbank[i]
 
-        temp = (addsequencearray == "") & (lengtharray != 0.)
-        addsequencearray[temp] = addsequencearray[temp] + "XXX" #TODO nur zum Testen, das muss noch raus!
+            temp = (addsequencearray == "") & (lengtharray != 0.)
+            addsequencearray[temp] = addsequencearray[temp] + "XXX" #TODO nur zum Testen, das muss noch raus!
 
-        return addsequencearray
+            return addsequencearray
 
     def angle_to_sequence(anglearray, angletosequence, angleseparators):
-        addsequencearray = np.zeros(np.size(anglearray), dtype=str)
-        addsequencearray = np.array(addsequencearray, dtype=np.object)
+        if np.size(anglearray) == 0:
+            return ""
+        else:
 
-        for i in range(len(angletosequence)):
-            setseqbool = (anglearray > angleseparators[i]) & (anglearray < angleseparators[i + 1])
-            addsequencearray[setseqbool] = addsequencearray[setseqbool] + angletosequence[i][2]
-        return addsequencearray
+            addsequencearray = np.zeros(np.size(anglearray), dtype=str)
+            addsequencearray = np.array(addsequencearray, dtype=np.object)
+
+            for i in range(len(angletosequence)):
+                setseqbool = (anglearray > angleseparators[i]) & (anglearray < angleseparators[i + 1])
+                addsequencearray[setseqbool] = addsequencearray[setseqbool] + angletosequence[i][2]
+            return addsequencearray
 
     #returns the weightingarrays and the sequencearrays, concatenated
-
-
     def translate_paths_to_sequences(startpoint, firstflex, secondflex, thirdflex, firstrig, secondrig, thirdrig,
                                      endpoint, linkerdatenbank, linkerlaengenKO, angletosequence, angleseparators,
                                      weightflex, weightrig):
-
-        if weightflex != None:
+        if (weightflex != None):
             #flexible linkers
             sequenceflex = np.zeros(np.size(firstflex, axis = 0), dtype=str)
             sequenceflex = np.array(sequenceflex, dtype=np.object)
@@ -1128,19 +1170,23 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
             withoutanglebool = (firstpointsflexible == secondpointsflexible).all(axis = 1)
 
-            sequenceflex[withoutanglebool] = sequenceflex[withoutanglebool] +         length_to_sequence(abstandarrays(secondflex[withoutanglebool], thirdflex[withoutanglebool]),
+            sequenceflex[withoutanglebool] = sequenceflex[withoutanglebool] + \
+            length_to_sequence(abstandarrays(secondflex[withoutanglebool], thirdflex[withoutanglebool]),
                                linkerdatenbank, linkerlaengenKO - (2 * LENGTHOFANGLEKO))
 
 
             withanglebool = np.invert(withoutanglebool)
 
-            sequenceflex[withanglebool] = sequenceflex[withanglebool] +         length_to_sequence(abstandarrays(firstflex[withanglebool], secondflex[withanglebool]),
+            sequenceflex[withanglebool] = sequenceflex[withanglebool] + \
+            length_to_sequence(abstandarrays(firstflex[withanglebool], secondflex[withanglebool]),
                                linkerdatenbank, linkerlaengenKO - LENGTHOFANGLEKO)
 
-            sequenceflex[withanglebool] = sequenceflex[withanglebool] +         angle_to_sequence(angle_between_connections_array(firstflex[withanglebool], secondflex[withanglebool],
+            sequenceflex[withanglebool] = sequenceflex[withanglebool] + \
+            angle_to_sequence(angle_between_connections_array(firstflex[withanglebool], secondflex[withanglebool],
                                                               thirdflex[withanglebool]), angletosequence, angleseparators)
 
-            sequenceflex[withanglebool] = sequenceflex[withanglebool] +         length_to_sequence(abstandarrays(secondflex[withanglebool], thirdflex[withanglebool]), linkerdatenbank,
+            sequenceflex[withanglebool] = sequenceflex[withanglebool] + \
+            length_to_sequence(abstandarrays(secondflex[withanglebool], thirdflex[withanglebool]), linkerdatenbank,
                                linkerlaengenKO - LENGTHOFANGLEKO)
 
         if weightrig != None:
@@ -1149,18 +1195,36 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             sequencerig = np.array(sequencerig, dtype=np.object)
             sequencerig = sequencerig + ScarsAtStartseq
 
+            withoutanglebool = (firstrig == secondrig).all(axis = 1)
+            withanglebool = np.invert(withoutanglebool)
 
             sequencerig = sequencerig + length_to_sequence(abstandpktzuarray(startpoint, firstrig) -
                                                            FLEXIBLEATSTARTKO + LENGTHOFANGLEKO,  linkerdatenbank, linkerlaengenKO)
-            sequencerig = sequencerig + angle_to_sequence(angle_between_connections_array([startpoint], firstrig, secondrig),
-                                                          angletosequence, angleseparators)
+            #split between those from shortpath and those not coming from there
+            sequencerig[withanglebool] = (sequencerig[withanglebool] +
+                                          angle_to_sequence(angle_between_connections_array(startpoint,
+                                                                                            firstrig[withanglebool],
+                                                                                            secondrig[withanglebool]),
+                                                          angletosequence, angleseparators))
 
-            sequencerig = sequencerig + length_to_sequence(abstandarrays(firstrig, secondrig), linkerdatenbank, linkerlaengenKO)
-            sequencerig = sequencerig + angle_to_sequence(angle_between_connections_array(firstrig, secondrig, thirdrig),
-                                                          angletosequence, angleseparators)
+            sequencerig[withanglebool] = (sequencerig[withanglebool] +
+                                          length_to_sequence(abstandarrays(firstrig[withanglebool], secondrig[withanglebool]),
+                                                             linkerdatenbank, linkerlaengenKO))
+            sequencerig[withanglebool] = (sequencerig[withanglebool] +
+                                          angle_to_sequence(angle_between_connections_array(firstrig[withanglebool],
+                                                                                            secondrig[withanglebool],
+                                                                                            thirdrig[withanglebool]),
+                                                          angletosequence, angleseparators))
+
+            sequencerig[withoutanglebool] = (sequencerig[withoutanglebool] +
+                                      angle_to_sequence(angle_between_connections_array(startpoint,
+                                                                                        firstrig[withoutanglebool],
+                                                                                        thirdrig[withoutanglebool]),
+                                                        angletosequence, angleseparators))
+
 
             sequencerig = sequencerig + length_to_sequence(abstandarrays(secondrig, thirdrig), linkerdatenbank, linkerlaengenKO)
-            sequencerig = sequencerig + angle_to_sequence(angle_between_connections_array(secondrig, thirdrig, [endpoint]),
+            sequencerig = sequencerig + angle_to_sequence(angle_between_connections_array(secondrig, thirdrig, endpoint),
                                                           angletosequence, angleseparators)
 
             sequencerig = sequencerig + length_to_sequence(abstandpktzuarray(endpoint, thirdrig) -
@@ -1178,25 +1242,26 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             sequence = sequenceflex
             retweight = weightflex
         elif (weightflex == None) & (weightrig == None):
-            loader.exit("There were absolutely no linkers found, that could be translated to sequences")            
+            loader.exit("There were absolutely no linkers found, that could be translated to sequences")
 
 
 
-
-        
         if (weightrig != None) | (weightflex != None):
             sequence = sequence + ScarsAtEndseq
             if firstrig != None:
                 if firstflex != None:
-                    return sequence , retweight, np.concatenate((firstflex, firstrig), axis = 0), np.concatenate((secondflex, secondrig), axis = 0),  np.concatenate((thirdflex, thirdrig), axis = 0)
+                    return sequence , retweight,\
+                    np.concatenate((firstflex, firstrig), axis = 0), \
+                    np.concatenate((secondflex, secondrig), axis = 0),\
+                    np.concatenate((thirdflex, thirdrig), axis = 0)
                 else:
                     return sequence, retweight, firstrig, secondrig, thirdrig
             elif firstflex != None:
-                return sequence, retweight, firstflex, secondflex, thirdflex     
-            
-            
-            
-            
+                return sequence, retweight, firstflex, secondflex, thirdflex
+
+
+
+
         else:
             loader.exit("There were absolutely no linkers found, that could be translated to sequences")
 
@@ -1245,12 +1310,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         amountofsecondpoints = np.size(secondpointsflexible, axis = 0)
 
         #reduce the amount of points in the protein, that should be checked, as a cylinder around start -> end
-        heretousepoints = pkte[np.ravel(distance_from_connection([anfangspunkt], [endpunkt], pkte)[0] <                        (minabstand + np.max(np.concatenate((FLEXATSTART, FLEXATEND)))))]
+        heretousepoints = pkte[np.ravel(distance_from_connection(anfangspunkt, endpunkt, pkte)[0] <  (minabstand + np.max(np.concatenate((FLEXATSTART, FLEXATEND)))))]
 
 
-        MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible], 
+        MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible],
                                             np.size(secondpointsflexible) * np.size(thirdpointsflexible),
-                                            2 , RAMOFMACHINE , ProteinArray = heretousepoints)
+                                            2 , RAMOFMACHINE , np.size(secondpointsflexible, axis=0),
+                                             ProteinArray = heretousepoints)
 
         teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
 
@@ -1272,7 +1338,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 secondpointsflexibletemp = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
                 thirdpointsflexibletemp = np.concatenate((thirdpointsflexibletemp, temp3), axis =0)
 
-        if (i+1)*teiler < np.size(secondpointsflexible, axis=0):
+        if (i+1) * teiler < np.size(secondpointsflexible, axis=0):
             temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[(i+1)*teiler:], thirdpointsflexible,
                                         firstpointsflexible[(i+1)*teiler:], abstandanfend, 300 / kalib)
 
@@ -1367,15 +1433,16 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-        MakeSmall = make_small_generator_offset([firstpointstriangle, secondpointstriangle],
-                                        secondpointstriangle, 12, RAMOFMACHINE, ProteinArray = heretousepoints)
+        MakeSmall, teiler = make_small_generator_offset([firstpointstriangle, secondpointstriangle],
+                                        secondpointstriangle, 12, RAMOFMACHINE,np.size(secondpointstriangle, axis=0),
+                                         ProteinArray = heretousepoints)
 
-        teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
+
 
         #about 250s per MakeSmall run
 
         for i in range(0, (MakeSmall +1)):
-            
+
 
             if i == MakeSmall:
                 temp1 = firstpointstriangle[i * teiler:]
@@ -1436,8 +1503,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-        MakeSmall = make_small_generator_offset([firstpointstriangle, secondpointstriangle, thirdpointstriangle],
-                                        secondpointstriangle, 15, RAMOFMACHINE, ProteinArray = heretousepoints)
+        MakeSmall, teiler = make_small_generator_offset([firstpointstriangle, secondpointstriangle, thirdpointstriangle],
+                                        secondpointstriangle, 15, RAMOFMACHINE,np.size(secondpointstriangle, axis=0),
+                                         ProteinArray = heretousepoints)
 
         teiler = np.size(secondpointstriangle, axis=0)/(MakeSmall)
 
@@ -1495,9 +1563,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         firstpointsflexible  = None
         secondpointsflexible = None
         thirdpointsflexible  = None
-        
 
-        
+
+
         angleforworkstart = float(angleforworkstart)
         angleforworkend = float(angleforworkend)
 
@@ -1544,7 +1612,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
         #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
-        
+
 
         if shortpath:
             zweitepunkte = erstepunkte
@@ -1563,7 +1631,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #Nach Winkeln aussortieren, von vorne.
 
-        temp = sort_out_by_angle([anfangspunkt], erstepunkte, zweitepunkte, angletosequence)
+        temp = sort_out_by_angle(anfangspunkt, erstepunkte, zweitepunkte, angletosequence)
         erstepunkte = temp[0]
         zweitepunkte = temp[1]
 
@@ -1579,8 +1647,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         #Läuft 82 sek, sortiert 60 000 Punkte aus
         #wir sortieren die Punkte aus, die zu weit oder zu nah im Protein sind
 
-        MakeSmall = make_small_generator(zweitepunkte,1 , RAMOFMACHINE , ProteinArray = PointsOfAllSubunits)
-        teiler = np.size(zweitepunkte, axis = 0)/MakeSmall
+        MakeSmall, teiler = make_small_generator(zweitepunkte,1 , RAMOFMACHINE ,np.size(zweitepunkte, axis = 0),
+                 ProteinArray = PointsOfAllSubunits)
+
         temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
 
         for i in range(1,MakeSmall):
@@ -1597,9 +1666,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         #läuft etwa 11 minuten, reduziert um die Hälfte
-        MakeSmall = make_small_generator(zweitepunkte, 10 , RAMOFMACHINE , ProteinArray = PointsOfAllSubunits)
+        MakeSmall, teiler = make_small_generator(zweitepunkte, 10 , RAMOFMACHINE ,np.size(zweitepunkte, axis=0),
+         ProteinArray = PointsOfAllSubunits)
 
-        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
         temp = sort_out_by_protein(erstepunkte[:teiler], zweitepunkte[:teiler], PointsOfAllSubunits, minabstand)
         erstetemp = temp[0]
         zweitetemp = temp[1]
@@ -1629,9 +1699,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-        MakeSmall = make_small_generator(zweitepunkte,8 , RAMOFMACHINE , ProteinArray = letztepunkte)
+        MakeSmall, teiler = make_small_generator(zweitepunkte,8 , RAMOFMACHINE ,np.size(zweitepunkte, axis=0),
+         ProteinArray = letztepunkte)
 
-        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
 
 
         #if os.path.exists('files/data{projectname}.h5'.format(projectname = UserDefinedProjectName)):
@@ -1662,9 +1733,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         erstepunkte = np.float16(erstetemp)
         zweitepunkte = np.float16(zweitetemp)
         drittepunkte = np.float16(drittetemp)
-        
+
         erstetemp = zweitetemp = drittetemp = None
-        
+
 
 
 
@@ -1678,10 +1749,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #removed sizeofarray
 
-        MakeSmall = make_small_generator_offset([erstepunkte, zweitepunkte, drittepunkte, firstpointsflexible, secondpointsflexible, thirdpointsflexible],
-                                                zweitepunkte, 13 , RAMOFMACHINE , ProteinArray = PointsOfAllSubunits)
-                                                
-        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+        MakeSmall, teiler = make_small_generator_offset([erstepunkte, zweitepunkte, drittepunkte, firstpointsflexible, secondpointsflexible, thirdpointsflexible],
+                                                zweitepunkte, 13 , RAMOFMACHINE ,np.size(zweitepunkte, axis=0),
+                                                 ProteinArray = PointsOfAllSubunits)
+
+
 
 
         #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))]
@@ -1712,17 +1784,17 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
             drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
-            
 
 
-        
+
+
             #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
             #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
             #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][(i+1) * teiler:]
 
         if np.shape(zweitepunkte) != (0,3):
             temp = sort_out_by_protein(zweitepunkte, drittepunkte, PointsOfAllSubunits, minabstand, beforearray = erstepunkte)
-                
+
 
             erstetemp = np.concatenate((erstetemp, temp[0]), axis = 0)
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis = 0)
@@ -1767,14 +1839,15 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         # In[47]:
 
-        MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
-                                                     erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 , 6 )
+        MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+                                                     erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 ,
+                                                     RAMOFMACHINE, np.size(zweitepunkte, axis=0) )
 
 
-        teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
 
         if shortpath:
-            temp = sort_out_by_angle([anfangspunkt], zweitepunkte[:teiler], drittepunkte[:teiler], angletosequence)
+            temp = sort_out_by_angle(anfangspunkt, zweitepunkte[:teiler], drittepunkte[:teiler], angletosequence)
 
             erstepunkte  = None
             zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
@@ -1782,7 +1855,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
             erstetemp = temp[0]
             zweitetemp = erstetemp
-            drittetemp = temp[2]
+            drittetemp = temp[1]
             temp = None
         else:
             temp = sort_out_by_angle(erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler], angletosequence)
@@ -1796,11 +1869,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             drittetemp = temp[2]
             temp = None
 
-        
+
 
         for i in range(1, MakeSmall):
             if shortpath:
-                temp = sort_out_by_angle([anfangspunkt], zweitepunkte[:teiler],
+                temp = sort_out_by_angle(anfangspunkt, zweitepunkte[:teiler],
                                          drittepunkte[:teiler], angletosequence)
                 zweitepunkte = np.delete(zweitepunkte, np.arange(teiler), axis = 0)
                 drittepunkte = np.delete(drittepunkte, np.arange(teiler), axis = 0)
@@ -1825,7 +1898,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         if shortpath:
             if np.shape(zweitepunkte) != (0,3):
-                temp = sort_out_by_angle([anfangspunkt], zweitepunkte, drittepunkte, angletosequence)
+                temp = sort_out_by_angle(anfangspunkt, zweitepunkte, drittepunkte, angletosequence)
                 erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
                 zweitetemp = erstetemp
                 drittetemp = np.concatenate((drittetemp, temp[2]), axis = 0)
@@ -1900,7 +1973,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             makes all the shiftings that should be needed in the rigid linkers, so that they can be easily translated in the end.
 
             returns:
-            firstpoints, secondpoints, thirdpoints    
+            firstpoints, secondpoints, thirdpoints
             '''
             linkerlaengenKOtemp = np.append(linkerlaengenKO, 0.)
             lonetemp = abstandpktzuarray(startpoint, firstpoints)
@@ -1918,22 +1991,22 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             keep = sort_out_by_length(thirdpoints, endpoint, linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO)
             firstpoints = firstpoints[keep]
             secondpoints = secondpoints[keep]
-            thirdpoints = thirdpoints[keep]    
+            thirdpoints = thirdpoints[keep]
 
             return firstpoints, secondpoints, thirdpoints
-        
-        
+
+
     def make_better_paths_flex(firstpoints, secondpoints, thirdpoints, endpoint):
         if np.shape(firstpoints) == (0,3):
             firstpoints = secondpoints = thirdpoints = None
             return firstpoints, secondpoints, thirdpoints
         else:
-            
+
             linkerlaengenKOtemp = np.append(linkerlaengenKO, 2*LENGTHOFANGLEKO)
 
             noanglebool = (firstpoints == secondpoints).all(1)
             thirdpoints[noanglebool] = shift_points_to_linkerpatterns(secondpoints[noanglebool],
-                                                                      thirdpoints[noanglebool], linkerlaengenKOtemp - 
+                                                                      thirdpoints[noanglebool], linkerlaengenKOtemp -
                                                                       2 * LENGTHOFANGLEKO)
 
             #keep Trues
@@ -1950,12 +2023,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if np.shape(firstpointsflexible != (0,3)):
 
 
-            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
-                                                     erstepunkte, zweitepunkte, drittepunkte], secondpointsflexible, 20 , 6)
+            MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+                                                     erstepunkte, zweitepunkte, drittepunkte], secondpointsflexible,
+                                                      20 , RAMOFMACHINE, np.size(secondpointsflexible, axis=0))
 
 
 
-            teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
+
 
 
             temp = make_better_paths_flex(firstpointsflexible[:teiler], secondpointsflexible[:teiler], thirdpointsflexible[:teiler], endpunkt)
@@ -1997,12 +2071,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     if erstepunkte != None:
-        if np.shape(erstepunkte != (0,3)):
-            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
-                                                     erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 , RAMOFMACHINE )
+        if np.shape(erstepunkte) != (0,3):
+            MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+                                                     erstepunkte, zweitepunkte, drittepunkte], zweitepunkte, 20 ,
+                                                      RAMOFMACHINE, np.size(zweitepunkte, axis=0) )
 
 
-            teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
 
 
             temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler], endpunkt)
@@ -2042,9 +2117,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             drittepunkte = np.float16(drittetemp)
 
             erstetemp = zweitetemp = drittetemp = None
-            
 
-   
+
+
 
 
     #### Die Bewertungsfunktion
@@ -2077,11 +2152,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if np.size(secondpointsflexible, axis = 0) > 0:
 
 
-            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+            MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
                                                      erstepunkte, zweitepunkte, drittepunkte], secondpointsflexible, 8 ,
-                                                    RAMOFMACHINE , ProteinArray = pkte)
+                                                    RAMOFMACHINE ,np.size(secondpointsflexible, axis=0), ProteinArray = pkte)
 
-            teiler = np.size(secondpointsflexible, axis=0)/(MakeSmall)
+
 
 
             temp = weighing_function_flex(anfangspunkt, firstpointsflexible[:teiler], secondpointsflexible[:teiler],
@@ -2139,11 +2214,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         #weighting of linkers without flexible ends
         if np.size(zweitepunkte, axis = 0) > 0:
 
-            MakeSmall = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
+            MakeSmall, teiler = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible,
                                                      erstepunkte, zweitepunkte, drittepunkte],
-                                                    zweitepunkte, 8 , RAMOFMACHINE , ProteinArray = pkte)
+                                                    zweitepunkte, 8 , RAMOFMACHINE ,np.size(zweitepunkte, axis=0),
+                                                     ProteinArray = pkte)
 
-            teiler = np.size(zweitepunkte, axis=0)/(MakeSmall)
+
 
             temp = weighing_function_rigids(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler],
                                             drittepunkte[:teiler], endpunkt, pkte, InterestingAANr,\
@@ -2193,7 +2269,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     # At first the different linkers are just analysed. Of course this could be done in the weighing step before, but this is not that calculation intensive and like this it is much more clear when it does what.
-    
+
     sequences, weightingsall, firstpointsall, secondpointsall, thirdpointsall =translate_paths_to_sequences(anfangspunkt,firstpointsflexible, secondpointsflexible,
                                                         thirdpointsflexible, erstepunkte, zweitepunkte, drittepunkte,
                                                         endpunkt, linkerdatenbank, linkerlaengenKO, angletosequence,
