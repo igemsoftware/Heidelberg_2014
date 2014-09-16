@@ -6,6 +6,8 @@ import json
 
 ID = '$Id$'
 
+INIT=0
+FINISHED=1
 
 class Job(DatabaseObject):
 
