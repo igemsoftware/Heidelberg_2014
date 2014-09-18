@@ -50,6 +50,7 @@ for linker in LINKERS:
 LINKERS = templist
 templist = None
 
+helicalrange = []
 
 # In[5]:
 def create_helicalrangelist(linkerlist):
@@ -58,8 +59,7 @@ def create_helicalrangelist(linkerlist):
     Always a list of twolists, with start and end of helix
     '''
 
-#create helicalrangelist
-helicalrange = []
+    #create helicalrangelist
     for linker in linkerlist:
         seq = []
         helixcount = 0
@@ -134,7 +134,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
             for i in range(1,4):
                 for key in exchangedict:
                     for otherstring in exchangedict[key]:
-                        allsequences.append(replace(sequence, key, otherstring, i)
+                        allsequences.append(replace(sequence, key, otherstring, i))
         f = open(folder + "linkers.txt", "w")
         for linker in allsequences:
             if linker == allsequences[0]:
@@ -203,7 +203,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
 
     seqlength = len(sequence)
     for i in range(len(linkerlist)):
-        uniqueforwu = pdbname + "_" + subunit + "_modeller_ " + "linker_" + str(i)
+        uniqueforwu = pdbname + "_" + subunit + "_modeller_" + str(i)
         alifname = uniqueforwu + ".ali"
         f = open(folder + alifname, "w")
         f.write(">P1;" + uniqueforwu + "\n")
