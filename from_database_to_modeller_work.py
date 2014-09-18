@@ -16,7 +16,7 @@ import numpy as np
 
 rods = ["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK", "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKA",
         "AEAAAKEAAAKEAAAKEAAAKEAAAKA"]
-angles =["AASGAA", "AALAA", "AAWAA", "ASNA", "ASA", "AGA", "VV"]
+angles = ["NVL","NLT", "KTA","LVA", "AADGTL", "AAIAP", "AADGTL", "VNLTA", "AAAHPEA", "AAANPEA", "ASLPAA", "ATGDLA", "AAGNAA"]
 
 
 # In[3]:
@@ -36,8 +36,8 @@ LINKERS += rods
 
 #attach extein and starting sequence:
 
-exteinlist = ["RGKCWE"]
-startlist = ["GG"]
+exteinlist = ["RGKCWE", "RGTCWE"]
+startlist = ["GG", ""]
 
 templist = []
 for linker in LINKERS:
