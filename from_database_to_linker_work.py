@@ -61,7 +61,7 @@ def return_shortpath(pdbfile, subunit):
 
 
 exteinlist = ["RGKCWE", "CG"]
-startlist = ["GG"]
+startlist = ["GG", ""]
 
 
 databasefolder = "./import_files/"
