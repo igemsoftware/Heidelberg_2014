@@ -7,6 +7,8 @@ import subprocess
 import glob
 import os
 import numpy as np
+import shutil
+
 
 # Merken:
 # 
@@ -16,7 +18,7 @@ import numpy as np
 
 rods = ["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK", "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKA",
         "AEAAAKEAAAKEAAAKEAAAKEAAAKA"]
-angles =["AASGAA", "AALAA", "AAWAA", "ASNA", "ASA", "AGA", "VV"]
+angles = ["NVL","NLT", "KTA","LVA", "AADGTL", "AAIAP", "AADGTL", "VNLTA", "AAAHPEA", "AAANPEA", "ASLPAA", "ATGDLA", "AAGNAA"]
 
 
 # In[3]:
@@ -36,8 +38,8 @@ LINKERS += rods
 
 #attach extein and starting sequence:
 
-exteinlist = ["RGKCWE"]
-startlist = ["GG"]
+exteinlist = ["RGKCWE", "RGTCWE"]
+startlist = ["GG", ""]
 
 templist = []
 for linker in LINKERS:
@@ -55,9 +57,9 @@ def create_helicalrangelist(linkerlist):
     returns a list of the helical ranges of the linker.
     Always a list of twolists, with start and end of helix
     '''
-    
-    #create helicalrangelist
-    helicalrange = []
+
+#create helicalrangelist
+helicalrange = []
     for linker in linkerlist:
         seq = []
         helixcount = 0
@@ -93,7 +95,7 @@ offset = len(databasefolder)
 
 ####Hier kann man einfach hinter glob.glob() ein [:10] setzen, um das erstmal auf wengier laufen zu lassen und zu testen
 
-for folder in glob.glob(databasefolder + "*/")[:1]:
+for folder in glob.glob(databasefolder + "*/")[:30]:
     pdbname = folder[offset:offset + 4]
     pdbfname = pdbname + ".pdb"
     subunit = folder[offset + 5]
@@ -174,7 +176,7 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
         f.close()
         
     #stage the PDB
-    subprocess.call(["bin/stage_file", "--gzip", folder + pdbfname])
+    subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
     #create .ali files
     f = open(folder + pdbname + "_" + subunit + ".seq", "r")
     sequence = f.readline()
@@ -219,7 +221,7 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
         for startend in helixranges[i]:
             #creates with comma for inserting it into file WATCHOUT!!!!!!!!!!
             helixrangestring += ("," + str(int(startend) + seqlength))
-        f.write(pdbname + "," + uniqueforwu + "," + subunit + "," + seqlength "," + linkerend + helixrangestring)
+        f.write(pdbname + "," + uniqueforwu + "," + subunit + "," + str(seqlength) + "," + str(linkerend) + helixrangestring)
         f.close()
         
         #make the signature of all files
@@ -237,3 +239,4 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
                          "--wu_name", uniqueforwu , configfname, pdbfname, alifname,
                          "signatures_" + uniqueforwu])
 
+    shutil.rmtree(folder)
