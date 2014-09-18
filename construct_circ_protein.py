@@ -123,15 +123,15 @@ def calc(configfile, atomfile, inputsequencefile, outputfile):
     
     ok_models = [x for x in a.loop.outputs if x['failure'] is None]
 
-	# Rank the models by Energy Score
-	ok_models.sort(key=lambda a: a['DOPE-HR score'])
+    # Rank the models by Energy Score
+    ok_models.sort(key=lambda a: a['DOPE-HR score'])
 
-	# Get top model
-	bestmodel = ok_models[0]
-	
-	print "BEGIN***************************************************************************"
-	print str(bestmodel['DOPE-HR score']) + ";" + str(bestmodel['Normalized DOPE score'])
-	print "END*****************************************************************************"
+    # Get top model
+    bestmodel = ok_models[0]
+    
+    print "BEGIN***************************************************************************"
+    print str(bestmodel['DOPE-HR score']) + ";" + str(bestmodel['Normalized DOPE score'])
+    print "END*****************************************************************************"
 
 
     refmodel = complete_pdb(env, bestmodel["name"])
