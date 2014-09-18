@@ -85,7 +85,7 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
     try:
         a = MyLoop(env, alnfile=alnfile,
                       knowns=pdbname + residuename, sequence=proteinname,
-                      assess_methods=(assess.DOPE,
+                      loop_assess_methods=(assess.DOPE,
                                       assess.normalized_dope,
                                       assess.DOPEHR,
                                       assess.GA341))
@@ -103,7 +103,7 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         
         # generate 10*5 loopmodels
         a.loop.starting_model = 1
-        a.loop.ending_model   = 3
+        a.loop.ending_model   = 4
 
         a.loop.library_schedule    = autosched.slow
         a.loop.max_var_iterations  = 5000
@@ -125,10 +125,15 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         ok_models = [x for x in a.outputs if x['failure'] is None]
 
         # Rank the models by Energy Score
-        ok_models.sort(key=lambda a: a['molpdf'])
+        ok_models.sort(key=lambda a: a['DOPE-HR score'])
 
         # Get top model
         bestmodel = ok_models[0]
+
+        print "BEGIN***************************************************************************"
+        print str(bestmodel['DOPE-HR score']) + ";" + str(bestmodel['Normalized DOPE score'])
+        print "END*****************************************************************************"
+
 
         refmodel = complete_pdb(env, bestmodel["name"])
 

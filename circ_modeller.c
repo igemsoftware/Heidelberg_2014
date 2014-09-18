@@ -459,7 +459,7 @@ int call_python(char *ProgramName, char *modeller_path) {
 	Py_SetProgramName(ProgramName);
 
 	Py_SetPythonHome(modeller_path);
-	Py_Initialize();
+	Py_InitializeEx(0);
 
 	loader = Py_InitModule("loader", loader_methods);
 
@@ -529,12 +529,11 @@ int call_python(char *ProgramName, char *modeller_path) {
 	PyObject *retval = PyObject_CallFunction(calc, "sssss", APP_NAME "-" APP_VERSION, resolved_files[0], resolved_files[1], resolved_files[2], resolved_files[3]);
 	if (retval != Py_None)
 		cretval = PyInt_AsLong(retval);
-	/*
-#ifdef DEBUG
 	if (cretval != -1){
 		print_error("python", "got ret value:", NULL);
 		fprintf(stderr, "%il\n", cretval);
 	}
+	/*
 	else{
 		print_error("python", "unable to get return value", NULL);
 		if (PyErr_Occurred() != NULL){
