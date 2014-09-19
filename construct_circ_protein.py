@@ -41,8 +41,8 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         log.minimal()
         env = environ()
 
-        env.libs.topology.read('${MODINSTALL9v14}/'+version+'/modlib/top_heav.lib')
-        env.libs.parameters.read('${MODINSTALL9v14}/'+version+'/modlib/par.lib')
+        env.libs.topology.read('${MODINSTALL9v14}/modlib/top_heav.lib')
+        env.libs.parameters.read('${MODINSTALL9v14}/modlib/par.lib')
     except:
         log.error("calc", "unable to setup environment")
         return -4
@@ -91,7 +91,7 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
                                       assess.GA341))
         # generate 10 models
         a.starting_model = 1
-        a.ending_model = 2
+        a.ending_model = 1
 
 
         a.library_schedule    = autosched.slow
@@ -103,7 +103,7 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         
         # generate 10*5 loopmodels
         a.loop.starting_model = 1
-        a.loop.ending_model   = 4
+        a.loop.ending_model   = 1
 
         a.loop.library_schedule    = autosched.slow
         a.loop.max_var_iterations  = 5000
@@ -122,7 +122,7 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         return -7
 
     try:
-        ok_models = [x for x in a.outputs if x['failure'] is None]
+        ok_models = [x for x in a.loop.outputs if x['failure'] is None]
 
         # Rank the models by Energy Score
         ok_models.sort(key=lambda a: a['DOPE-HR score'])
@@ -130,10 +130,14 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         # Get top model
         bestmodel = ok_models[0]
 
-        print "BEGIN***************************************************************************"
-        print str(bestmodel['DOPE-HR score']) + ";" + str(bestmodel['Normalized DOPE score'])
-        print "END*****************************************************************************"
-
+        loader.log( "BEGIN***************************************************************************")
+        loader.log( str(bestmodel['DOPE-HR score']) + ";" + str(bestmodel['Normalized DOPE score']))
+        loader.log( "END*****************************************************************************")
+    except:
+        log.error("calc", "find best model")
+        return -8
+        
+    try:
 
         refmodel = complete_pdb(env, bestmodel["name"])
 
@@ -141,8 +145,10 @@ def calc(version, configfile, atomfile, inputsequencefile, outputfile):
         refmodel.restraints.unpick_all()
         refmodel.restraints.condense()
     except:
-        log.error("calc", "setting up refmodal")
+        log.error("calc", "refmodel started")
         return -8
+    
+    
 
     try:
         refmodel.restraints.make(refmodel_atms, restraint_type='STEREO', spline_on_site=False)
