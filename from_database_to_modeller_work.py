@@ -176,7 +176,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
         f.close()
         
     #stage the PDB
-    subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
+    
     #create .ali files
     f = open(folder + pdbname + "_" + subunit + ".seq", "r")
     sequence = f.readline()
@@ -203,7 +203,15 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
 
     seqlength = len(sequence)
     for i in range(len(linkerlist)):
+        
+        
         uniqueforwu = pdbname + "_" + subunit + "_modeller_" + str(i)
+        
+        #copy the pdbs
+        pdbfnameunique = uniqueforwu + ".pdb"
+        shutil.copyfile(folder + pdbfname, folder + pdbfnameunique)
+        
+        
         alifname = uniqueforwu + ".ali"
         f = open(folder + alifname, "w")
         f.write(">P1;" + uniqueforwu + "\n")
@@ -228,15 +236,15 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
         subprocess.call(["bin/file_signer", "../private_key.pem", folder + "signatures_" + uniqueforwu,
                          "configfile.csv", folder + configfname, "atomfile.pdb", folder + pdbfname,
                          "inputsequencefile.ali", folder + alifname])
-        
+        subprocess.call(["bin/stage_file", folder + pdbfnameunique])
         #stage the new files first .ali and then configfile
-        subprocess.call(["bin/stage_file", "--gzip", folder + configfname])
-        subprocess.call(["bin/stage_file", "--gzip", folder + alifname])
-        subprocess.call(["bin/stage_file", "--gzip", folder + "signatures_" + uniqueforwu])
+        subprocess.call(["bin/stage_file",  folder + configfname])
+        subprocess.call(["bin/stage_file",  folder + alifname])
+        subprocess.call(["bin/stage_file",  folder + "signatures_" + uniqueforwu])
         #create work
         subprocess.call(["bin/create_work", "--appname", "circ_modeller", "--wu_template", 
                          "templates/circ_modeller.input-template", "--result_template", "templates/circ_modeller.result-template",
-                         "--wu_name", uniqueforwu , configfname, pdbfname, alifname,
+                         "--wu_name", uniqueforwu , configfname, pdbfnameunique, alifname,
                          "signatures_" + uniqueforwu])
 
     shutil.rmtree(folder)

@@ -19,7 +19,7 @@ class circModeller_Assimilator(Assimilator):
 		if not os.path.isdir(self.basedir):
 			os.mkdir(self.basedir)
 
-		self.save_pdbs = False
+		self.save_pdbs = True
 
 	def save_inputfiles(self, wu, path, files): # Gets a tuble with input filenames (unresolved) to save from workunit
 		root = ET.fromstring("<root>" + wu.xml_doc + "</root>")
@@ -39,12 +39,16 @@ class circModeller_Assimilator(Assimilator):
 			
 			elif boincname == "atomfile.pdb" and self.save_pdbs:
 				resname = file.find("file_name").text
-				if not os.path.exists(path+"/"+resname):
+				pdbfname = wu.name[:4]+ ".pdb"
+				if not os.path.exists(path+"/"+pdbfname):
 					filepath = check_output(['bin/dir_hier_path', resname])
 					filepath = filepath.strip('\n ')
 					if os.path.isfile(filepath):
 						self.logDebug("Saving pdb %s\n" % filepath)
-						shutil.copy(filepath, path)
+						if not os.path.exists(path + "/" wu.name[:4]):
+							shutil.copy(filepath, path+"/" + pdbfname)
+						else:
+							self.logDebug("Pdbfile %s already exists!\n" % path+ "/" + pdbfname)
 					else:
 						self.logCritical("Unable to save pdb %s, file does not exist.\n")
 
