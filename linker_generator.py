@@ -395,7 +395,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     anzahlwuerfel = int(abstandanfend / wuerfeldiaghalbe) #wir setzen einen mehr ein, als wir müssten
     if anzahlwuerfel == 0:
         if abstandanfend < (2* minabstand):
-            loader.exit("The ends are too close")
+            loader.log("The ends are too close")
+            return 0
         else:
             wuerfelmitten = np.array([(anfangspunkt-endpunkt)/2])
             kantenlaenge = abstandanfend / np.sqrt(3)
@@ -558,7 +559,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     moeglichewinkelende = winkelarray[moeglichewinkelendebool]
     if (np.size(moeglichewinkelanfangbool) == 0) | (np.size(moeglichewinkelendebool) == 0):
        #TODO, vielleicht noch mit flexiblem Linker verbindbar? Einfach der Test, ob es an der Oberfläche ist.
-       loader.exit("One end is covered in the protein, it is not circularizable")
+       loader.log("One end is covered in the protein, it is not circularizable")
+       return 0
 
 
     # Wir versuchen nun wirklich einen Linker zu finden. Dafür alle möglichen Linker, die zum Ziel führen erzeugen lassen. So ein Linker ist eindeutig bestimmt, durch die Punkte, durch die er durchgeht, das heißt man muss nur die Punkte abspeichern lassen. Die kann man dann auswerten im Endeffekt und so den besten Linker rausfinden.
@@ -1057,7 +1059,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 MakeSmall = premakesmall
             return MakeSmall, teiler
         else :
-            loader.exit("not enough RAM available for next calculation")
+            loader.log("not enough RAM available for next calculation")
+            return -1
 
 
 
@@ -1249,7 +1252,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             sequence = sequenceflex
             retweight = weightflex
         elif (weightflex == None) & (weightrig == None):
-            loader.exit("There were absolutely no linkers found, that could be translated to sequences")
+            loader.log("There were absolutely no linkers found, that could be translated to sequences")
+            return 0
 
 
 
@@ -1271,7 +1275,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         else:
-            loader.exit("There were absolutely no linkers found, that could be translated to sequences")
+            loader.log("There were absolutely no linkers found, that could be translated to sequences")
+            return 0
 
 
 
