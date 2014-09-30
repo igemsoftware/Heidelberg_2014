@@ -494,7 +494,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     if anzahlwuerfel == 0:
         if abstandanfend < (2* minabstand):
             loader.log("The ends are too close")
-            return "Exit 0"
+            return 0
         else:
             wuerfelmitten = np.array([(anfangspunkt-endpunkt)/2])
             kantenlaenge = abstandanfend / np.sqrt(3)
@@ -841,7 +841,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         '''
         if ((np.shape(verschiebungsarray) == (3,0)) |
             (np.shape(anfangsarray) == (3,0))):
-            return "Exit -2"
+            return -2
         laengeanfang = np.size(anfangsarray, axis=0)
         laengeversch = np.size(verschiebungsarray, axis=0)
         hilfanfang = np.float16(np.repeat(anfangsarray, laengeversch, axis=0))
@@ -1313,7 +1313,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             return MakeSmall, teiler
         else :
             loader.log("not enough RAM available for next calculation")
-            return "Exit -1"
+            return -1
 
     # In[21]:
 
@@ -1373,7 +1373,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         Either comefrompoints or gotopoints can be only one point, but never both of them can.
         '''
         if np.shape(comefrompoints) == (3,0):
-            return "Exit -3"
+            return -3
         if np.shape(comefrompoints) == (3,):
             comefrompoints = np.repeat([comefrompoints], np.size(gotopoints, axis=0), axis=0)
         else:
@@ -1614,7 +1614,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
+            print catch
+            return 0
 
 
         for i in range(0,(MakeSmall)):
@@ -1745,7 +1746,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             if "Exit" not in catch:
                 MakeSmall, teiler = catch
             else:
-                return catch
+                print catch
+                return -1
 
             loader.log( "bevor anglepoints gemacht sind" + str(MakeSmall) + str(teiler))
 
@@ -1818,7 +1820,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             if "Exit" not in catch:
                 MakeSmall, teiler = catch
             else:
-                return catch
+                print catch
 
 
             # about 250s per MakeSmall run
@@ -2006,7 +2008,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
+            print catch
+            return 0
 
         temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
 
@@ -2034,7 +2037,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
+            print catch
 
         if ((np.shape(erstepunkte) == (3,0)) | (np.shape(zweitepunkte) == (3,0))):
             loader.log("Exit 4, all sorted out by points lying in protein")
@@ -2083,8 +2086,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
-
+            print catch
+            return 0
 
 
 
@@ -2145,7 +2148,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
+            print catch
 
 
 
@@ -2247,8 +2250,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            return catch
-
+            print catch
+            return 0
 
 
         if shortpath:
@@ -2498,7 +2501,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    return catch
+                    print catch
 
 
 
@@ -2570,8 +2573,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    return catch
-
+                    print catch
+                    return -1
 
 
                 temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler],
@@ -2662,7 +2665,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    return catch
+                    print catch
 
 
 
@@ -2736,8 +2739,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    return catch
-
+                    print catch
+                    return -1
 
                 temp = weighing_function_rigids(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler],
                                                 drittepunkte[:teiler], endpunkt, pkte, InterestingAANr,\
