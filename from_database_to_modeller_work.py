@@ -11,14 +11,14 @@ import shutil
 
 
 # Merken:
-# 
+#
 # In Linkers.txt müssen die ganzen Linker sein, mit allen ausgetauschten Anfangs und Endsequenzen und auch den verschiedenen Winkelmotiven.
 
 # In[2]:
 
 rods = ["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK", "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA", "AEAAAKEAAAKEAAAKEAAAKA",
         "AEAAAKEAAAKEAAAKEAAAKEAAAKA"]
-angles = ["NVL","NLT", "KTA","LVA", "AADGTL", "AAIAP", "AADGTL", "VNLTA", "AAAHPEA", "AAANPEA", "ASLPAA", "ATGDLA", "AAGNAA"]
+angles = ["NVL", "KTA", "AADGTL", "VNLTA", "AAAHPEA",  "ASLPAA", "ATGDLA"]
 
 
 # In[3]:
@@ -29,7 +29,7 @@ temp = []
 for angle in angles:
     for rod in rods:
         temp.append("AEAAAK" + angle + rod)
-        
+
 LINKERS += temp
 LINKERS += rods
 
@@ -78,12 +78,13 @@ def create_helicalrangelist(linkerlist):
             elif ((helixcount > 5) & (i == (len(linker) -1))):
                 seq = seq + [i - helixcount + 3, i]
                 helixcount = 0
-                
+
         helicalrange.append(seq)
     return helicalrange
-    
-    
-exchangedict = {"RGKCWE":["RGKCWE"]}
+
+
+exchangedict = {"RGKCWE":["RGKCWE"], "NVL":["NLT"], "KTA":["LVA", "AA_I_AP"],
+                "AAHPEA":["AANPEA"], "AAGDLA":["AAGNAA"]}
 
 
 # In[19]:
@@ -99,7 +100,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
     pdbname = folder[offset:offset + 4]
     pdbfname = pdbname + ".pdb"
     subunit = folder[offset + 5]
-    
+
     sequencesfromlinker = []
     lengtoflinker = []
     if os.path.exists(folder + "resultsfromlinkers/"):
@@ -115,17 +116,17 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
                     lengthoflinker.append(cols[10])
         sequencesfromlinker = np.array(sequencesfromlinker)
         lengthoflinker = np.array(lengthoflinker)
-        
+
         sequencepool = np.unique(sequencesfromlinker)
         sequenceweightings = []
         for sequenceiter in sequencepool:
             sequenceweightings.append(np.mean(weightingsall[0][sequences == sequenceiter]))
-            
+
         sequenceweightings = np.array(sequenceweightings)
-        
+
         sortarray = np.argsort(sequenceweightings)
         sequencepool = sequencepool[sortarray]
-        
+
         if np.size(sequencepool) > 100:
             sequencepool = sequencepool[100]
         allsequences = []
@@ -142,7 +143,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
             else:
                 writestring += ("," + linker)
         f.write(writestring + "\n")
-        
+
         helicalrange = create_helicalrangelist(allsequences)
         writestring = ""
         for linkerrange in helicalrange:
@@ -152,13 +153,13 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
         writestring = writestring[:-1] + "\n"
         f.write(writestring)
         f.close()
-        
-    
-    
+
+
+
     if not os.path.exists(folder + "linkers.txt"):
-        
+
         helicalrange = create_helicalrangelist(LINKERS)
-        
+
         f = open(folder + "linkers.txt", "w")
         for linker in LINKERS:
             if linker == LINKERS[0]:
@@ -174,15 +175,15 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
         writestring = writestring[:-1] + "\n"
         f.write(writestring)
         f.close()
-        
+
     #stage the PDB
-    
+
     #create .ali files
     f = open(folder + pdbname + "_" + subunit + ".seq", "r")
     sequence = f.readline()
     sequence = sequence.strip()
     f.close()
-    
+
     f = open(folder + "linkers.txt", "r")
     linkers = f.readline()
     linkers = linkers.strip()
@@ -203,24 +204,24 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
 
     seqlength = len(sequence)
     for i in range(len(linkerlist)):
-        
-        
+
+
         uniqueforwu = pdbname + "_" + subunit + "_modeller_" + str(i)
-        
+
         #copy the pdbs
         pdbfnameunique = uniqueforwu + ".pdb"
         shutil.copyfile(folder + pdbfname, folder + pdbfnameunique)
-        
-        
+
+
         alifname = uniqueforwu + ".ali"
         f = open(folder + alifname, "w")
         f.write(">P1;" + uniqueforwu + "\n")
         f.write("sequence:" + uniqueforwu + ":::::::0.00: 0.00\n")
         f.write(sequence + linkerlist[i] + "*\n")
         f.close()
-        
+
         linkerend = len(linkerlist[i]) + seqlength
-        
+
         #configfile
         configfname = "configfile_" + uniqueforwu + ".csv"
         f = open(folder + configfname, "w")
@@ -231,7 +232,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
             helixrangestring += ("," + str(int(startend) + seqlength))
         f.write(pdbname + "," + uniqueforwu + "," + subunit + "," + str(seqlength) + "," + str(linkerend) + helixrangestring)
         f.close()
-        
+
         #make the signature of all files
         subprocess.call(["bin/file_signer", "../private_key.pem", folder + "signatures_" + uniqueforwu,
                          "configfile.csv", folder + configfname, "atomfile.pdb", folder + pdbfname,
@@ -242,7 +243,7 @@ for folder in glob.glob(databasefolder + "*/")[:30]:
         subprocess.call(["bin/stage_file",  folder + alifname])
         subprocess.call(["bin/stage_file",  folder + "signatures_" + uniqueforwu])
         #create work
-        subprocess.call(["bin/create_work", "--appname", "circ_modeller", "--wu_template", 
+        subprocess.call(["bin/create_work", "--appname", "circ_modeller", "--wu_template",
                          "templates/circ_modeller.input-template", "--result_template", "templates/circ_modeller.result-template",
                          "--wu_name", uniqueforwu , configfname, pdbfnameunique, alifname,
                          "signatures_" + uniqueforwu])
