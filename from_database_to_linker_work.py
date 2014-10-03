@@ -84,7 +84,7 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 	#stage the PDB
 	subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
 
-	proteinjob = igemdb.Job(protein=pdbname, email="maexlich@gmail.com")
+	proteinjob = igemdb.Job(protein=pdbname, mailaddress="placeholder@igemathome.org")
 	proteinjob.commit()
 	jobid = proteinjob.id
 	wus = dict()
