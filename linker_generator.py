@@ -783,7 +783,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         beforearray is used, if also arrays before the connection need to be sliced. Then the boolarray is returned.
         '''
         # catch if there is no endingarray
-        if np.shape(endingarray) == (3, 0):
+        if np.shape(endingarray) == (0, 3):
             if beforearray is None:
                 if np.shape(startingarray) == (3,):
                     return [np.float16(startingarray), np.float16(endingarray)]
@@ -839,8 +839,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         sind einfach Vektoren, wie das verschoben werden kann
         anfangsarray sind Vektoren, von denen wir ausgehen.
         '''
-        if ((np.shape(verschiebungsarray) == (3,0)) |
-            (np.shape(anfangsarray) == (3,0))):
+        if ((np.shape(verschiebungsarray) == (0, 3)) |
+            (np.shape(anfangsarray) == (0, 3))):
             return -2
         laengeanfang = np.size(anfangsarray, axis=0)
         laengeversch = np.size(verschiebungsarray, axis=0)
@@ -1184,9 +1184,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         If startingarray is only one point, it returns only middlearray and endingarray, else all three arrays are returned
         '''
-        if ((np.shape(startingarray) == (3, 0)) |
-            (np.shape(middlearray) == (3, 0)) |
-            (np.shape(endingarray) == (3,0))):
+        if ((np.shape(startingarray) == (0, 3)) |
+            (np.shape(middlearray) == (0, 3)) |
+            (np.shape(endingarray) == (0, 3))):
             if np.shape(startingarray) == (3,):
                 return middlearray, endingarray
             else:
@@ -1350,8 +1350,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         returns three arrays with all possible paths, made out of all possible combinations startingpoints to endingpoints
         that are in a certain distance
         '''
-        if ((np.shape(startingpoints) == (3, 0)) |
-            (np.shape(endingpoints) == (3, 0))):
+        if ((np.shape(startingpoints) == (0, 3)) |
+            (np.shape(endingpoints) == (0, 3))):
             a = startingpoints
             return a, a, a
         starttemp = np.float16(np.repeat(startingpoints, np.size(endingpoints, axis=0), axis =0))
@@ -1372,7 +1372,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         Either comefrompoints or gotopoints can be only one point, but never both of them can.
         '''
-        if np.shape(comefrompoints) == (3,0):
+        if np.shape(comefrompoints) == (0, 3):
             return -3
         if np.shape(comefrompoints) == (3,):
             comefrompoints = np.repeat([comefrompoints], np.size(gotopoints, axis=0), axis=0)
@@ -1595,6 +1595,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     if (functionnumber == "1") | (functionnumber == "0"):
+        loader.log("function 1 started")
 
         secondpointsflexible = firstpointsflexible = np.float16(make_displacements(FLEXATSTART, startdisp) + anfangspunkt)
         thirdpointsflexible = np.float16(make_displacements(FLEXATEND, enddisp) + endpunkt)
@@ -1614,7 +1615,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log(catch)
             return 0
 
 
@@ -1662,6 +1663,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             erstepunkte = None
             zweitepunkte = None
             drittepunkte = None
+        loader.log("function 1 finished")
 
 
 
@@ -1670,7 +1672,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         # now it should be tried to link it with one edge in the linker.
 
-    elif (functionnumber == "2") | (functionnumber == "0"):
+    if (functionnumber == "2") | (functionnumber == "0"):
         loader.log( "function 2 started")
 
         heretousepoints = pkte[abstandpktzuarray( (anfangspunkt + endpunkt) / 2., pkte) < (abstandanfend / 2. +
@@ -1746,7 +1748,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             if "Exit" not in catch:
                 MakeSmall, teiler = catch
             else:
-                print catch
+                loader.log( catch)
                 return -1
 
             loader.log( "bevor anglepoints gemacht sind" + str(MakeSmall) + str(teiler))
@@ -1820,7 +1822,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             if "Exit" not in catch:
                 MakeSmall, teiler = catch
             else:
-                print catch
+                loader.log( catch)
 
 
             # about 250s per MakeSmall run
@@ -1878,17 +1880,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         #die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
-    elif (functionnumber == "3") | (functionnumber == "0"):
+    if (functionnumber == "3") | (functionnumber == "0"):
+        loader.log("function 3 started")
         if functionnumber == "3":
             firstpointsflexible  = None
             secondpointsflexible = None
             thirdpointsflexible  = None
-
-        # In[ ]:
-
-
-
-
 
 
 
@@ -1896,7 +1893,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         angleforworkstart = float(angleforworkstart)
         angleforworkend = float(angleforworkend)
 
-    # multiplicate displacements with the linkerlengthes, in the dispnorms always 0 displacements are in there
+        # multiplicate displacements with the linkerlengthes, in the dispnorms always 0 displacements are in there
         versch = make_displacements(linkerlaengenKO, dispnorm)
 
 
@@ -1952,8 +1949,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
 
         #Bedingung übedenken!!! DNMT1 in shortpath??? na ja
-        if ((np.shape(erstepunkte) == (3, 0)) |
-             (np.shape(letztepunkte) == (3, 0))):
+        if ((np.shape(erstepunkte) == (0, 3)) |
+             (np.shape(letztepunkte) == (0, 3))):
             loader.log("Exit 1, not enough starting or endingpoints")
             return 0
 
@@ -1970,7 +1967,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             zweitepunkte = np.float16(zweiteiteration[1])
             erstepunkte = np.float16(zweiteiteration[0])
 
-
+        loader.log("3rd points generated")
         # Wir sortieren nun alle Winkel aus, die kleiner als 15° sind. Das machen wir aber nicht für die Anfangs und Endpunkte, da nicht klar ist, wie dort die Alphahelix angesetzt wird.
 
         # In[43]:
@@ -1981,7 +1978,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         erstepunkte = temp[0]
         zweitepunkte = temp[1]
 
-        if ((np.shape(erstepunkte) == (3,0)) | (np.shape(zweitepunkte) == (3,0))):
+        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 2, all sorted out by angle")
             return 0
 
@@ -1993,7 +1990,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = zweitepunkte[keep]
         erstepunkte = erstepunkte[keep]
 
-        if ((np.shape(erstepunkte) == (3,0)) | (np.shape(zweitepunkte) == (3,0))):
+        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 3, all sorted out distance from end")
             return 0
         # In[46]:
@@ -2008,9 +2005,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log( catch)
             return 0
-
+        loader.log("aussortierennachpunkten gestartet")
         temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
 
         for i in range(1,MakeSmall):
@@ -2037,12 +2034,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log( catch)
 
-        if ((np.shape(erstepunkte) == (3,0)) | (np.shape(zweitepunkte) == (3,0))):
+        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 4, all sorted out by points lying in protein")
             return 0
-
+        loader.log("sort_out_by_prot started, 2nd Points")
         temp = sort_out_by_protein(erstepunkte[:teiler], zweitepunkte[:teiler], PointsOfAllSubunits, minabstand)
         erstetemp = temp[0]
         zweitetemp = temp[1]
@@ -2067,11 +2064,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         erstepunkte = np.float16(erstetemp)
         zweitepunkte = np.float16(zweitetemp)
 
-        if ((np.shape(erstepunkte) == (3,0)) | (np.shape(zweitepunkte) == (3,0))):
+        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 5, all sorted out by connections through protein")
             return 0
 
-        loader.log( "erstepunkte" + str( np.size(erstepunkte, axis=0)))
+        loader.log( "erstepunkte: " + str( np.size(erstepunkte, axis=0)))
 
 
         # Generierung der Verbindungen zwsichen den zweiten und den dritten Punkten
@@ -2082,11 +2079,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                      np.size(zweitepunkte, axis=0),
                                      ProteinArray=letztepunkte)
 
-
+        loader.log("dritte Punkte am Erzeugen")
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log( catch)
             return 0
 
 
@@ -2148,7 +2145,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log( catch)
 
 
 
@@ -2203,8 +2200,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = np.float16(zweitetemp)
         drittepunkte = np.float16(drittetemp)
 
-        if ((np.shape(erstepunkte) == (3, 0)) | (np.shape(zweitepunkte) == (3, 0)) |
-            (np.shape(drittepunkte) == (3, 0))):
+        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3)) |
+            (np.shape(drittepunkte) == (0, 3))):
             if functionnumber != "0":
                 loader.log("Exit 6, all sorted out by protein")
                 return 0
@@ -2250,7 +2247,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
-            print catch
+            loader.log( catch)
             return 0
 
 
@@ -2328,6 +2325,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = np.float16(zweitetemp)
         drittepunkte = np.float16(drittetemp)
 
+        loader.log("rigid paths all generated")
+
 
 
 
@@ -2351,7 +2350,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         loader.log("Exit 7, no linkers anymore to refine")
         return 0
     else:
-
+        loader.log("not Exithere, started point weighing and translation")
         #thirdpoints are to be shifted and given back
         def shift_points_to_linkerpatterns(secondpoints, thirdpoints, linkerlaengenKO):
             '''
@@ -2481,10 +2480,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         # In[91]:
 
-
+        loader.log("all functions loaded")
 
         if firstpointsflexible is not None:
-            if np.shape(firstpointsflexible != (3,0)):
+            if np.shape(firstpointsflexible != (0, 3)):
 
 
                 catch = make_small_generator_offset([firstpointsflexible,
@@ -2501,7 +2500,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    print catch
+                    loader.log( catch)
 
 
 
@@ -2524,7 +2523,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
                 for i in range(1, MakeSmall):
-                    # print str(time.time() - starttime ) + "_at run " + str(i) + "of" + str(MakeSmall)
+                    # loader.log( str(time.time() - starttime ) + "_at run " + str(i) + "of" + str(MakeSmall)
                     temp = make_better_paths_flex(firstpointsflexible[:teiler],
                                                   secondpointsflexible[:teiler],
                                                   thirdpointsflexible[:teiler],
@@ -2561,7 +2560,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         if erstepunkte is not None:
-            if np.shape(erstepunkte) != (3, 0):
+            if np.shape(erstepunkte) != (0, 3):
                 catch = make_small_generator_offset([firstpointsflexible,
                                                      secondpointsflexible,
                                                      thirdpointsflexible,
@@ -2573,7 +2572,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    print catch
+                    loader.log( catch)
                     return -1
 
 
@@ -2665,7 +2664,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    print catch
+                    loader.log( catch)
 
 
 
@@ -2739,7 +2738,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 if "Exit" not in catch:
                     MakeSmall, teiler = catch
                 else:
-                    print catch
+                    loader.log( catch)
                     return -1
 
                 temp = weighing_function_rigids(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler],
@@ -2806,7 +2805,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             loader.log("no paths could be translated")
             return 0
 
-        # print str(time.time() - starttime ) + "write file"
+        # loader.log( str(time.time() - starttime ) + "write file"
         f = open(resultsfile, "w")
 
         f.write("sequence,erstepunkteallx,erstepunkteally,erstepunkteallz,zweitepunkteallx,zweitepunkteally,zweitepunkteallz,drittepunkteallx,drittepunkteally,drittepunkteallz,lengthofpath,weightingofangles,unpreferableplaces,distfromsurface\n")

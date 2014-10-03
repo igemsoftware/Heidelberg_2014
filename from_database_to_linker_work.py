@@ -31,28 +31,28 @@ def return_shortpath(pdbfile, subunit):
 		art = line[:4]
 		if art == 'ATOM':
 			wholesubunit.append(line[21])
-			
+
 			wholex.append(float(line[31:38]))
 			wholey.append(float(line[38:46]))
 			wholez.append(float(line[46:54]))
 
-	f.close()        
+	f.close()
 
 	#aus allen Listen arrays machen
 	for thing in [wholex, wholey, wholez, wholesubunit]:
 		thing = np.array([thing])
-		
+
 	keep = (wholesubunit == subunit)
-	
+
 	for thing in [wholex, wholey, wholez, wholesubunit]:
 		thing = thing[keep]
-		
+
 	shortpath = (vectabs(wholex[0]-wholex[-1], wholey[0] - wholey[-1], wholez[0] - wholez[-1]) < 3 * 7.5)
-	
+
 	return shortpath
 
 # Merken:
-# 
+#
 # In Linkers.txt müssen die ganzen Linker sein, mit allen ausgetauschten Anfangs und Endsequenzen und auch den verschiedenen Winkelmotiven.
 
 
@@ -76,14 +76,14 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 	pdbname = folder[-7:-3]
 	pdbfname = pdbname + ".pdb"
 	subunit = folder[-2]
-	
+
 	print "folder: %s, pdbname: %s, pdbfname: %s, subunit: %s" % (folder, pdbname, pdbfname, subunit)
 
 	shortpath = return_shortpath(folder + pdbfname, subunit)
-	
+
 	#stage the PDB
 	subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
-	
+
 	proteinjob = igemdb.Job(protein=pdbname, email="maexlich@gmail.com")
 	proteinjob.commit()
 	jobid = proteinjob.id
@@ -111,26 +111,26 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 				if not shortpath:
 					for slicing in range(300):
 						uniqueforwu = pdbname + "_" + subunit + "_"  + "linker" +"_" + extein + "_" + str(nr) + "_" + str(slicing) +"_"+ str(slicing + 1)
-			
+
 						f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-						f.write(subunit +"," + uniqueforwu + "," + "1" + "," + str(slicing) +","+ str(slicing + 1) + "," + extein + "," "0")
+						f.write(subunit +"," + uniqueforwu + "," + str(nr) + "," + str(slicing) +","+ str(slicing + 1) + "," + extein + "," "0")
 						f.close()
 						subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
 						database.close()
-						subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
+						subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
 						"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
 						"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
 						database.connect()
 						setWuByName(uniqueforwu, igemdb.INIT)
 				else:
 					uniqueforwu = pdbname + "_" + subunit + "_" + "linker" +"_" + extein + "_" + str(nr) + "_" + "shortpath"
-			
+
 					f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-					f.write(subunit +"," + uniqueforwu + "," + "1" + ",0,300" + "," + extein + "," + "1")
+					f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "1")
 					f.close()
 					subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
 					database.close()
-					subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
+					subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
 					"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
 					"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
 					database.connect()
@@ -138,13 +138,13 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 
 			else:
 				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + "_" + str(nr) +"_"+ "0_1"
-		
+
 				f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
 				f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "0")
 				f.close()
 				subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
 				database.close()
-				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template", 
+				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
 				"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
 				"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
 				database.connect()
