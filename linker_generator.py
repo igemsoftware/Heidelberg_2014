@@ -90,11 +90,15 @@ def skalar_product(ar1, ar2):
 
 
 def angle_between_connections_array(startingarray, middlearray, endingarray):
+
     '''
-    returns value between [0,pi] an array of size Startarray with the angles.
-    If there is no displacement,
-    it returns zero as value
-    MiddleArray should never be of just one point
+    calculates the angles between the vectors from startingarray to
+    middlearray and middlearray to endingarray.
+    If there is no displacement between the arrays it returns zero as angle.
+    startingarray and endingarray can be only one single point,
+    middlearray should always be an array of points in 3d space.
+
+    returns values between [0,pi] in an array of size Startarray.
     '''
 
     if np.shape(startingarray) == (3,):
@@ -115,10 +119,11 @@ def angle_between_connections_array(startingarray, middlearray, endingarray):
 
 def angle_between_vectors(vect1, vect2):
     '''
+    calculates the angle between two arrays of vectors. If one of the vectors
+    is 0, the angle is set to 0. The result is based on arccos.
+
     returns the angles between two vectors.
-    Works always on complete arrays, if the vectors are 0, it returns 0 as
-    angle for them.
-    based on the arccos
+
     '''
     lengthofarrays = np.size(vect1, axis=0)
     # catch if there is 0 displacement
@@ -127,8 +132,9 @@ def angle_between_vectors(vect1, vect2):
     if tocalculate.any():
         vect1 = vect1[tocalculate]
         vect2 = vect2[tocalculate]
-        catchrounding = skalar_product(vect1, vect2)/(vectabsar(vect1)*vectabsar(vect2))
-        #get rounding arrors
+        catchrounding = skalar_product(vect1, vect2)/(vectabsar(vect1) *
+                                                      vectabsar(vect2))
+        # get rounding arrors
         catchrounding[catchrounding > 1] = 1
         catchrounding[catchrounding < -1] = -1
         angles = np.arccos(catchrounding)
@@ -144,25 +150,29 @@ def angle_between_vectors(vect1, vect2):
 
 def distance_from_connection(Startarray, Endarray, Points):
     '''
-takes a connection from Startarray to Endarray nnd calculates the perpendicular
-distance of the points from the connection.
+takes a connection from Startarray to Endarray and calculates the perpendicular
+distance of the points from the connection. Startarray or Endarray
+can also be single points.
+
 Returns an array of size (start * points) with all perpendicular distances
 or distances of the endpoints.
-Start or End can also be single points.
+
     '''
     if np.shape(Startarray) == (3,):
-        if np.shape(Endarray) != (3,):
-            Starttemp = np.repeat([Startarray], np.size(Endarray, axis=0), axis=0)
+        if np.shape(Endarray) != (3, ):
+            Starttemp = np.repeat([Startarray], np.size(Endarray, axis=0),
+                                  axis=0)
         else:
-            Starttemp = np.reshape(Startarray, (1,3))
+            Starttemp = np.reshape(Startarray, (1, 3))
     else:
         Starttemp = Startarray
 
-    if np.shape(Endarray) == (3,):
-        if np.shape(Startarray) != (3,):
-            Endtemp = np.repeat([Endarray], np.size(Startarray, axis=0), axis=0)
+    if np.shape(Endarray) == (3, ):
+        if np.shape(Startarray) != (3, ):
+            Endtemp = np.repeat([Endarray], np.size(Startarray, axis=0),
+                                axis=0)
         else:
-            Endtemp = np.reshape(Endarray, (1,3))
+            Endtemp = np.reshape(Endarray, (1, 3))
     else:
         Endtemp = Endarray
 
@@ -189,7 +199,8 @@ Start or End can also be single points.
 
 
 
-    # die Punkte mit über 90° nehmen einfach den Abstand vom Ende, die kleiner als 90° den senkrechten Abstand
+    # die Punkte mit über 90° nehmen einfach den Abstand vom Ende,
+    # die kleiner als 90° den senkrechten Abstand
     StartBiggerNinetyBool = (AngleAtStart > np.pi/2)
     EndBiggerNinetyBool = (AngleAtEnd > np.pi/2)
     pointonconnectionbool = (AngleAtStart == 0) & (AngleAtEnd == 0)
@@ -356,7 +367,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     UserChosenEnd = None
 
     if UserChosenEnd is None:
-        UserChosenEnd =  np.max(wholeasnr[wholesubunit == SubUnitChosen])
+        UserChosenEnd = np.max(wholeasnr[wholesubunit == SubUnitChosen])
 
     if UserChosenStart is None:
         UserChosenStart = np.min(wholeasnr[wholesubunit == SubUnitChosen])
@@ -589,9 +600,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def punktebeigerade(minabstand, pkte, gerade, aufpunkt, laenge):
         '''
-    aufpunkt, der Punkt von wo aus geht
-    gerade: normiert
-    gibt True zurück, wenn kein Punkt in der Nähe der Geraden ist.
+        checks whether there are points too close to a straight line coming from
+        aufpunkt with in direction of gerade with length laenge.
+
+        returns True if no point of pkte is closer to the straight line than
+        minabstand
         '''
         kantenlaenge = 4 * minabstand
         wuerfeldiaghalbe = np.sqrt(3)/2 * kantenlaenge
@@ -657,7 +670,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     def test_accessible_angles(winkelarray, length, anfangspunkt, proteinpoints,
                                gerade=np.array([0, 0, 1])):
         '''
-        angles are measured from z-axis, returns a boolean array to slice with.
+        winkelarray is an array of angles that should be checked, whether they are
+        accessible from anfangspunkt. Accessible means that no point of protein-
+        points is too close to the straight line, which is produced by rotating
+        gerade with the angles of winkelarray. Gerade always starts at anfangspunkt
+        angles are measured from z-axis, if gerade is not defined else.
+
+        returns a boolean array with which winkelarray can be sliced.
         '''
         moeglichewinkelanfangbool = []
 
@@ -678,7 +697,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         takes an array of angles in the format [phi, theta] and looks which angles
         produce the same result in the vector.
 
-        Returns an array with all indices, that can be deleted along the 0 axis.
+        Returns an array with all indices, that can be deleted along the 0 axis
+        of winkelarray.
         '''
         winkelvekt = []
         for winkel in winkelarray:
@@ -762,6 +782,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     # displacement ist wirklich die Verschiebung im 3d raum, deshalb müssen die Längen dreimal draufgemacht werden.
     def make_displacements(lengtharray, displacementarray):
+        '''
+        generates all possible displacements from displacementarray (an array of
+        vectors) and lengtharray (array of different lengths)
+
+        returns an array with displacementvectors in different lengths
+        '''
         oneaxis = np.size(lengtharray)
         twoaxis = np.size(displacementarray, axis=0)
 
@@ -779,11 +805,15 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     def sort_out_by_protein(startingarray, endingarray, proteinpoints, mindist,
                             beforearray = None):
         '''
-        startingarray must be an array of (x,3) shape. so add it as: [startingarray]
-        beforearray is used, if also arrays before the connection need to be sliced. Then the boolarray is returned.
+        sorts out the connections between startingarray and endingarray with pro-
+        teinpoints. A connection is sorted out, if one point of the protein-
+        points is nearer to the connection, than mindist.
+
+        Returns only the points for the connections, that are good. If beforearray
+        is set, returns also beforearray
         '''
         # catch if there is no endingarray
-        if np.shape(endingarray) == (0, 3):
+        if np.shape(endingarray) == (3, 0):
             if beforearray is None:
                 if np.shape(startingarray) == (3,):
                     return [np.float16(startingarray), np.float16(endingarray)]
@@ -835,13 +865,15 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def naechstepunkte(anfangsarray, verschiebungsarray):
         '''
-        gibt ein Array zurück, das zu jedem Punkt, jede Verschiebung macht aus dem verschiebungsarray. Verschiebungsarray
-        sind einfach Vektoren, wie das verschoben werden kann
-        anfangsarray sind Vektoren, von denen wir ausgehen.
+        generates for each point of anfangsarray, all points that are made by
+        displacements of that point with verschiebungsarray.
+
+        Returns two arrays of equal size, the enlarged anfangsarray and the array
+        resulting from verschiebungsarray.
         '''
-        if ((np.shape(verschiebungsarray) == (0, 3)) |
-            (np.shape(anfangsarray) == (0, 3))):
-            return -2
+        if ((np.shape(verschiebungsarray) == (3,0)) |
+            (np.shape(anfangsarray) == (3,0))):
+            return "Exit -2"
         laengeanfang = np.size(anfangsarray, axis=0)
         laengeversch = np.size(verschiebungsarray, axis=0)
         hilfanfang = np.float16(np.repeat(anfangsarray, laengeversch, axis=0))
@@ -850,8 +882,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def aussortierennachpunken(punktearray, proteinpunkte, minabstand, maxabstand):
         '''
-        schmeißt Punkte raus, die in dem Protein liegen, bzw. die zu weit vom Protein weg sind
-        gibt ein Bool Array raus, mit dem man das Punktearray slicen kann, vom Protein wird nur jeder 4 Punkt verwendet
+        sorts all the points of punktearray out, that are nearer than minabstand to
+        one of the points from proteinpunkte, or farther away than maxabstand.
+
+        returns a boolean array, with which one can slice punktearray.
         '''
 
         temp1 = np.repeat(punktearray, np.size(proteinpunkte[::4], axis=0), axis =0)
@@ -873,7 +907,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     def angle_weighing(anglearray, angletosequence=angletosequence):
+        '''
+        weighting of the angles form anglearray. The better an angle fits to
+        the angles provided by angletosequence, the lower the value is.
+        The best angle gets a weighing of 1, the worst angle of 2.
 
+        Returns a weighingarray for the angles of anglearray. Each weighing is in
+        the range between 1 and 2. The weighing is based on gaussian distributions.
+        '''
         # build function
         returnarray = np.zeros(np.size(anglearray))
         sigmas = []
@@ -888,6 +929,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     #die Winkelfunktion muss man noch überlegen, in the end it returns a on one normed value.
     def angle_function(StartingArray, MiddleArray, EndingArray):
+        '''
+        makes a weighing of the connection from Startingarray, over Middlearray to
+        Endingarray based on the weighing of the angles.
+
+        Returns an angle weighting for each connection.
+        '''
         vect1 = (StartingArray - MiddleArray)
         vect2 = (EndingArray - MiddleArray)
         #catch if there is 0 displacement
@@ -908,6 +955,17 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     #TODO: Start can be array or just points, End has to be an array...
     def unpreferable_places(Start, End, ProteinPoints, AminoacidNumberArray,
                             ToBeWeighedAAInput, WeighingofAA, substratelist):
+        '''
+        Calculates a weighting for the connection from the points of Start to the
+        points of End based on the distance from regions that should be omitted.
+        These aminoacids should be defined in the ToBeWeighedAAInput array and
+        the WeighingofAA array defines how important this region is. If one wants
+        whole substrates to be omitted, they should be added in the substratelist.
+
+        returns the weighing of the connections, because of the regions, where the
+        linker passes through.
+
+        '''
         if np.shape(Start) == (3,):
             Start = np.repeat([Start], np.size(End, axis=0), axis=0)
 
@@ -979,10 +1037,15 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def distance_from_surface(beforearray, testarray, ProteinPoints, Afterpoint = None):
         '''
-        calculates the distances of the testarrays points from the surface as just the minimum of the distances to all protein
-        points. It doesn't calculate the points that are equal to the points of the beforearray, so that these are not taken double.
-        And it checks that the points don't lie on the endpoint.
-        Returns the distance divided by the minimal distance for norming the values somehow.
+        calculates the distances of the testarrays points from the surface as
+        just the minimum of the distances to all proteinpoints. It doesn't
+        calculate the points that are equal to the points of the beforearray,
+        so that these are not taken double. And it checks that the points
+        don't lie on the endpoint.
+
+        Returns the weighting of the distance by subtracting mindist, dividing it
+        through mindist for making it unitless and then squaring, so that the
+        values are better distributed.
         '''
         Horiz_Axis = np.size(ProteinPoints, axis=0)
         testsize = np.size(testarray, axis=0)
@@ -1008,8 +1071,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             Distances = np.reshape(Distances, (Vert_Axis, Horiz_Axis))
             Distances = np.min(Distances, axis=1)
             Distancesret = np.zeros(testsize)
-            #TODO: Über Potenz nachdenken
-            Distancesret[calc] = (Distances - minabstand) ** 2 / minabstand
+            # TODO: Über Potenz nachdenken
+            Distancesret[calc] = ((Distances - minabstand) / minabstand) ** 2
 
         return Distancesret
 
@@ -1018,6 +1081,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                  EndPoint, ProteinPoints, AminoacidNumberArray,
                                  ToBeWeighedAA, WeighingofAA=None,
                                  substratelist=None):
+        '''
+        makes the weighting of rigid linkers, with angle, distance, length and
+        regions distribution.
+
+        returns a list of 5 arrays: weighedvalue, normed lenghtweighing,
+        Angleweighing, Siteinfluence and the distances
+        '''
 
         LinkerLength = (abstandpktzuarray(StartPoint, FirstArray) +
                         abstandarrays(FirstArray, SecondArray) +
@@ -1071,6 +1141,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                EndPoint, ProteinPoints, AminoacidNumberArray,
                                ToBeWeighedAA, WeighingofAA = None,
                                substratelist = None):
+        '''
+        makes the weighting of flexible linkers, with angle, distance, length and
+        regions distribution.
+
+        returns a list of 5 arrays: weighedvalue, normed lenghtweighing,
+        Angleweighing, Siteinfluence and the distances
+        '''
 
         LinkerLength = (abstandpktzuarray(StartPoint, FirstArray) +
                         abstandarrays(FirstArray, SecondArray) +
@@ -1106,10 +1183,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     def make_weighingarrays(Userstring):
 
         """
-    Userstring ist von der Form: 273,10 280-290,5 298,7,35.6  usw. (Leerzeichen trennen Einträge, , for single residues
-    - for ranges, second, for the diameter of the substrate)
+    Userstring is of the shape: 273,10 280-290,5 298,7,35.6  etc.
+    (spaces separate entries, "," is for single residues "-" for ranges,
+    second "," for the diameter of the substrate)
+
     If nothing should be weighted, insert ""
 
+    returns the information in arrayform (Shouldbeweighed and Weighingarray)
+    and a substratelist
         """
         if Userstring == "":
             return None, None, None
@@ -1179,14 +1260,19 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def sort_out_by_angle (startingarray, middlearray, endingarray, angletosequence):
         '''
-        returns a boolian array which paths to keep, middle and endingarray must have same dimension, startingarray is only one
-        entry
+        sorts out the paths from startingarray over middlearray to endingarray.
+        A path is sorted out, when the angle it would need is too far away from
+        the possible angles in angletosequence
 
-        If startingarray is only one point, it returns only middlearray and endingarray, else all three arrays are returned
+        returns a boolian array which paths to keep, middle and endingarray must
+        have same dimension
+
+        If startingarray is only one point, it returns only middlearray and
+        endingarray, else all three arrays are returned
         '''
-        if ((np.shape(startingarray) == (0, 3)) |
-            (np.shape(middlearray) == (0, 3)) |
-            (np.shape(endingarray) == (0, 3))):
+        if ((np.shape(startingarray) == (3, 0)) |
+            (np.shape(middlearray) == (3, 0)) |
+            (np.shape(endingarray) == (3,0))):
             if np.shape(startingarray) == (3,):
                 return middlearray, endingarray
             else:
@@ -1239,8 +1325,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def make_small_generator(PointArray, repetition, RAM, tobesplitlength, ProteinArray = None):
         '''
+        calculates how often PointArray needs to be split so that the following
+        calculations still fit into the RAM.
         RAM in GByte,
-        repetition, how often is the largest array repeated
+        repetition means how often is the largest array repeated
 
         returns MakeSmall and teiler
         '''
@@ -1275,10 +1363,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def make_small_generator_offset(listofarraysinRAM, PointArray, repetition, RAM, tobesplitlength,  ProteinArray = None):
         '''
-        In the listofarraysinRAM can be either just the arrays or the size of the arrays, same for PointArray
-
+        calculates how often PointArray needs to be split so that the following
+        calculations still fit into the RAM.
+        In the listofarraysinRAM can be either just the arrays or the size of
+        the arrays, same for PointArray
         RAM in GByte,
-        repetition, how often is the largest array repeated
+        repetition means how often is the largest array repeated
+
+        returns MakeSmall and teiler
         '''
 
         bytespergig = 1073741824
@@ -1311,9 +1403,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             else:
                 MakeSmall = premakesmall
             return MakeSmall, teiler
-        else :
+        else:
             loader.log("not enough RAM available for next calculation")
-            return -1
+            return "Exit -1"
 
     # In[21]:
 
@@ -1345,13 +1437,17 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     hitgenauig = 0.0436 * laengstesstueck
 
 
-    def sort_out_by_distance(startingpoints, endingpoints, firstpoints, distance, variation):
+    def sort_out_by_distance(startingpoints, endingpoints, firstpoints, distance,
+                             variation):
         '''
+        generates all possible connections from startingpoints to endingpoints,
+        that lie in one of the distances plus minus the variation.
+
         returns three arrays with all possible paths, made out of all possible combinations startingpoints to endingpoints
         that are in a certain distance
         '''
-        if ((np.shape(startingpoints) == (0, 3)) |
-            (np.shape(endingpoints) == (0, 3))):
+        if ((np.shape(startingpoints) == (3, 0)) |
+            (np.shape(endingpoints) == (3, 0))):
             a = startingpoints
             return a, a, a
         starttemp = np.float16(np.repeat(startingpoints, np.size(endingpoints, axis=0), axis =0))
@@ -1367,13 +1463,18 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     def sort_out_by_length (comefrompoints, gotopoints, linkerlaengen):
         '''
-        returns a boolean array, with which you can slice the points, True means the values are kept
-        comefrompoints can be either an x * 3 array or just a three array, then it is elongated
+        sorts out the connections between comefrompoints and gotopoints, when they
+        don't fit to the linkerlengths from linkerlaengen.
 
-        Either comefrompoints or gotopoints can be only one point, but never both of them can.
+        Either comefrompoints or gotopoints can be only one point, but never
+        both of them can.
+
+        returns a boolean array, with which you can slice the points, True
+        means the values are kept
+
         '''
-        if np.shape(comefrompoints) == (0, 3):
-            return -3
+        if np.shape(comefrompoints) == (3,0):
+            return "Exit -3"
         if np.shape(comefrompoints) == (3,):
             comefrompoints = np.repeat([comefrompoints], np.size(gotopoints, axis=0), axis=0)
         else:
@@ -1396,6 +1497,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     # In[288]:
 
     def length_to_sequence(lengtharray, linkerdatenbank, linkerlaengen):
+        '''
+        translates the lengthes from lengtharray to sequences according to the
+        different linkerpieces in linkerdatenbank.
+
+        returns an array of the sequences that reproduce the length
+        '''
         if np.size(lengtharray) == 0:
             return ""
         else:
@@ -1416,6 +1523,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             return addsequencearray
 
     def angle_to_sequence(anglearray, angletosequence, angleseparators):
+         '''
+        translates the angles from anglearray to sequences according to the
+        different angletosequence data.
+
+        returns an array of the sequences that reproduce the angles
+        '''
         if np.size(anglearray) == 0:
             return ""
         else:
@@ -1434,6 +1547,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                      firstrig, secondrig, thirdrig, endpoint,
                                      linkerdb, linkerlKO, angletosequence,
                                      angleseparators, weightflex, weightrig):
+
+        '''
+        translates all paths to sequences according to the patterns provided in
+        angleosequence and linkerdb
+
+        returns an array with sequences for each path
+        '''
         if (weightflex is not None):
             # flexible linkers
             # initiate the array of objects
@@ -1468,7 +1588,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                linkerlKO - LENGTHOFANGLEKO)
 
         if weightrig is not None:
-            #rigid linkers
+            # rigid linkers
             sequencerig = np.zeros(np.size(firstrig, axis=0), dtype=str)
             sequencerig = np.array(sequencerig, dtype=np.object)
 
@@ -1592,6 +1712,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     # starttime = time.time()
+    loader.log( "starting pointgeneration")
 
 
     if (functionnumber == "1") | (functionnumber == "0"):
@@ -1599,7 +1720,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         secondpointsflexible = firstpointsflexible = np.float16(make_displacements(FLEXATSTART, startdisp) + anfangspunkt)
         thirdpointsflexible = np.float16(make_displacements(FLEXATEND, enddisp) + endpunkt)
-
+        loader.log( "firstppointsflex are " + str(np.shape(firstpointsflexible)))
+        loader.log( "thirdpointsflex are " + str(np.shape(thirdpointsflexible)))
         amountofthirdpoints = np.size(thirdpointsflexible, axis=0)
         amountofsecondpoints = np.size(secondpointsflexible, axis=0)
 
@@ -1655,6 +1777,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             firstpointsflexible  = firstpointsflexibletemp
             secondpointsflexible = secondpointsflexibletemp
             thirdpointsflexible  = thirdpointsflexibletemp
+
+        loader.log( "firstppointsflex are " + str(np.shape(firstpointsflexible)))
 
         firstpointsflexibletemp = secondpointsflexibletemp = thirdpointsflexibletemp = None
 
@@ -1785,7 +1909,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             firstpointstriangle = firstpointstritemp
             secondpointstriangle = secondpointstritemp
 
-
+            loader.log( "firstpointstriangle = " + str( np.shape(firstpointstriangle)))
 
         # In[32]:
 
@@ -1812,6 +1936,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         secondpointstriangle = secondpointstriangle[keep]
         thirdpointstriangle = thirdpointstriangle[keep]
         if keep.any():
+            loader.log( "firstpointstriangle = " + str( np.shape(firstpointstriangle)))
+
 
             catch = make_small_generator_offset([firstpointstriangle, secondpointstriangle,
                                                  thirdpointstriangle],
@@ -1921,8 +2047,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         letztepunkte = letztepunkte[(letztepunkte == endpunkt).all(axis=1) |
                                     aussortierennachpunken(letztepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
 
-        #aussortieren, ob Punkte durch Protein gehen
-        #we just test with all as but not the first and last, because they are too close.
+        # aussortieren, ob Punkte durch Protein gehen
+        loader.log("erstepunkte: " +str( np.shape(erstepunkte)))
+        # we just test with all as but not the first and last, because they are too close.
 
         # TODO hier abfangen, falls gleich alle Punkte weggemacht werden und dann
         # eine Ausgabe machen, dass das ziemlich schwierig
