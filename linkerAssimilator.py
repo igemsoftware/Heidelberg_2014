@@ -123,8 +123,8 @@ class circModeller_Assimilator(Assimilator):
 			Job = igemdb.Jobs.find1(id=wu.batch)
 			errorwus = Job.getErrorWus()
 			errorwus += wu.id
-               Job.setErrorWus(errorwus)
-               Job.commit()
+			Job.setErrorWus(errorwus)
+			Job.commit()
 		else:
 			wus[wu.id] = igemdb.FINISHED
 			Job.setWus('linker', wus)
@@ -138,23 +138,23 @@ class circModeller_Assimilator(Assimilator):
 				missing += wuid
 
 		if len(missing) == 0:
-			print "Workunit #%i: %s is ready for modelling" % (wu.id, wu.name)
-               modeller_staged = self.databasedir + "/staged_modeller"
-               if not os.path.isdir(modeller_staged):
-                         os.mkdir(modeller_staged)
-               
-               shutil.move(pdbfolder, modeller_staged)
+			print "Job #%i: %s (%s) is ready for modelling" % (Job.id, Job.protein, Job.mailaddress)
+			modeller_staged = self.databasedir + "/staged_modeller"
+			if not os.path.isdir(modeller_staged):
+				os.mkdir(modeller_staged)
+			
+			shutil.move(pdbfolder, modeller_staged)
 
-               Job.linker_state = igemdb.FINISHED
-               Job.commit()
+			Job.linker_state = igemdb.FINISHED
+			Job.commit()
 
 			# Do something, like staging the files and creating work for modeller
 		else:
-               self.logDebug("Job #%i is missing %i Workunits\n" % (Job.id, len(missing)))
-               for wuid in missing:
-                    missingresults = database.Workunits.find(workunitid=wuid, )
-                    .report_deadline
-               self.logDebug("Estimated finish time: \n")
+			   self.logDebug("Job #%i is missing %i Workunits\n" % (Job.id, len(missing)))
+			   #for wuid in missing:
+			   #     missingresults = database.Workunits.find(workunitid=wuid, )
+			   #     .report_deadline
+			   #self.logDebug("Estimated finish time: \n")
 
 		# TODO resubmit Wu if failed
 
@@ -162,5 +162,5 @@ class circModeller_Assimilator(Assimilator):
 
 
 if __name__ == '__main__':
-    asm = circModeller_Assimilator()
-    asm.run()
+	asm = circModeller_Assimilator()
+	asm.run()
