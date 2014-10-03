@@ -1497,12 +1497,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     # In[288]:
 
     def length_to_sequence(lengtharray, linkerdatenbank, linkerlaengen):
+
         '''
         translates the lengthes from lengtharray to sequences according to the
         different linkerpieces in linkerdatenbank.
 
         returns an array of the sequences that reproduce the length
         '''
+
         if np.size(lengtharray) == 0:
             return ""
         else:
@@ -1523,7 +1525,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             return addsequencearray
 
     def angle_to_sequence(anglearray, angletosequence, angleseparators):
-         '''
+
+        '''
         translates the angles from anglearray to sequences according to the
         different angletosequence data.
 
@@ -1709,10 +1712,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     # The functions start
 
-
-
     # starttime = time.time()
-    loader.log( "starting pointgeneration")
+    loader.log("starting pointgeneration")
 
 
     if (functionnumber == "1") | (functionnumber == "0"):
@@ -1761,6 +1762,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 secondpointsflexibletemp = np.concatenate((secondpointsflexibletemp, temp2), axis =0)
                 thirdpointsflexibletemp = np.concatenate((thirdpointsflexibletemp, temp3), axis =0)
 
+            loader.log("1765: firstpointsflex contains now : " +
+                       str( np.size(firstpointsflexibletemp, axis=0)) + "points")
+
         if np.shape(firstpointsflexible) != (0,3):
             temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible, thirdpointsflexible,
                                         firstpointsflexible, abstandanfend, 300 / kalib)
@@ -1778,7 +1782,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             secondpointsflexible = secondpointsflexibletemp
             thirdpointsflexible  = thirdpointsflexibletemp
 
-        loader.log( "firstppointsflex are " + str(np.shape(firstpointsflexible)))
+        loader.log("firstppointsflex are finished with " +
+                   str(np.shape(firstpointsflexible)) + "points")
 
         firstpointsflexibletemp = secondpointsflexibletemp = thirdpointsflexibletemp = None
 
@@ -1845,7 +1850,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             temp = drehenxy(angle[0], angle[1], np.array([0,0,1]))
             dispnormtriend = np.append(dispnorm, [temp], axis=0)
 
-
+        loader.log("1849: linkertrianglesone are " + str(np.shape(linkertriangleone)))
+        loader.log("1850: linkertrianglestwo are " + str(np.shape(linkertriangletwo)))
 
         triangleshiftsbeg = np.float16(make_displacements(FLEXATSTART, dispnormtribeg))
 
@@ -1858,6 +1864,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         secondpointstriangle = np.float16(triangleshiftsbeg + allpointsfortriangles)
 
         loader.log( "firstpointstriangle = " + str( np.shape(firstpointstriangle)))
+        loader.log("sort triangles out by length now")
 
         keep = sort_out_by_length(firstpointstriangle, secondpointstriangle, linkertriangle)
 
@@ -1905,6 +1912,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                     firstpointstritemp = np.concatenate((firstpointstritemp, temp1), axis =0)
                     secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
 
+                loader.log("1915: firstpointstritemp contains now : " +
+                       str( np.size(firstpointstritemp, axis=0)) + "points")
 
             firstpointstriangle = firstpointstritemp
             secondpointstriangle = secondpointstritemp
@@ -1981,6 +1990,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                     secondpointstritemp = np.concatenate((secondpointstritemp, temp2), axis =0)
                     thirdpointstritemp = np.concatenate((thirdpointstritemp, temp3), axis =0)
 
+                loader.log("1765: firstpointstritemp contains now : " +
+                       str( np.size(firstpointstritemp, axis=0)) + "points")
+
         if functionnumber == "2":
             firstpointsflexible  = firstpointstritemp
             secondpointsflexible = secondpointstritemp
@@ -2048,7 +2060,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                     aussortierennachpunken(letztepunkte, PointsOfAllSubunits, minabstand, maxabstand)]
 
         # aussortieren, ob Punkte durch Protein gehen
-        loader.log("erstepunkte: " +str( np.shape(erstepunkte)))
+        loader.log("2054:erstepunkte: " + str( np.shape(erstepunkte)))
+        loader.log("2055:letztepunkte: " + str( np.shape(letztepunkte)))
         # we just test with all as but not the first and last, because they are too close.
 
         # TODO hier abfangen, falls gleich alle Punkte weggemacht werden und dann
@@ -2071,7 +2084,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         temp = abstandpktzuarray(anfangspunkt, letztepunkte)
         keep = temp < (3 * laengstesstueck)
         letztepunkte = letztepunkte[keep]
-
+        loader.log("2078:erstepunkte: " +str( np.shape(erstepunkte)))
+        loader.log("2079:letztepunkte: " +str( np.shape(letztepunkte)))
         #die zweite iteration, erstepunkte wird so groß gemacht, wie zweitepunkte, damit die Wege passen
         #davor fragen wir ab, ob es überhaupt sinnvoll ist, die eine weitere Ecke zu nehmen, das spart viel Rechenzeit
 
@@ -2095,6 +2109,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             erstepunkte = np.float16(zweiteiteration[0])
 
         loader.log("3rd points generated")
+        loader.log("2103:erstepunkte: "  + str( np.shape(erstepunkte)))
+        loader.log("2104:zweitepunkte: " + str( np.shape(zweitepunkte)))
         # Wir sortieren nun alle Winkel aus, die kleiner als 15° sind. Das machen wir aber nicht für die Anfangs und Endpunkte, da nicht klar ist, wie dort die Alphahelix angesetzt wird.
 
         # In[43]:
@@ -2105,7 +2121,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         erstepunkte = temp[0]
         zweitepunkte = temp[1]
 
-        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
+        if ((np.shape(erstepunkte) == (0, 3)) |
+            (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 2, all sorted out by angle")
             return 0
 
@@ -2117,7 +2134,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = zweitepunkte[keep]
         erstepunkte = erstepunkte[keep]
 
-        if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
+        if ((np.shape(erstepunkte) == (0, 3)) |
+            (np.shape(zweitepunkte) == (0, 3))):
             loader.log("Exit 3, all sorted out distance from end")
             return 0
         # In[46]:
@@ -2138,12 +2156,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         temp = aussortierennachpunken(zweitepunkte[:teiler], PointsOfAllSubunits, minabstand, maxabstand)
 
         for i in range(1,MakeSmall):
+            loader.log("2165: already " + str(i) + " of " + str(MakeSmall))
             temp = np.concatenate((temp, aussortierennachpunken(zweitepunkte[i*teiler:(i+1)*teiler], PointsOfAllSubunits, minabstand, maxabstand)), axis=0)
         if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
             temp = np.concatenate((temp,
                                    aussortierennachpunken(zweitepunkte[(i+1)*teiler:],
                                    PointsOfAllSubunits, minabstand, maxabstand)),
                                    axis=0)
+
 
         # print time.time()-StartTime
         temp = np.array(temp)
@@ -2176,11 +2196,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         # bla = time.time()
         #das läuft zu lange...
         for i in range(1, MakeSmall):
+            loader.log("2199: already " + str(i) + " of " + str(MakeSmall))
             temp = sort_out_by_protein(erstepunkte[i*teiler:(i+1)*teiler], zweitepunkte[i*teiler:(i+1)*teiler], PointsOfAllSubunits, minabstand)
 
             erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
-
+        loader.log("2204:erstetemp: " + str( np.shape(erstetemp)))
 
         if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
             temp = sort_out_by_protein(erstepunkte[(i+1)*teiler:], zweitepunkte[(i+1)*teiler:], PointsOfAllSubunits, minabstand)
@@ -2192,7 +2213,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = np.float16(zweitetemp)
 
         if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3))):
-            loader.log("Exit 5, all sorted out by connections through protein")
+            loader.log("!!!Exit 5, all sorted out by connections through protein!!!")
             return 0
 
         loader.log( "erstepunkte: " + str( np.size(erstepunkte, axis=0)))
@@ -2206,7 +2227,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                      np.size(zweitepunkte, axis=0),
                                      ProteinArray=letztepunkte)
 
-        loader.log("dritte Punkte am Erzeugen")
+        loader.log("###dritte Punkte am Erzeugen###")
         if "Exit" not in catch:
             MakeSmall, teiler = catch
         else:
@@ -2221,8 +2242,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         for laenge in linkerlaengenKO:
-
+            loader.log("now at linker: " + str(laenge))
             for i in range(0,(MakeSmall)):
+
+                loader.log("2247: already " + str(i) + " of " + str(MakeSmall))
 
                 temp = sort_out_by_distance(zweitepunkte[i*teiler:(i+1)*teiler],
                                                          letztepunkte,
@@ -2237,6 +2260,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                     erstetemp = np.concatenate((erstetemp, temp[0]), axis =0)
                     zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
                     drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
+
+                    loader.log("2261:erstetemp: " + str( np.shape(erstetemp)))
 
             if ((i+1) * teiler) < np.size(zweitepunkte, axis=0):
                 temp = sort_out_by_distance(zweitepunkte[(i+1)*teiler:],
@@ -2294,6 +2319,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #das läuft zu lange, ein Durchlauf 2.5s, das heißt insgesamt: 30500~9hs
         for i in range(1, MakeSmall):
+            loader.log("2322: already " + str(i) + " of " + str(MakeSmall))
             #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][i * teiler:(i+1)*teiler]
             #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][i * teiler:(i+1)*teiler]
             #drittepunkte = h5f["dataset_{points}{linker}".format(points = 3, linker = int(laenge))][i * teiler:(i+1)*teiler]
@@ -2306,7 +2332,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
             drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
 
-
+            loader.log("2261: erstetemp: " + str( np.shape(erstetemp)))
 
 
             #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
@@ -2330,7 +2356,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if ((np.shape(erstepunkte) == (0, 3)) | (np.shape(zweitepunkte) == (0, 3)) |
             (np.shape(drittepunkte) == (0, 3))):
             if functionnumber != "0":
-                loader.log("Exit 6, all sorted out by protein")
+                loader.log("!!!Exit 6, all sorted out by protein!!!")
                 return 0
 
         erstetemp = zweitetemp = drittetemp = None
@@ -2402,10 +2428,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             zweitetemp = temp[1]
             drittetemp = temp[2]
             temp = None
-
+            loader.log("2431:erstetemp: " + str( np.shape(erstetemp)))
+            loader.log("2432:zweitetemp: " + str( np.shape(zweitetemp)))
+            loader.log("2432:drittetemp: " + str( np.shape(drittetemp)))
 
 
         for i in range(1, MakeSmall):
+            loader.log("2437: already " + str(i) + " of " + str(MakeSmall))
             if shortpath:
                 temp = sort_out_by_angle(anfangspunkt, zweitepunkte[:teiler],
                                          drittepunkte[:teiler], angletosequence)
@@ -2416,6 +2445,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 zweitetemp = erstetemp
                 drittetemp = np.concatenate((drittetemp, temp[1]), axis=0)
                 temp = None
+                loader.log("2448:drittetemp: " + str( np.shape(drittetemp)))
             else:
                 temp = sort_out_by_angle(erstepunkte[:teiler], zweitepunkte[:teiler],
                                          drittepunkte[:teiler], angletosequence)
@@ -2428,7 +2458,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 drittetemp = np.concatenate((drittetemp, temp[2]), axis=0)
                 temp = None
 
-
+                loader.log("2461:drittetemp: " + str( np.shape(drittetemp)))
 
         if shortpath:
             if np.shape(zweitepunkte) != (0,3):
@@ -2452,7 +2482,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         zweitepunkte = np.float16(zweitetemp)
         drittepunkte = np.float16(drittetemp)
 
-        loader.log("rigid paths all generated")
+        loader.log("###rigid paths all generated###")
+        loader.log("2461:erstepunkte: " + str( np.shape(erstepunkte)))
 
 
 
@@ -2474,12 +2505,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
              Exithere = True
 
     if Exithere:
-        loader.log("Exit 7, no linkers anymore to refine")
+        loader.log("!!!Exit 7, no linkers anymore to refine!!!")
         return 0
     else:
-        loader.log("not Exithere, started point weighing and translation")
+        loader.log("###not Exithere, started point weighing and translation###")
         #thirdpoints are to be shifted and given back
         def shift_points_to_linkerpatterns(secondpoints, thirdpoints, linkerlaengenKO):
+
             '''
             shifts thirdpoints to the secondpoints or away from them, so that the distance between second and third fits into the
             patterns that are provided by linkerlaengenKO.
@@ -2489,6 +2521,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
             ATTENTION, changes thirdpoints also
             '''
+
             lthreetemp = abstandarrays(secondpoints, thirdpoints)
             for LAENGE in linkerlaengenKO:
                 if LAENGE == linkerlaengenKO[0]:
@@ -2607,7 +2640,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         # In[91]:
 
-        loader.log("all functions loaded")
+        loader.log("###all functions loaded, now refining paths###")
 
         if firstpointsflexible is not None:
             if np.shape(firstpointsflexible != (0, 3)):
@@ -2650,6 +2683,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
                 for i in range(1, MakeSmall):
+                    loader.log("2685: already " + str(i) + " of " + str(MakeSmall))
                     # loader.log( str(time.time() - starttime ) + "_at run " + str(i) + "of" + str(MakeSmall)
                     temp = make_better_paths_flex(firstpointsflexible[:teiler],
                                                   secondpointsflexible[:teiler],
@@ -2719,7 +2753,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
                 for i in range(1, MakeSmall):
-
+                    loader.log("2755: already " + str(i) + " of " + str(MakeSmall))
                     temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler],
                                                    endpunkt, linkerlaengenKO)
                     erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis=0)
@@ -2768,7 +2802,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         #UserdefinedWeighing = "19,10,10" #Lambdalysozyme
         UserdefinedWeighing = ""
 
-        loader.log( "weighting started")
+        loader.log("###weighting started###")
 
         ShouldBeWeighed, Weighingarray, substratelist = make_weighingarrays(UserdefinedWeighing)
 
@@ -2792,6 +2826,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                     MakeSmall, teiler = catch
                 else:
                     loader.log( catch)
+                    return 0
 
 
 
@@ -2880,6 +2915,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
                 for i in range(1, MakeSmall):
+                    loader.log("2917: already " + str(i) + " of " + str(MakeSmall))
                     temp = weighing_function_rigids(anfangspunkt, erstepunkte[i * teiler:(i+1)*teiler],
                                                     zweitepunkte[i * teiler:(i+1)*teiler],
                                                     drittepunkte[i * teiler:(i+1)*teiler],
