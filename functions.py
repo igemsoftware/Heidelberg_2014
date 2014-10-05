@@ -12,7 +12,7 @@ from globals import *
 
 
 
-matplotlib.rc("axes", titlesize      = "Large", labelsize      ="Large" )
+matplotlib.rc("axes", titlesize = "Large", labelsize ="Large" )
 
 
 def simpleaxis(ax):
@@ -25,7 +25,9 @@ def simpleaxis(ax):
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-def define_globals(date, folder, kind,  upperlimit, lowerlimit, legendplace, ignorelist):
+
+def define_globals(date, folder, kind,  upperlimit, lowerlimit, legendplace,
+                   ignorelist):
     global DATE
     global UPPERLIMIT
     global LOWERLIMIT
@@ -34,7 +36,9 @@ def define_globals(date, folder, kind,  upperlimit, lowerlimit, legendplace, ign
     global LEGENDPLACE
     global IGNORELIST
     global RESULTFOLDER
+    global MATLABFOLDER
 
+    MATLABFOLDER = "./matlabd2ddata/"
     RESULTFOLDER = "./only_resultplots/"
     UPPERLIMIT = upperlimit
     LOWERLIMIT = lowerlimit
@@ -44,112 +48,103 @@ def define_globals(date, folder, kind,  upperlimit, lowerlimit, legendplace, ign
     LEGENDPLACE = legendplace
     IGNORELIST = ignorelist
 
+
 def exp(x, A, lam, C):
-    return A * np.exp( - lam * x) + C
+    return A * np.exp(- lam * x) + C
 
 
-
-def simpleaxis(ax):
-    '''
-    removes upper and right axis of an axis element
-    '''
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-
-
-
-def my_fitting(x, y, fitdict, ax, key = None):
+def my_fitting(x, y, fitdict, ax, key=None):
 
     '''
     adds a fitted curve to the plot.
     returns a new fitdict, if key is set.
     '''
+    if (y[0] - y[-1] > 0.2) | (y[-1] < 0.3):
+        OD0 = y[0]
+        # a = np.mean(y[-30:])
+        m = 1/1.160     # mg/ml
 
-    OD0 = y[0]
-    #a = np.mean(y[-30:])
-    m = 1/1.160 #mg/ml
+        def fitfunc(t, KM, VMax, a, slope):
 
-    def fitfunc(t, KM, VMax, a):
+            if (KM < 10) & (KM > 0) & (VMax > 0) & (VMax < 1):
 
-        if (KM < 10) & (KM > 0) & (VMax > 0) & (VMax < 1):
+                S0 = m * (OD0 - a)
 
-            S0 = m * (OD0 - a)
+                S = KM * np.real(lambertw((S0 / KM) *
+                                  np.exp((S0 - (VMax * t)) / KM))) + slope * t
+                OD = (S / m) + a
 
-            S =  KM * np.real(lambertw((S0 / KM) * np.exp((S0 - (VMax *t)) / KM) ))
-            OD = (S / m) +a
-
-            return OD
-        else:
-            return 1e10
-
-    def exp_fit(t, VMax, OD0, a):
-        return (OD0 -a) * np.exp(-VMax * t) + a
-
-
-    #plt.plot(make_param(y[1:6], x[1:6], a, OD0), make_result(y[1:6], x[1:6], m, OD0), "bo")
-    #plt.xlim(xmin = 0)
-    #plt.ylim(ymin = 0)
-    #the fitting
-    try:
-        popt, pcov = curve_fit(fitfunc, x, y, p0 = (0.01, 0.01, np.min(y)))
-
-        KMfit, VMaxfit, afit,  =  popt
-        KMfiterr, VMaxfiterr, afiterr =  np.sqrt(np.diag(pcov))
-        OD_mod = fitfunc(x, *popt)
-
-
-        redchisqMM = redchisqg(y, OD_mod, deg = 3)
-        ax.plot(x, fitfunc(x, *popt), "r--", lw = 3)
-
-        #plt.plot(x, fitfunc(x, 0.05, np.min(y)), "y--", lw = 3)
-        #plt.plot(x, fitfunc(x, KMfit-KMfiterr, VMaxfit - VMaxfiterr, afit - afiterr), "g--", lw = 3)
-        #plt.plot(x, fitfunc(x, KMfit+KMfiterr, VMaxfit + VMaxfiterr, afit + afiterr), "g--", lw = 3)
-        plt.text(0.8 * x[-1], np.mean(y), "$V_{max MM}$ " + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = VMaxfit,
-                                                                                               Vmaxerr = VMaxfiterr))
-        plt.text(0.8 * x[-1], np.mean(y)-0.1, "$V_{max MM}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = VMaxfit,
-                                                                                               Vmaxerr = VMaxfiterr))
-    except KeyError:
-        KMfit= VMaxfit = afit= KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
-
-    try:
-        popt, pcov = curve_fit(exp_fit, x, y)
-        ax.plot(x, exp_fit(x, *popt), "g--", lw = 3)
-
-        Vfit = popt[0]
-        Vfiterr = np.sqrt(np.diag(pcov))[0]
-        OD_mod = exp_fit(x, *popt)
-        redchisqexp = redchisqg(y, OD_mod, deg = 3)
-
-        if redchisqMM != None:
-            if redchisqexp < redchisqMM:
-                plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}  exp better".format(Vmax = Vfit,
-                                                                                                   Vmaxerr = Vfiterr))
+                return OD
             else:
-                plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}  MM better".format(Vmax = Vfit,
-                                                                                                   Vmaxerr = Vfiterr))
-        else:
-            plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = Vfit, Vmaxerr = Vfiterr))
+                return 1e10
 
-    except:
-        Vfit = None
-        Vfiterr = None
-        redchisqexp = None
+        def exp_fit(t, VMax, OD0, a, slope):
+            return (OD0 - a) * np.exp(-VMax * t) + a + slope * t
 
-    #sort out misfitted
-    if VMaxfit != None:
-        if VMaxfiterr > 0.5 * VMaxfit:
-            KMfit= VMaxfit = afit=  KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
 
-    if Vfit != None:
-        if Vfiterr > 0.5 * Vfit:
+        # plt.plot(make_param(y[1:6], x[1:6], a, OD0), make_result(y[1:6], x[1:6], m, OD0), "bo")
+        # plt.xlim(xmin = 0)
+        # plt.ylim(ymin = 0)
+        # the fitting
+        try:
+            popt, pcov = curve_fit(fitfunc, x, y, p0 = (0.1, 0.1, y[-1], -0.001))
+
+            KMfit, VMaxfit, afit, slopefit  =  popt
+            KMfiterr, VMaxfiterr, afiterr, slopefiterr =  np.sqrt(np.diag(pcov))
+            OD_mod = fitfunc(x, *popt)
+
+            redchisqMM = redchisqg(y, OD_mod, deg = 3)
+            ax.plot(x, fitfunc(x, *popt), "r--", lw = 3)
+
+            #plt.plot(x, fitfunc(x, 0.05, np.min(y)), "y--", lw = 3)
+            #plt.plot(x, fitfunc(x, KMfit-KMfiterr, VMaxfit - VMaxfiterr, afit - afiterr), "g--", lw = 3)
+            #plt.plot(x, fitfunc(x, KMfit+KMfiterr, VMaxfit + VMaxfiterr, afit + afiterr), "g--", lw = 3)
+            plt.text(0.8 * x[-1], np.mean(y), "$V_{max MM}$ " + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = VMaxfit,
+                                                                                                   Vmaxerr = VMaxfiterr))
+            plt.text(0.8 * x[-1], np.mean(y)-0.1, "$KM$" + " = {KM:5.3f} +- {KMerr:5.3f} mg/ml".format(KM = KMfit,
+                                                                                                   KMerr = KMfiterr))
+        except:
+            KMfit= VMaxfit = afit= KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
+
+        try:
+            popt, pcov = curve_fit(exp_fit, x, y)
+            ax.plot(x, exp_fit(x, *popt), "g--", lw = 3)
+
+            Vfit = popt[0]
+            Vfiterr = np.sqrt(np.diag(pcov))[0]
+            OD_mod = exp_fit(x, *popt)
+            redchisqexp = redchisqg(y, OD_mod, deg = 3)
+
+            if redchisqMM != None:
+                if redchisqexp < redchisqMM:
+                    plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}  exp better".format(Vmax = Vfit,
+                                                                                                       Vmaxerr = Vfiterr))
+                else:
+                    plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}  MM better".format(Vmax = Vfit,
+                                                                                                       Vmaxerr = Vfiterr))
+            else:
+                plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = Vfit, Vmaxerr = Vfiterr))
+
+        except:
             Vfit = None
             Vfiterr = None
             redchisqexp = None
 
+        #sort out misfitted
+        if VMaxfit != None:
+            if VMaxfiterr > 0.5 * VMaxfit:
+                KMfit= VMaxfit = afit=  KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
+
+        if Vfit != None:
+            if Vfiterr > 0.5 * Vfit:
+                Vfit = None
+                Vfiterr = None
+                redchisqexp = None
+    else:
+        Vfit = None
+        Vfiterr = None
+        redchisqexp = None
+        KMfit= VMaxfit = afit=  KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
 
     if key != None:
         fitdict[key] = [KMfit,KMfiterr, VMaxfit, VMaxfiterr, afit,  afiterr, redchisqMM, Vfit, Vfiterr, redchisqexp]
@@ -187,7 +182,7 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
                     plt.ylabel("Fluorescence")
                 #plt.yscale("log")
 
-                plt.xlim((0, 180))
+                plt.xlim((0, x[-1]))
                 if max(y) > UPPERLIMIT:
                     plt.ylim(ymin = LOWERLIMIT)
                 else:
@@ -253,7 +248,7 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
             plt.ylim(ymin = LOWERLIMIT)
         else:
             plt.ylim((LOWERLIMIT, UPPERLIMIT))
-        plt.xlim((0, 180))
+        plt.xlim((0, x[-1]))
 
         plt.title("{well}".format(well = plotlisttuple[1]))
         plt.xlabel("time in [min]")
@@ -582,6 +577,10 @@ def lysozyme_activity_plot_normed(dictoftoplottypes, whatiswheredict, fitdict, o
                 if i == 0:
                     sameys.append(y[0])
                     sameyerrs.append(y[0])
+                    if np.size(x) == 1:
+                        newylist = sameys
+                        newyerrlist = sameyerrs
+                        newxlist.append(x[0])
                 else:
                     if (x[i] == x[i-1]):
                         sameys.append(y[i])
@@ -630,6 +629,11 @@ def lysozyme_activity_plot_normed(dictoftoplottypes, whatiswheredict, fitdict, o
             ynormed = newylist / refactivity
             yerrnormed = (np.sqrt( (newyerrlist / newylist)**2 +
                                   ( refactivityerr / refactivity  )**2 ) * ynormed)
+            try:
+                if np.max(ynormed) > maxynormed:
+                    maxynormed = np.max(ynormed)
+            except:
+                maxynormed = np.max(ynormed)
 
 
 
@@ -642,7 +646,10 @@ def lysozyme_activity_plot_normed(dictoftoplottypes, whatiswheredict, fitdict, o
 
                 ax.errorbar(newxlist, ynormed, yerr = yerrnormed, fmt="x",label = lystype, ms=15.)
             count += 1
-            plt.ylim(ymin = 0, ymax = 1.1)
+    if maxynormed < 1.2:
+        plt.ylim(ymin = 0, ymax = 1.2)
+    else:
+        plt.ylim(ymin = 0, ymax = maxynormed + 0.1)
 
 
     plt.xlabel("temperature [°C]")
@@ -656,3 +663,154 @@ def lysozyme_activity_plot_normed(dictoftoplottypes, whatiswheredict, fitdict, o
     plt.savefig(FOLDER + "resultsplotlamlysnormed.png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
     plt.savefig(RESULTFOLDER + "resultsplotlamlysnormed" + DATE + ".png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
     plt.close()
+
+
+def make_data_and_modelfiles(lystype, biolrepl, temperature,
+                             techrepl, datadict, well, forscriptdict):
+    '''
+    appends the data of the given inputs to the lystype_biolrepl_temp.csv file"
+
+    uses the techrepl as experiment value.
+
+    forscriptdict is a dict of all the species for the models. For each species
+    there is a list of the technical replicates.
+    '''
+
+    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+    uniquestring = uniquestring.replace(".", "p")
+
+    if not os.path.exists(MATLABFOLDER):
+        os.mkdir(MATLABFOLDER)
+    if not os.path.exists(MATLABFOLDER + "Data/"):
+        os.mkdir(MATLABFOLDER + "Data/")
+
+    filename = (MATLABFOLDER + "Data/" + uniquestring + ".csv")
+
+    f = open(filename, "a")
+    if techrepl == 1:
+        f.close()
+        f = open(filename, "w")
+        f.write("time,Temp,experiment,OD_%s\n" % uniquestring)
+
+    for i in range(len(datadict["time"])):
+        f.write("{time},{temp},{techre},{OD}\n"
+                .format(time=str(datadict["time"][i]),
+                        temp=str(temperature), techre=str(techrepl),
+                        OD=str(datadict[well][i])))
+    f.close()
+
+    if techrepl == 1:
+        create_data_def_file(lystype, biolrepl, temperature)
+        create_model_file(lystype, biolrepl, temperature)
+    try:
+        forscriptdict[uniquestring].append(techrepl)
+    except KeyError:
+        forscriptdict[uniquestring] = [techrepl]
+    return forscriptdict
+
+
+def create_data_def_file(lystype, biolrepl, temperature):
+    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+    uniquestring = uniquestring.replace(".", "p")
+    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
+
+    f.write('DESCRIPTION\n' +
+            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+            'PREDICTOR\n' +
+            'time        T   min time    0   105\n\n' +
+
+            'INPUTS\n\n' +
+
+            'OBSERVABLES\n' +
+            'OD_{uni}       C   au  conc.   0  0   "offset_{uni}_experiment '.format(uni=uniquestring) +
+            '- (dec_{uni}_experiment * t) + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
+
+            'ERRORS\n' +
+            'OD_{temp}         "sd_OD"\n\n'.format(temp=uniquestring) +
+
+            'CONDITIONS\n\n' +
+
+            'RANDOM\n' +
+            'experiment    INDEPENDENT\n')
+    f.close()
+
+
+def create_model_file(lystype, biolrepl, temperature):
+    if not os.path.exists(MATLABFOLDER + "Models/"):
+        os.mkdir(MATLABFOLDER + "Models/")
+    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+    uniquestring = uniquestring.replace(".", "p")
+
+    f = open(MATLABFOLDER + "Models/model" + uniquestring + ".def", "w")
+    if "circ" not in lystype:
+        f.write('DESCRIPTION\n' +
+                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+                'PREDICTOR\n' +
+                't               T   "min"     "time"   0   105\n\n' +
+
+                'COMPARTMENTS\n\n' +
+
+                'STATES\n' +
+                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+
+                'INPUTS\n\n' +
+
+                'ODES\n' +
+                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
+                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+                        Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
+
+                'DERIVED\n\n'
+
+                'CONDITIONS\n')
+
+    elif "circ" in lystype:
+        f.write('DESCRIPTION\n' +
+                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+                'PREDICTOR\n' +
+                't               T   "min"     "time"   0   105\n\n' +
+
+                'COMPARTMENTS\n\n' +
+
+                'STATES\n' +
+                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+
+                'INPUTS\n\n' +
+
+                'ODES\n' +
+                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
+                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+                        Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
+
+                'DERIVED\n\n'
+
+                'CONDITIONS\n')
+
+
+def make_script_file(forscriptdict):
+    f = open(MATLABFOLDER + "script.m", "w")
+
+    f.write('clear;\n' +
+            'arInit;\n')
+
+    for uniquestring in forscriptdict:
+        f.write("arLoadModel('%s');\n" % ("model" + uniquestring))
+    f.write("\n")
+    for uniquestring in forscriptdict:
+        f.write("arLoadData('{data}','{model}','csv',true);\n".format(
+                        data=uniquestring , model="model" + uniquestring))
+    f.write("\n")
+    f.write("arCompileAll;\n")
+    f.write("\n")
+    for uniquestring in forscriptdict:
+        for techrepl in forscriptdict[uniquestring]:
+            f.write("arSetPars('dec_%s_experiment%s', -3, 1, 1, -6, -2)\n"
+                    % (uniquestring, str(techrepl)))
+            f.write("arSetPars('offset_%s_experiment%s', -1, 1, 1, -2, 0)\n"
+                    % (uniquestring, str(techrepl)))
+    f.write("\n")
+    f.write("arFit;\n")
+
