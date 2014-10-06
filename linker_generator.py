@@ -276,8 +276,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     UserDefinedProjectName = projectname
 
 
-
-
+    loader.log("There are : " + str(RAMOFMACHINE) + "GB of RAM availible for" +
+               " calculation")
+    loader.log("Start parsing PDB")
 
     f = open(pdbfile, 'r')
 
@@ -397,7 +398,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             loader.log("Your PDB File does not contain the end of the protein, but there are less than 5 Aminoacids missing, so the position of the beginning will be estimated. If there is a better PDB file, upload it")
 
 
-    PartToCircularizeBool = (((wholeasnr >= UserChosenStart) & (wholesubunit == SubUnitChosen)) & (wholeasnr <= UserChosenEnd)) #hier kann man einstellen, welche AS behalten werden sollen.
+    PartToCircularizeBool = (((wholeasnr >= UserChosenStart) &
+                             (wholesubunit == SubUnitChosen)) &
+                             (wholeasnr <= UserChosenEnd)) # hier kann man einstellen, welche AS behalten werden sollen.
 
     InterestingAtom = wholeatom[PartToCircularizeBool]
     InterestingAminos = wholeaminos[PartToCircularizeBool]
@@ -424,7 +427,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     AmountOfAtomsFirstAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[0]])  #anzahl an Atomen in der erstenas
     AmountOfAtomsLastAA = np.size(InterestingAANr[InterestingAANr == InterestingAANr[-1]])  #amount of atoms in last AS
 
-
+    loader.log("The protein has in total: " + str(np.size(PointsOfAllSubunits,
+                                                          axis=0)) +
+               " Points, but only " + str(np.size(pkte, axis=0)) +
+               " are between the ends")
     #TODO Winkel einfügen
 
 
@@ -499,7 +505,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     abstandanfend = abstand(anfangspunkt, endpunkt)
     kantenlaenge = 4 * minabstand
     wuerfeldiaghalbe = np.sqrt(3)/2 * kantenlaenge
-
+    loader.log("508: die Enden sind: " + str(abstandanfend) + " in KO "+
+               "auseinander")
     # wir setzen einen mehr ein, als wir müssten
     anzahlwuerfel = int(abstandanfend / wuerfeldiaghalbe)
     if anzahlwuerfel == 0:
@@ -551,7 +558,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
 
         if  mintemp < minabstandcalc:
-            loader.log("Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: " + str( mintemp * kalib) + " pm")
+            loader.log("Es ist nicht moeglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: " + str( mintemp * kalib) + " pm")
 
         else:
             if derallernaechstepunkt is None:
@@ -576,7 +583,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             mintemp = np.min(abstandpktzuarray(mitte, wuerfelpunkte))
 
             if  mintemp < minabstandcalc:
-                loader.log("Es ist nicht möglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "                     + str( mintemp * kalib) + " pm")
+                loader.log("Es ist nicht moeglich einen direkten Linker zu bauen. Der minimale Abstand von der direkten Verbindung betrug: "                     + str( mintemp * kalib) + " pm")
                 break
 
             else:
@@ -596,7 +603,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     # Ob eine Region außen ist. Dafür werden von dem Punkt Strahlen in alle Richtungen in 5° Schritten gemacht und diese dann in eine Liste geschrieben, welche Winkel frei sind.
 
     # In[12]:
-
+    loader.log("605:loading various functions.")
 
     def punktebeigerade(minabstand, pkte, gerade, aufpunkt, laenge):
         '''
@@ -666,9 +673,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         return True
 
-
-    def test_accessible_angles(winkelarray, length, anfangspunkt, proteinpoints,
-                               gerade=np.array([0, 0, 1])):
+    def test_accessible_angles(winkelarray, length, anfangspunkt,
+                               proteinpoints,  gerade=np.array([0, 0, 1])):
         '''
         winkelarray is an array of angles that should be checked, whether they are
         accessible from anfangspunkt. Accessible means that no point of protein-
@@ -895,7 +901,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         keep = (minimaleabst < maxabstand**2) & (minimaleabst > minabstand**2)
         return keep
 
-
+    loader.log("903:loading various functions.")
 
     # In[17]:
 
@@ -1214,7 +1220,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                     Weighingarray += ([float(entry.split(",")[1])/                                       (int(entry.split(",")[0].split("-")[1])+1-int(entry.split(",")[0].split("-")[0]))]*                                      (int(entry.split(",")[0].split("-")[1])+1-int(entry.split(",")[0].split("-")[0])))
 
             return np.array(ShouldBeWeighed), np.array(Weighingarray), substratelist
-
+    loader.log("1222:loading various functions.")
 
     # In[18]:
 
@@ -1254,7 +1260,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
     anzahleckenmax = maxlinkerKO / np.max(linkerlaengenKO)
     anzahleckenmin = abstandanfend / np.min(linkerlaengenKO)
 
-
+    loader.log("1262: defined different global variables")
     # In[19]:
 
 
@@ -1357,11 +1363,14 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             MakeSmall = tobesplitlength / teiler
         else:
             MakeSmall = premakesmall
-
+        loader.log("In Make Small RAM: " + str(RAM) +
+                   "in GBytes. UsedMem(GB): " + str(UsedMem / bytespergig))
         return MakeSmall, teiler
 
 
-    def make_small_generator_offset(listofarraysinRAM, PointArray, repetition, RAM, tobesplitlength,  ProteinArray = None):
+    def make_small_generator_offset(listofarraysinRAM, PointArray, repetition,
+                                    RAM, tobesplitlength,
+                                    ProteinArray = None):
         '''
         calculates how often PointArray needs to be split so that the following
         calculations still fit into the RAM.
@@ -1372,6 +1381,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         returns MakeSmall and teiler
         '''
+        loader.log("MakeSmall started")
 
         bytespergig = 1073741824
         AvailableRAM = float(RAM) * bytespergig #in BytesWaBytesWarning
@@ -1383,32 +1393,47 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 except:
                     inramsize += array * 2 #assumes, that it is the size of the array, and this is float 16
         # print "inramsize" + str(inramsize / 1073741824.)  +"in GB"
+                loader.log("1396: arraysize: " + str(np.shape(array)))
+                loader.log("1397: size in RAM: " + str(inramsize /
+                                                       float(bytespergig)))
         try:
             PointSize = PointArray.nbytes
         except:
             PointSize = PointArray * 2 #assumes, that it is the size of the array, and this is float 16
+
+        loader.log("1400: Pointsize is: " + str(float(PointSize) /
+                                                bytespergig))
+
 
         if ProteinArray is not None:
             proteinsize = np.size(ProteinArray, axis=0)
         else:
             proteinsize = 1
 
+        loader.log("1413: Protsize is: " + str(float(proteinsize) /
+                                        bytespergig))
+
         UsedMem = PointSize * proteinsize * repetition
 
         if (AvailableRAM - inramsize) > 0:
             premakesmall = int(UsedMem / (AvailableRAM - inramsize)) + 1
             teiler = tobesplitlength / premakesmall
+
             if teiler != 0:
                 MakeSmall = tobesplitlength / teiler
             else:
                 MakeSmall = premakesmall
+
+            loader.log("In Make Small RAM: " + str(RAM) +
+                       "in GBytes. UsedMem(GB): " + str(UsedMem / bytespergig)
+                        + " so it is dived at points: " + str(teiler))
+
             return MakeSmall, teiler
         else:
             loader.log("not enough RAM available for next calculation")
             return "Exit -1"
 
     # In[21]:
-
 
     def part_of_RAM(listofarraysinRAM, RAM):
         '''
@@ -1422,7 +1447,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             try:
                 inramsize += array.nbytes
             except:
-                # assumes, that it is the size of the array, and this is float 16
+                # assumes, that it is the size of the array, and is float 16
                 inramsize += array * 2
 
         return inramsize / AvailableRAM
@@ -1491,7 +1516,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         return sortouttemp
 
-
+    loader.log("1503:loading various functions.")
     # Gestartet am 9.8. um 15:15 Uhr, 15:55 Uhr bei den Dreieckigen Linkern Versuch eines kompletten Durchlaufs, dann dreistunden für die dreieckigen Linker  Linkerohneeckeflex: 11000 erzeugt, bereits erstmal aussortiert. Linkermiteckeflex:  insgesamt 35000 flexible (also 24000 hinzugekommen)  erstepunkte 2200 erzeugt,  drittepunkte werden 850 000 erzeugt
 
     # In[288]:
@@ -1673,7 +1698,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
     # In[25]:
-
+    loader.log("1685:really starting calculations")
     #wir machen Arrays aus den Verschiebungen, für alle drei auf einmal, alle normiert
     startdisp = np.array([[0,0,0]])
     enddisp = np.array([[0,0,0]])
@@ -1698,14 +1723,36 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
     #without any edge,
     #+1 because of range
+    # restrict the amount of maximally produced first displacements to 4000,
+    # otherwise it just calculates too long
+
+    if len(startdisp) > 1000:
+        maxnumber = int(4000. / len(startdisp))
+        if maxnumber == 1:
+            maxnumber = 2
+    else:
+        maxnumber = 4
 
     if (ScarsAtStart + MissingAtStart) > 3:
-        FLEXATSTART = np.logspace(np.log10(1.5), np.log10(ScarsAtStart + MissingAtStart), num=4) * LengthOfFlexibleAA
+        FLEXATSTART = np.logspace(np.log10(1.5),
+                                  np.log10(ScarsAtStart + MissingAtStart),
+                                  num=maxnumber) * LengthOfFlexibleAA
     else:
-        FLEXATSTART = np.append(np.arange(2, (ScarsAtStart + MissingAtStart+1)), 1.5 ) * LengthOfFlexibleAA
+        FLEXATSTART = np.append(np.arange(2, (ScarsAtStart +
+                                              MissingAtStart+1)),
+                                1.5 ) * LengthOfFlexibleAA
+
+    if len(enddisp) > 1000:
+        maxnumber = int(4000. / len(startdisp))
+        if maxnumber == 1:
+            maxnumber = 2
+    else:
+        maxnumber = 4
 
     if (ScarsAtEnd + MissingAtEnd) > 3:
-        FLEXATEND = np.logspace(np.log10(1.5), np.log10(ScarsAtEnd + MissingAtEnd), num=4) * LengthOfFlexibleAA
+        FLEXATEND = np.logspace(np.log10(1.5),
+                                np.log10(ScarsAtEnd + MissingAtEnd),
+                                num=maxnumber) * LengthOfFlexibleAA
     else:
         FLEXATEND = np.append(np.arange(2, (ScarsAtEnd + MissingAtEnd+1)), 1.5 ) * LengthOfFlexibleAA
 
@@ -1723,6 +1770,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         thirdpointsflexible = np.float16(make_displacements(FLEXATEND, enddisp) + endpunkt)
         loader.log( "firstppointsflex are " + str(np.shape(firstpointsflexible)))
         loader.log( "thirdpointsflex are " + str(np.shape(thirdpointsflexible)))
+
         amountofthirdpoints = np.size(thirdpointsflexible, axis=0)
         amountofsecondpoints = np.size(secondpointsflexible, axis=0)
 
@@ -1733,7 +1781,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         catch = make_small_generator_offset([firstpointsflexible, secondpointsflexible, thirdpointsflexible],
                                             np.size(secondpointsflexible) * np.size(thirdpointsflexible),
                                             2 , RAMOFMACHINE , np.size(secondpointsflexible, axis=0),
-                                             ProteinArray = heretousepoints)
+                                             ProteinArray=heretousepoints)
 
         if "Exit" not in catch:
             MakeSmall, teiler = catch
@@ -1743,7 +1791,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         for i in range(0,(MakeSmall)):
-
+            loader.log("1748: already " + str(i) + " of " + str(MakeSmall))
             temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible[:teiler], thirdpointsflexible,
                                         firstpointsflexible[:teiler], abstandanfend, 300 / kalib)
             #300 ist etwa die Hälfte des Unterschieds zwischen zwei Linkerstücken
@@ -1751,7 +1799,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             firstpointsflexible = np.delete(firstpointsflexible, np.arange(teiler), axis=0)
             secondpointsflexible = np.delete(secondpointsflexible, np.arange(teiler), axis=0)
             keep = (distance_from_connection(temp2, temp3, heretousepoints)[0] >= minabstand).all(axis=1)
-
+            loader.log("still: " + str(np.size(firstpointsflexible, axis=0)) +
+                       "to calculate, until function is finished")
             temp1 = temp2 = temp2[keep]
             temp3 = temp3[keep]
 
@@ -1764,6 +1813,17 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
             loader.log("1765: firstpointsflex contains now : " +
                        str( np.size(firstpointsflexibletemp, axis=0)) + "points")
+            # catch if the arrays get too large
+            if 1 < part_of_RAM([firstpointsflexibletemp,
+                                secondpointsflexibletemp,
+                                thirdpointsflexibletemp], RAMOFMACHINE):
+                loader.log("1803: RAM would overflow by arrays, so stopped " +
+                           "further calculations, just continues, with what" +
+                           " is already there")
+                firstpointsflexible  = firstpointsflexibletemp
+                secondpointsflexible = secondpointsflexibletemp
+                thirdpointsflexible  = thirdpointsflexibletemp
+                break
 
         if np.shape(firstpointsflexible) != (0,3):
             temp1, temp2, temp3 = sort_out_by_distance(secondpointsflexible, thirdpointsflexible,
@@ -1872,9 +1932,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         secondpointstriangle = secondpointstriangle[keep]
         if keep.any():
 
-            catch = make_small_generator_offset([firstpointstriangle, secondpointstriangle],
-                                                    secondpointstriangle, 12, RAMOFMACHINE, np.size(secondpointstriangle, axis=0),
-                                                    ProteinArray = heretousepoints)
+            catch = make_small_generator_offset([firstpointstriangle,
+                                                 secondpointstriangle],
+                                                secondpointstriangle, 12,
+                                                RAMOFMACHINE,
+                                                np.size(secondpointstriangle, axis=0),
+                                                ProteinArray=heretousepoints)
 
             if "Exit" not in catch:
                 MakeSmall, teiler = catch
@@ -1882,11 +1945,13 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 loader.log( catch)
                 return -1
 
-            loader.log( "bevor anglepoints gemacht sind" + str(MakeSmall) + str(teiler))
+            loader.log("bevor anglepoints gemacht sind " + str(MakeSmall) +
+                        "Zerteilungen, bei: " + str(teiler))
 
             #about 250s per MakeSmall run
 
             for i in range(0, (MakeSmall +1)):
+                loader.log("1898: already " + str(i) + " of " + str(MakeSmall))
                 if i == MakeSmall:
                     temp1 = firstpointstriangle[i * teiler:]
                     temp2 = secondpointstriangle[i * teiler:]
@@ -1963,6 +2028,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             # about 250s per MakeSmall run
 
             for i in range(0, (MakeSmall +1)):
+                loader.log("1975: already " + str(i) + " of " + str(MakeSmall))
                 if i == MakeSmall:
                     if (i * teiler) < np.size(secondpointstriangle, axis=0):
                         temp1 = firstpointstriangle[i * teiler:]
@@ -2019,7 +2085,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         #die verschiebungen mit den Linkerlängen multiplizieren, wichtig ist, in den versch sind immer auch nuller drinnen
     if (functionnumber == "3") | (functionnumber == "0"):
-        loader.log("function 3 started")
+        loader.log("###function 3 started###")
         if functionnumber == "3":
             firstpointsflexible  = None
             secondpointsflexible = None
@@ -2035,10 +2101,12 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         versch = make_displacements(linkerlaengenKO, dispnorm)
 
 
-        anfversch = make_displacements((linkerlaengenKO + FLEXIBLEATSTARTKO - LENGTHOFANGLEKO), startdisp)
+        anfversch = make_displacements((linkerlaengenKO + FLEXIBLEATSTARTKO -
+                                        LENGTHOFANGLEKO), startdisp)
         anfversch = anfversch[(anfversch != np.array([0,0,0])).all(axis=1)]
 
-        endversch = make_displacements((linkerlaengenKO + FLEXIBLEATENDKO - LENGTHOFANGLEKO), enddisp)
+        endversch = make_displacements((linkerlaengenKO + FLEXIBLEATENDKO -
+                                        LENGTHOFANGLEKO), enddisp)
         endversch = endversch[(endversch != np.array([0,0,0])).all(axis=1)]
 
 
@@ -2313,7 +2381,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         erstetemp = temp[0]
         zweitetemp = temp[1]
         drittetemp = temp[2]
-
+        loader.log("2329: still " + str(np.size(erstepunkte, axis=0)) +
+                       "to calculate, until function is finished")
 
 
 
@@ -2332,8 +2401,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             zweitetemp = np.concatenate((zweitetemp, temp[1]), axis =0)
             drittetemp = np.concatenate((drittetemp, temp[2]), axis =0)
 
-            loader.log("2261: erstetemp: " + str( np.shape(erstetemp)))
+            loader.log("2349: erstetemp: " + str( np.shape(erstetemp)))
 
+            loader.log("2350: still " + str(np.size(erstepunkte, axis=0)) +
+                       "to calculate, until function is finished")
 
             #erstepunkte  = h5f["dataset_{points}{linker}".format(points = 1, linker = int(laenge))][(i+1) * teiler:]
             #zweitepunkte = h5f["dataset_{points}{linker}".format(points = 2, linker = int(laenge))][(i+1) * teiler:]
@@ -2435,6 +2506,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         for i in range(1, MakeSmall):
             loader.log("2437: already " + str(i) + " of " + str(MakeSmall))
+            loader.log("2455: still " + str(np.size(zweitepunkte, axis=0)) +
+                       "to calculate, until function MakeSmall is finished")
             if shortpath:
                 temp = sort_out_by_angle(anfangspunkt, zweitepunkte[:teiler],
                                          drittepunkte[:teiler], angletosequence)
@@ -2684,6 +2757,9 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
                 for i in range(1, MakeSmall):
                     loader.log("2685: already " + str(i) + " of " + str(MakeSmall))
+                    loader.log("2705: still " +str(np.size(firstpointsflexible,
+                                                        axis=0)) +
+                       "to calculate, until MakeSmall is finished")
                     # loader.log( str(time.time() - starttime ) + "_at run " + str(i) + "of" + str(MakeSmall)
                     temp = make_better_paths_flex(firstpointsflexible[:teiler],
                                                   secondpointsflexible[:teiler],
@@ -2754,6 +2830,10 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
                 for i in range(1, MakeSmall):
                     loader.log("2755: already " + str(i) + " of " + str(MakeSmall))
+                    loader.log("2705: still " + str(np.size(erstepunkte,
+                                                        axis=0)) +
+                       "to calculate, until MakeSmall is finished")
+
                     temp = make_better_paths_rigid(anfangspunkt, erstepunkte[:teiler], zweitepunkte[:teiler], drittepunkte[:teiler],
                                                    endpunkt, linkerlaengenKO)
                     erstepunkte  = np.delete(erstepunkte, np.arange(teiler), axis=0)
@@ -2810,6 +2890,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         if secondpointsflexible is not None:
             if np.size(secondpointsflexible, axis=0) > 0 :
+                loader.log("2876: flexible weighting")
 
                 catch = make_small_generator_offset([firstpointsflexible,
                                                      secondpointsflexible,
@@ -2840,9 +2921,11 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 kzwei = temp[2]
                 kdrei = temp[3]
                 kvier = temp[4]
+                loader.log("2907: first weightingstep finished")
 
 
                 for i in range(1, MakeSmall):
+                    loader.log("2855: already " + str(i) + " of " + str(MakeSmall))
                     temp = weighing_function_flex(anfangspunkt, firstpointsflexible[i * teiler:(i+1)*teiler],
                                                     secondpointsflexible[i * teiler:(i+1)*teiler],
                                                     thirdpointsflexible[i * teiler:(i+1)*teiler],
@@ -2871,7 +2954,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-
+                loader.log("3012: flex weighting done")
                 weightflex = np.array([knull, keins, kzwei, kdrei, kvier])
                 flexk = weightflex
             else:
@@ -2886,6 +2969,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if erstepunkte is not None:
             # weighting of linkers without flexible ends
             if np.size(zweitepunkte, axis=0) > 0:
+                loader.log("2876: rigid weighting")
 
                 catch = make_small_generator_offset([firstpointsflexible,
                                                      secondpointsflexible,
@@ -2893,8 +2977,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                                      erstepunkte, zweitepunkte,
                                                      drittepunkte], zweitepunkte, 8,
                                                     RAMOFMACHINE,
-                                                    np.size(zweitepunkte, axis=0) /
-                                                    (MakeSmall),
+                                                    np.size(zweitepunkte, axis=0),
                                                     ProteinArray=pkte)
 
                 if "Exit" not in catch:
@@ -2912,6 +2995,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 kzwei = temp[2]
                 kdrei = temp[3]
                 kvier = temp[4]
+                loader.log("2907: first weightingstep finished")
 
 
                 for i in range(1, MakeSmall):
@@ -2942,7 +3026,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
 
-
+                loader.log("3012: rigid weighting done")
                 weightrig = np.array([knull, keins, kzwei, kdrei, kvier])
                 temp = None
                 knull = keins = kzwei = kdrei = kvier = None
@@ -2956,7 +3040,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         # At first the different linkers are just analysed. Of course this could be done in the weighing step before, but this is not that calculation intensive and like this it is much more clear when it does what.
 
         # In[289]:
-
+        loader.log("now translating paths to sequences")
         sequences, weightingsall, firstpointsall, secondpointsall, thirdpointsall \
         =translate_paths_to_sequences(anfangspunkt,firstpointsflexible,
                                       secondpointsflexible, thirdpointsflexible,
@@ -2967,7 +3051,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         if sequences is None:
             loader.log("no paths could be translated")
             return 0
-
+        loader.log("3037: finished translation, writing file")
         # loader.log( str(time.time() - starttime ) + "write file"
         f = open(resultsfile, "w")
 
@@ -2988,3 +3072,4 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
 
         f.close()
+        loader.log("resultfile written successfully, thank you")
