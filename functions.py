@@ -53,16 +53,28 @@ def exp(x, A, lam, C):
     return A * np.exp(- lam * x) + C
 
 
-def my_fitting(x, y, fitdict, ax, key=None):
+def my_fitting(x, y, fitdict, ax, key=None, xyl=False):
 
     '''
     adds a fitted curve to the plot.
     returns a new fitdict, if key is set.
     '''
-    if (y[0] - y[-1] > 0.2) | (y[-1] < 0.3):
+    fit = False
+    if xyl:
+        if (y[-1] - y[0] > 1000):
+            fit = True
+    else:
+        if (y[0] - y[-1] > 0.2) | (y[0] < 0.4):
+            fit = True
+    if fit:
+
         OD0 = y[0]
         # a = np.mean(y[-30:])
-        m = 1/1.160     # mg/ml
+        if xyl:
+            m = 1
+            subtoP = np.mean(y[-5:])
+        else:
+            m = 1/1.160     # mg/ml
 
         def fitfunc(t, KM, VMax, a, slope):
 
@@ -82,12 +94,42 @@ def my_fitting(x, y, fitdict, ax, key=None):
             return (OD0 - a) * np.exp(-VMax * t) + a + slope * t
 
 
+        def fitfunc_xyl(t, KM, VMax, a, slope):
+
+            if (KM < 100000) & (KM > 0) & (VMax > 0) & (VMax < 100000):
+
+                P0 = m * (OD0 - a)
+
+                P = subtoP * (1 - KM * np.real(lambertw((1 / KM) *
+                           np.exp((1 - (VMax * t)) / KM)))) + P0
+                OD = (P / m) + a
+
+                return OD
+            else:
+                return 1e10
+
+        def exp_fit_xyl(t, VMax, OD0, maxi):
+            '''
+            maxi is maximum of curve, a is fluorescence of empty well
+            '''
+            P0 = m * (OD0)
+            Pmaxi = m * (maxi)
+
+            P = - (Pmaxi - P0) * np.exp(-VMax * t) + Pmaxi
+            return P/m
+
+
+
         # plt.plot(make_param(y[1:6], x[1:6], a, OD0), make_result(y[1:6], x[1:6], m, OD0), "bo")
         # plt.xlim(xmin = 0)
         # plt.ylim(ymin = 0)
         # the fitting
         try:
-            popt, pcov = curve_fit(fitfunc, x, y, p0 = (0.1, 0.1, y[-1], -0.001))
+            if xyl:
+                # noch Anfangsparameter setzen
+                popt, pcov = curve_fit(fitfunc_xyl, x, y, p0 = (0.1, 0.1, y[0], -0.001))
+            else:
+                popt, pcov = curve_fit(fitfunc, x, y, p0 = (0.1, 0.1, y[-1], -0.001))
 
             KMfit, VMaxfit, afit, slopefit  =  popt
             KMfiterr, VMaxfiterr, afiterr, slopefiterr =  np.sqrt(np.diag(pcov))
@@ -106,13 +148,21 @@ def my_fitting(x, y, fitdict, ax, key=None):
         except:
             KMfit= VMaxfit = afit= KMfiterr= VMaxfiterr= afiterr = redchisqMM =  None
 
-        try:
-            popt, pcov = curve_fit(exp_fit, x, y)
-            ax.plot(x, exp_fit(x, *popt), "g--", lw = 3)
+        if True:
+            if xyl:
+                popt, pcov = curve_fit(exp_fit_xyl, x, y, p0=(1,1,30000))
+                print "blubb"
+                print popt
+                ax.plot(x, exp_fit_xyl(x, *popt), "g--", lw = 3)
+                OD_mod = exp_fit_xyl(x, *popt)
+            else:
+                popt, pcov = curve_fit(exp_fit, x, y)
+                ax.plot(x, exp_fit(x, *popt), "g--", lw = 3)
+                OD_mod = exp_fit(x, *popt)
 
             Vfit = popt[0]
             Vfiterr = np.sqrt(np.diag(pcov))[0]
-            OD_mod = exp_fit(x, *popt)
+
             redchisqexp = redchisqg(y, OD_mod, deg = 3)
 
             if redchisqMM != None:
@@ -125,7 +175,7 @@ def my_fitting(x, y, fitdict, ax, key=None):
             else:
                 plt.text(0.8 * x[-1], np.mean(y) + 0.1, "$V_{max exp}$" + " = {Vmax:5.3f} +- {Vmaxerr:5.3f}".format(Vmax = Vfit, Vmaxerr = Vfiterr))
 
-        except:
+        else:
             Vfit = None
             Vfiterr = None
             redchisqexp = None
@@ -151,7 +201,7 @@ def my_fitting(x, y, fitdict, ax, key=None):
         return fitdict
 
 
-def make_plots(thedict, coordtoindict, plotlisttuple = None, fitdict = None):
+def make_plots(thedict, coordtoindict, plotlisttuple = None, fitdict = None, xyl=False):
     """
 Creates histograms of the distribution of all turn sequences,
 always a histogram for the distance and for the angles is
@@ -174,11 +224,16 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
 
                 y = thedict[key]
                 ax.plot(x, y, "bo", ms=10)
-                plt.title("OD600 of {well}".format(well = key + "_with:_" + coordtoindict[key]  + DATE))
+                if xyl:
+                    plt.title("Fluo of {well}".format(well = key + "_with:_" + coordtoindict[key]  + DATE))
+                else:
+                    plt.title("OD600 of {well}".format(well = key + "_with:_" + coordtoindict[key]  + DATE))
                 plt.xlabel("time in [min]")
                 if KIND == "Nils_":
                     plt.ylabel("Optical Density at 600 nm")
                 elif KIND == "Fluo_":
+                    plt.ylabel("Fluorescence")
+                elif KIND == "Charlotte_":
                     plt.ylabel("Fluorescence")
                 #plt.yscale("log")
 
@@ -190,8 +245,7 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
 
                 if fitdict != None:
 
-
-                    fitdict = my_fitting(x, y, fitdict, ax, key)
+                    fitdict = my_fitting(x, y, fitdict, ax, key, xyl=xyl)
                     lg = None
                 else:
                     lg = None
@@ -242,7 +296,7 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
 
 
             if fitdict != None:
-                blubb = my_fitting(x, y, fitdict, ax)
+                blubb = my_fitting(x, y, fitdict, ax, xyl=xyl)
                 blubb = None
         if maxcount:
             plt.ylim(ymin = LOWERLIMIT)
@@ -255,6 +309,8 @@ Plotslisttuple always needs a list of the coordinates and a string of the file's
         if KIND == "Nils_":
             plt.ylabel("Optical Density at 600 nm")
         elif KIND == "Fluo_":
+            plt.ylabel("Fluorescence")
+        elif KIND == "Charlotte_":
             plt.ylabel("Fluorescence")
         lg = plt.legend(loc = 'upper right', bbox_to_anchor = (LEGENDPLACE, 1))
         if lg != None:
@@ -359,9 +415,9 @@ def make_plots_from_datalist(datalist, timelist, nameofplot, fitdict = None):
 
 
 
-def make_calibration_plot(datadict):
+def make_calibration_plot(datadict, xlength=12):
     datadict["calibration"] = np.array(datadict["calibration"], dtype=float)
-    datadict["calibration"] = np.reshape(datadict["calibration"], (8, 12))
+    datadict["calibration"] = np.reshape(datadict["calibration"], (8, xlength))
 
     fig = plt.figure()
     ax = plt.axes()
@@ -516,8 +572,8 @@ def lysozyme_activity_plot(dictoftoplottypes, whatiswheredict, fitdict):
     lg = plt.legend(loc = 'upper right', bbox_to_anchor = (1.3, 1))
     if lg != None:
         lg.draw_frame(False)
-    plt.savefig(FOLDER + "resultsplotlamlys.png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
-    plt.savefig(RESULTFOLDER + "resultsplotlamlys" + DATE + ".png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
+        plt.savefig(FOLDER + "resultsplotlamlys.png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
+        plt.savefig(RESULTFOLDER + "resultsplotlamlys" + DATE + ".png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
     plt.close()
 
 
@@ -660,13 +716,162 @@ def lysozyme_activity_plot_normed(dictoftoplottypes, whatiswheredict, fitdict, o
     lg = plt.legend(loc = 'upper right', bbox_to_anchor = (1.3, 1))
     if lg != None:
         lg.draw_frame(False)
-    plt.savefig(FOLDER + "resultsplotlamlysnormed.png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
-    plt.savefig(RESULTFOLDER + "resultsplotlamlysnormed" + DATE + ".png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
+        plt.savefig(FOLDER + "resultsplotlamlysnormed.png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
+        plt.savefig(RESULTFOLDER + "resultsplotlamlysnormed" + DATE + ".png", bbox_extra_artists=(lg,), bbox_inches='tight', dpi = 200)
     plt.close()
 
 
+
+
+
+# Michaelis Menten with product inhibition and injection of stuff
+
+
+
+def create_data_def_file(lystype, biolrepl, temperature):
+    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+    uniquestring = uniquestring.replace(".", "p")
+    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
+
+    f.write('DESCRIPTION\n' +
+            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+            'PREDICTOR\n' +
+            'time        T   min time    0   130\n\n' +
+
+            'INPUTS\n\n' +
+
+            'OBSERVABLES\n' +
+            'OD_{uni}       C   au  conc.   0  0   "0.083 '.format(uni=uniquestring) +
+            ' + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
+
+            'ERRORS\n' +
+            'OD_{temp}         "sd_OD_experiment"\n\n'.format(temp=uniquestring) +
+
+            'CONDITIONS\n\n' +
+
+            'RANDOM\n' +
+            'experiment    INDEPENDENT\n')
+    f.close()
+
+def create_model_file(lystype, biolrepl, temperature, techrepl):
+    if not os.path.exists(MATLABFOLDER + "Models/"):
+        os.mkdir(MATLABFOLDER + "Models/")
+    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+    uniquestring = uniquestring.replace(".", "p")
+
+    f = open(MATLABFOLDER + "Models/model" + uniquestring + ".def", "w")
+    if "circ" not in lystype:
+        f.write('DESCRIPTION\n' +
+                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+                ('PREDICTOR\n' +
+                't               T   "min"     "time"   0   130\n\n' +
+
+                'COMPARTMENTS\n\n' +
+
+                'STATES\n' +
+                '{Enz} C    au    conc. cell\n' +
+                '{Prod} C    au    conc. cell\n' +
+                '{EnzSub} C    au    conc. cell\n' +
+                '{EnzProd} C    au    conc. cell\n' +
+                '{Sub} C    au    conc. cell\n\n' +
+
+
+                'INPUTS\n' +
+
+                '{Inject}   C  nM  conc.  "{amnt_Enz} * (1/sqrt(2*pi*(0.1^2))) * exp(-(t - {t_inj})^2/(2*(0.1^2)))"  \n\n'.format(
+                                    Inject="Inject_" + uniquestring + "_experiment", amnt_Enz="amnt_Enz_" + uniquestring, t_inj = "t_inj_" + uniquestring + "_experiment")       +
+
+
+                'REACTIONS\n' +
+                '{Enz} + {Sub}    -> {EnzSub}         CUSTOM "{kbuild} * {Enz} * {Sub}"  \n' +
+                '{EnzSub}          -> {Enz} + {Sub}    CUSTOM "{kdis} * {EnzSub}"        \n' +
+                '{EnzSub}          -> {Enz} + {Prod}   CUSTOM "{kcat} * {EnzSub}"        \n' +
+                '{Enz} + {Prod}    -> {EnzProd}        CUSTOM "{kon} * {Enz} * {Prod}"   \n' +
+                '{EnzProd}         -> {Enz} + {Prod}   CUSTOM "{koff} * {Enz} * {Prod}"  \n' +
+                '{Sub}             ->                  CUSTOM "{kdecay} * {Sub}"         \n' +
+                '                  -> {Enz}            CUSTOM "{Inject}"                 \n' ).format(
+                        Enz="Enz_" + uniquestring, Sub="Sub_" + uniquestring,
+                        EnzSub="EnzSub_" + uniquestring, Prod="Prod_" + uniquestring ,
+                        EnzProd="EnzProd_" + uniquestring, Inject="Inject_" + uniquestring + "_experiment",
+                        kbuild="kbuild_" + lystype, kdis="kdis_" + lystype,
+                        kcat="kcat_" + lystype, kon="kon_" + lystype,
+                        koff="koff_" + lystype, kdecay="kdecay") +
+
+
+                'DERIVED\n\n' +
+
+                'CONDITIONS\n')
+        if str(temperature) != "37.0":
+            f.write("Enz_" + uniquestring + '    Enz_' + lystype + "_" +
+                    str(biolrepl) + "_37p0*act_"+ uniquestring + '\n')
+
+        f.write('init_Enz_'    + uniquestring +  '   "0"\n')
+        f.write('init_EnzSub_' + uniquestring +  '   "0"\n')
+        f.write('init_EnzProd_' + uniquestring + '   "0"\n')
+        f.write('init_EnzSub_' + uniquestring +  '   "0"\n')
+        f.write('init_Prod_' + uniquestring +    '   "0"\n')
+
+
+    elif "circ" in lystype:
+        f.write('DESCRIPTION\n' +
+                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+
+                ('PREDICTOR\n' +
+                't               T   "min"     "time"   0   130\n\n' +
+
+                'COMPARTMENTS\n\n' +
+
+                'STATES\n' +
+                '{Enz} C    au    conc. cell\n' +
+                '{Prod} C    au    conc. cell\n' +
+                '{EnzSub} C    au    conc. cell\n' +
+                '{EnzProd} C    au    conc. cell\n' +
+                '{Sub} C    au    conc. cell\n\n' +
+
+
+                'INPUTS\n' +
+
+                '{Inject}   C  nM  conc.  "{amnt_Enz} * (1/sqrt(2*pi*(0.1^2))) * exp(-(t - {t_inj})^2/(2*(0.1^2)))"  \n\n'.format(
+                                    Inject="Inject_" + uniquestring + "_experiment", amnt_Enz="amnt_Enz_" + uniquestring, t_inj = "t_inj_" + uniquestring + "_experiment" )       +
+
+
+                'REACTIONS\n' +
+                '{Enz} + {Sub}    -> {EnzSub}         CUSTOM "{kbuild} * {Enz} * {Sub}"  \n' +
+                '{EnzSub}          -> {Enz} + {Sub}    CUSTOM "{kdis} * {EnzSub}"        \n' +
+                '{EnzSub}          -> {Enz} + {Prod}   CUSTOM "{kcat} * {EnzSub}"        \n' +
+                '{Enz} + {Prod}    -> {EnzProd}        CUSTOM "{kon} * {Enz} * {Prod}"   \n' +
+                '{EnzProd}         -> {Enz} + {Prod}   CUSTOM "{koff} * {Enz} * {Prod}"  \n' +
+                '{Sub}             ->                  CUSTOM "{kdecay} * {Sub}"         \n' +
+                '                  -> {Enz}            CUSTOM "{Inject}"                 \n' ).format(
+                        Enz="Enz_" + uniquestring, Sub="Sub_" + uniquestring,
+                        EnzSub="EnzSub_" + uniquestring , Prod="Prod_" + uniquestring,
+                        EnzProd="EnzProd_" + uniquestring, Inject="Inject_" + uniquestring,
+                        kbuild="kbuild_" + lystype, kdis="kdis_" + lystype,
+                        kcat="kcat_" + lystype, kon="kon_" + lystype,
+                        koff="koff_" + lystype, kdecay="kdecay") +
+
+                'DERIVED\n\n' +
+
+                'CONDITIONS\n')
+
+        if str(temperature) != "37.0":
+            f.write('amnt_Enz_' + uniquestring + '    amnt_Enz_' + lystype + "_" +
+                    str(biolrepl) + "_37p0*act_"+ uniquestring + '\n')
+
+        f.write('init_Enz_'    + uniquestring +             '   "0"\n')
+        f.write('init_EnzSub_' + uniquestring +  '   "0"\n')
+        f.write('init_EnzProd_' + uniquestring + '   "0"\n')
+        f.write('init_EnzSub_' + uniquestring +  '   "0"\n')
+        f.write('init_Prod_' + uniquestring +    '   "0"\n')
+        # f.write("kcat_" + lystype + "    kcat_linlys*kcatratio_" + lystype + "\n")
+        # f.write("KM_" + lystype + "    KM_linlys*KMratio_" + lystype + "\n")
+
+
+
 def make_data_and_modelfiles(lystype, biolrepl, temperature,
-                             techrepl, datadict, well, forscriptdict):
+                             techrepl, datadict, well, forscriptdict, calibdict):
     '''
     appends the data of the given inputs to the lystype_biolrepl_temp.csv file"
 
@@ -692,16 +897,21 @@ def make_data_and_modelfiles(lystype, biolrepl, temperature,
         f = open(filename, "w")
         f.write("time,Temp,experiment,OD_%s\n" % uniquestring)
 
+
     for i in range(len(datadict["time"])):
+        if i == 0:
+            f.write("0,{temp},{techre},{OD}\n"
+                .format(temp=str(temperature), techre=str(techrepl),
+                        OD=str(calibdict[well])))
         f.write("{time},{temp},{techre},{OD}\n"
-                .format(time=str(datadict["time"][i]),
+                .format(time=str(datadict["time"][i] + 15),
                         temp=str(temperature), techre=str(techrepl),
                         OD=str(datadict[well][i])))
     f.close()
 
     if techrepl == 1:
         create_data_def_file(lystype, biolrepl, temperature)
-        create_model_file(lystype, biolrepl, temperature)
+        create_model_file(lystype, biolrepl, temperature, techrepl)
     try:
         forscriptdict[uniquestring].append(techrepl)
     except KeyError:
@@ -709,88 +919,17 @@ def make_data_and_modelfiles(lystype, biolrepl, temperature,
     return forscriptdict
 
 
-def create_data_def_file(lystype, biolrepl, temperature):
-    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
-    uniquestring = uniquestring.replace(".", "p")
-    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
-
-    f.write('DESCRIPTION\n' +
-            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
-
-            'PREDICTOR\n' +
-            'time        T   min time    0   105\n\n' +
-
-            'INPUTS\n\n' +
-
-            'OBSERVABLES\n' +
-            'OD_{uni}       C   au  conc.   0  0   "offset_{uni}_experiment '.format(uni=uniquestring) +
-            '- (dec_{uni}_experiment * t) + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
-
-            'ERRORS\n' +
-            'OD_{temp}         "sd_OD"\n\n'.format(temp=uniquestring) +
-
-            'CONDITIONS\n\n' +
-
-            'RANDOM\n' +
-            'experiment    INDEPENDENT\n')
-    f.close()
 
 
-def create_model_file(lystype, biolrepl, temperature):
-    if not os.path.exists(MATLABFOLDER + "Models/"):
-        os.mkdir(MATLABFOLDER + "Models/")
-    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
-    uniquestring = uniquestring.replace(".", "p")
-
-    f = open(MATLABFOLDER + "Models/model" + uniquestring + ".def", "w")
-    if "circ" not in lystype:
-        f.write('DESCRIPTION\n' +
-                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
-
-                'PREDICTOR\n' +
-                't               T   "min"     "time"   0   105\n\n' +
-
-                'COMPARTMENTS\n\n' +
-
-                'STATES\n' +
-                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
-
-                'INPUTS\n\n' +
-
-                'ODES\n' +
-                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
-                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
-                        Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
-
-                'DERIVED\n\n'
-
-                'CONDITIONS\n')
-
-    elif "circ" in lystype:
-        f.write('DESCRIPTION\n' +
-                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
-
-                'PREDICTOR\n' +
-                't               T   "min"     "time"   0   105\n\n' +
-
-                'COMPARTMENTS\n\n' +
-
-                'STATES\n' +
-                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
-
-                'INPUTS\n\n' +
-
-                'ODES\n' +
-                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
-                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
-                        Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
-
-                'DERIVED\n\n'
-
-                'CONDITIONS\n')
 
 
-def make_script_file(forscriptdict):
+
+def make_script_file(forscriptdict, coomassiedict, fixedconc):
+
+    '''
+    if fixconc, then all the enzyme concentrations will be set, or restrained
+    '''
+
     f = open(MATLABFOLDER + "script.m", "w")
 
     f.write('clear;\n' +
@@ -801,16 +940,416 @@ def make_script_file(forscriptdict):
     f.write("\n")
     for uniquestring in forscriptdict:
         f.write("arLoadData('{data}','{model}','csv',true);\n".format(
-                        data=uniquestring , model="model" + uniquestring))
+                    data=uniquestring , model="model" + uniquestring))
     f.write("\n")
     f.write("arCompileAll;\n")
     f.write("\n")
     for uniquestring in forscriptdict:
-        for techrepl in forscriptdict[uniquestring]:
-            f.write("arSetPars('dec_%s_experiment%s', -3, 1, 1, -6, -2)\n"
-                    % (uniquestring, str(techrepl)))
-            f.write("arSetPars('offset_%s_experiment%s', -1, 1, 1, -2, 0)\n"
-                    % (uniquestring, str(techrepl)))
+#        for techrepl in forscriptdict[uniquestring]:
+#            f.write("arSetPars('t_inj_%s_experiment%s', 5, 0, 0, -2, 10)\n"
+#                   % (uniquestring, str(techrepl)))
+#             f.write("arSetPars('offset_%s_experiment%s', 0.0831, 0, 0, -2, 2)\n"
+#                    % (uniquestring, str(techrepl)))
+        if "37p0" not in uniquestring:
+            f.write("arSetPars('act_" + uniquestring + "', 0, 1, 1, -2, 1)\n\n")
+
+
+#    for lystype in coomassiedict:
+#        lys37 = lystype + "_37p0"
+#        if lys37 in forscriptdict:
+#            if "linlys" in lystype:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][1]),
+#                               str(coomassiedict[lystype][1] + 1)))
+#            else:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][0]),
+#                               str(coomassiedict[lystype][0] + 1)))
+#                lysn = lystype.split("_")[0]
+#                # f.write("arSetPars('kcatratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
+#                # f.write("arSetPars('KMratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
     f.write("\n")
     f.write("arFit;\n")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#def make_data_and_modelfiles(lystype, biolrepl, temperature,
+#                             techrepl, datadict, well, forscriptdict):
+#    '''
+#    appends the data of the given inputs to the lystype_biolrepl_temp.csv file"
+#
+#    uses the techrepl as experiment value.
+#
+#    forscriptdict is a dict of all the species for the models. For each species
+#    there is a list of the technical replicates.
+#    '''
+#
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#
+#    if not os.path.exists(MATLABFOLDER):
+#        os.mkdir(MATLABFOLDER)
+#    if not os.path.exists(MATLABFOLDER + "Data/"):
+#        os.mkdir(MATLABFOLDER + "Data/")
+#
+#    filename = (MATLABFOLDER + "Data/" + uniquestring + ".csv")
+#
+#    f = open(filename, "a")
+#    if techrepl == 1:
+#        f.close()
+#        f = open(filename, "w")
+#        f.write("time,Temp,experiment,OD_%s\n" % uniquestring)
+#
+#    for i in range(len(datadict["time"])):
+#        f.write("{time},{temp},{techre},{OD}\n"
+#                .format(time=str(datadict["time"][i]),
+#                        temp=str(temperature), techre=str(techrepl),
+#                        OD=str(datadict[well][i])))
+#    f.close()
+#
+#    if techrepl == 1:
+#        create_data_def_file(lystype, biolrepl, temperature)
+#        create_model_file(lystype, biolrepl, temperature)
+#    try:
+#        forscriptdict[uniquestring].append(techrepl)
+#    except KeyError:
+#        forscriptdict[uniquestring] = [techrepl]
+#    return forscriptdict
+#
+#
+#def create_data_def_file(lystype, biolrepl, temperature):
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
+#
+#    f.write('DESCRIPTION\n' +
+#            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#            'PREDICTOR\n' +
+#            'time        T   min time    0   105\n\n' +
+#
+#            'INPUTS\n\n' +
+#
+#            'OBSERVABLES\n' +
+#            'OD_{uni}       C   au  conc.   0  0   "offset_{uni}_experiment '.format(uni=uniquestring) +
+#            '- (dec_{uni}_experiment * t) + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
+#
+#            'ERRORS\n' +
+#            'OD_{temp}         "sd_OD"\n\n'.format(temp=uniquestring) +
+#
+#            'CONDITIONS\n\n' +
+#
+#            'RANDOM\n' +
+#            'experiment    INDEPENDENT\n')
+#    f.close()
+#
+#
+## Michaelis Menten with product inhibition
+#
+#def create_data_def_file(lystype, biolrepl, temperature):
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
+#
+#    f.write('DESCRIPTION\n' +
+#            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#            'PREDICTOR\n' +
+#            'time        T   min time    0   105\n\n' +
+#
+#            'INPUTS\n\n' +
+#
+#            'OBSERVABLES\n' +
+#            'OD_{uni}       C   au  conc.   0  0   "offset_{uni}_experiment '.format(uni=uniquestring) +
+#            ' + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
+#
+#            'ERRORS\n' +
+#            'OD_{temp}         "sd_OD"\n\n'.format(temp=uniquestring) +
+#
+#            'CONDITIONS\n\n' +
+#
+#            'RANDOM\n' +
+#            'experiment    INDEPENDENT\n')
+#    f.close()
+#
+#def create_model_file(lystype, biolrepl, temperature):
+#    if not os.path.exists(MATLABFOLDER + "Models/"):
+#        os.mkdir(MATLABFOLDER + "Models/")
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#
+#    f = open(MATLABFOLDER + "Models/model" + uniquestring + ".def", "w")
+#    if "circ" not in lystype:
+#        f.write('DESCRIPTION\n' +
+#                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#                'PREDICTOR\n' +
+#                't               T   "min"     "time"   0   105\n\n' +
+#
+#                'COMPARTMENTS\n\n' +
+#
+#                'STATES\n' +
+#                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+#
+#                'INPUTS\n\n' +
+#
+#                'ODES\n' +
+#                '" - ({kcat} * {Enz} * {Sub}) / ((1 + ({initSub} - {Sub})/{Ki}) * ({KM} + {Sub} + kdecay * {Sub}))"\n\n'.format(
+#                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+#                        Sub="Sub_" + uniquestring, KM="KM_" + lystype,
+#                        initSub="init_Sub_" + uniquestring, Ki="Ki_" + lystype) +
+#
+#
+#                'DERIVED\n\n' +
+#
+#                'CONDITIONS\n')
+#        if str(temperature) != "37.0":
+#            f.write("Enz_" + uniquestring + "    Enz_" + lystype + "_" +
+#                    str(biolrepl) + "_37p0*act_"+ uniquestring + "\n")
+#
+#
+#    elif "circ" in lystype:
+#        f.write('DESCRIPTION\n' +
+#                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#                'PREDICTOR\n' +
+#                't               T   "min"     "time"   0   105\n\n' +
+#
+#                'COMPARTMENTS\n\n' +
+#
+#                'STATES\n' +
+#                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+#
+#                'INPUTS\n\n' +
+#
+#                'ODES\n' +
+#                '" - ({kcat} * {Enz} * {Sub}) / (((1 + ({initSub} - {Sub})/{Ki}) * {KM}) + {Sub}) + kdecay * {Sub}"\n\n'.format(
+#                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+#                        Sub="Sub_" + uniquestring, KM="KM_" + lystype,
+#                        initSub="init_Sub_" + uniquestring, Ki="Ki_" + lystype) +
+#
+#                'DERIVED\n\n' +
+#
+#                'CONDITIONS\n')
+#
+#        if str(temperature) != "37.0":
+#            f.write("Enz_" + uniquestring + "    Enz_" + lystype + "_" +
+#                    str(biolrepl) + "_37p0*act_"+ uniquestring + "\n")
+#        f.write("kcat_" + lystype + "    kcat_linlys*kcatratio_" + lystype + "\n")
+#        f.write("KM_" + lystype + "    KM_linlys*KMratio_" + lystype + "\n")
+#
+#
+#def make_script_file(forscriptdict, coomassiedict, fixedconc):
+#
+#    '''
+#    if fixconc, then all the enzyme concentrations will be set, or restrained
+#    '''
+#
+#    f = open(MATLABFOLDER + "script.m", "w")
+#
+#    f.write('clear;\n' +
+#            'arInit;\n')
+#
+#    for uniquestring in forscriptdict:
+#        f.write("arLoadModel('%s');\n" % ("model" + uniquestring))
+#    f.write("\n")
+#    for uniquestring in forscriptdict:
+#        f.write("arLoadData('{data}','{model}','csv',true);\n".format(
+#                    data=uniquestring , model="model" + uniquestring))
+#    f.write("\n")
+#    f.write("arCompileAll;\n")
+#    f.write("\n")
+#    for uniquestring in forscriptdict:
+#        for techrepl in forscriptdict[uniquestring]:
+#            f.write("arSetPars('offset_%s_experiment%s', 0.0831, 0, 0, -2, 2)\n"
+#                    % (uniquestring, str(techrepl)))
+#        if "37p0" not in uniquestring:
+#            f.write("arSetPars('act_" + uniquestring + "', 0, 1, 1, -2, 1)\n\n")
+#    for lystype in coomassiedict:
+#        lys37 = lystype + "_37p0"
+#        if lys37 in forscriptdict:
+#            if "linlys" in lystype:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][1]),
+#                               str(coomassiedict[lystype][1] + 1)))
+#            else:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][0]),
+#                               str(coomassiedict[lystype][0] + 1)))
+#                lysn = lystype.split("_")[0]
+#                f.write("arSetPars('kcatratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
+#                f.write("arSetPars('KMratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
+#    f.write("\n")
+#    f.write("arFit;\n")
+#
+
+
+
+#Michaelis Menten, no product inhibition, fixed enzyme concentrations.
+#
+#def create_data_def_file(lystype, biolrepl, temperature):
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#    f = open(MATLABFOLDER + "Data/" + uniquestring + ".def", "w")
+#
+#    f.write('DESCRIPTION\n' +
+#            '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#            'PREDICTOR\n' +
+#            'time        T   min time    0   105\n\n' +
+#
+#            'INPUTS\n\n' +
+#
+#            'OBSERVABLES\n' +
+#            'OD_{uni}       C   au  conc.   0  0   "offset_{uni}_experiment '.format(uni=uniquestring) +
+#            '- (dec_{uni}_experiment * t) + 1.116 * Sub_{uni}" "A"\n\n'.format(uni=uniquestring) +
+#
+#            'ERRORS\n' +
+#            'OD_{temp}         "sd_OD"\n\n'.format(temp=uniquestring) +
+#
+#            'CONDITIONS\n\n' +
+#
+#            'RANDOM\n' +
+#            'experiment    INDEPENDENT\n')
+#    f.close()
+#
+#def create_model_file(lystype, biolrepl, temperature):
+#    if not os.path.exists(MATLABFOLDER + "Models/"):
+#        os.mkdir(MATLABFOLDER + "Models/")
+#    uniquestring = lystype + "_" + str(biolrepl) + "_" + str(temperature)
+#    uniquestring = uniquestring.replace(".", "p")
+#
+#    f = open(MATLABFOLDER + "Models/model" + uniquestring + ".def", "w")
+#    if "circ" not in lystype:
+#        f.write('DESCRIPTION\n' +
+#                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#                'PREDICTOR\n' +
+#                't               T   "min"     "time"   0   105\n\n' +
+#
+#                'COMPARTMENTS\n\n' +
+#
+#                'STATES\n' +
+#                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+#
+#                'INPUTS\n\n' +
+#
+#                'ODES\n' +
+#                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
+#                            kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+#                            Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
+#
+#                'DERIVED\n\n' +
+#
+#                'CONDITIONS\n')
+#        if str(temperature) != "37.0":
+#            f.write("Enz_" + uniquestring + "    Enz_" + lystype + "_" +
+#                    str(biolrepl) + "_37p0*act_"+ uniquestring + "\n")
+#
+#
+#    elif "circ" in lystype:
+#        f.write('DESCRIPTION\n' +
+#                '"' + lystype + " " + str(biolrepl) + " " + str(temperature) + '"\n\n' +
+#
+#                'PREDICTOR\n' +
+#                't               T   "min"     "time"   0   105\n\n' +
+#
+#                'COMPARTMENTS\n\n' +
+#
+#                'STATES\n' +
+#                '{Sub} C    au    conc. cell\n\n'.format(Sub="Sub_" + uniquestring) +
+#
+#                'INPUTS\n\n' +
+#
+#                'ODES\n' +
+#                '" - ({kcat} * {Enz} * {Sub}) / ({KM} + {Sub})"\n\n'.format(
+#                        kcat="kcat_" + lystype, Enz="Enz_" + uniquestring,
+#                        Sub="Sub_" + uniquestring, KM="KM_" + lystype) +
+#
+#                'DERIVED\n\n' +
+#
+#                'CONDITIONS\n')
+#
+#        if str(temperature) != "37.0":
+#            f.write("Enz_" + uniquestring + "    Enz_" + lystype + "_" +
+#                    str(biolrepl) + "_37p0*act_"+ uniquestring + "\n")
+#        f.write("kcat_" + lystype + "    kcat_linlys*kcatratio_" + lystype + "\n")
+#        f.write("KM_" + lystype + "    KM_linlys*KMratio_" + lystype + "\n")
+#
+#
+#def make_script_file(forscriptdict, coomassiedict, fixedconc):
+#    '''
+#    if fixconc, then all the enzyme concentrations will be set, or restrained
+#    '''
+#    f = open(MATLABFOLDER + "script.m", "w")
+#
+#    f.write('clear;\n' +
+#            'arInit;\n')
+#
+#    for uniquestring in forscriptdict:
+#        f.write("arLoadModel('%s');\n" % ("model" + uniquestring))
+#    f.write("\n")
+#    for uniquestring in forscriptdict:
+#        f.write("arLoadData('{data}','{model}','csv',true);\n".format(
+#                    data=uniquestring , model="model" + uniquestring))
+#    f.write("\n")
+#    f.write("arCompileAll;\n")
+#    f.write("\n")
+#    for uniquestring in forscriptdict:
+#        for techrepl in forscriptdict[uniquestring]:
+#            f.write("arSetPars('dec_%s_experiment%s', -3, 1, 1, -6, -2)\n"
+#                    % (uniquestring, str(techrepl)))
+#            f.write("arSetPars('offset_%s_experiment%s', -1, 1, 1, -2, 0)\n"
+#                    % (uniquestring, str(techrepl)))
+#        if "37p0" not in uniquestring:
+#            f.write("arSetPars('act_" + uniquestring + "', 0, 1, 1, -2, 1)\n\n")
+#    for lystype in coomassiedict:
+#        lys37 = lystype + "_37p0"
+#        if lys37 in forscriptdict:
+#            if "linlys" in lystype:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][1]),
+#                               str(coomassiedict[lystype][1] + 1)))
+#            else:
+#                if fixedconc:
+#                    f.write("arSetPars('Enz_%s', %s, 0, 0, 0, %s)\n" % (lys37,
+#                               str(coomassiedict[lystype][0]),
+#                               str(coomassiedict[lystype][0] + 1)))
+#                lysn = lystype.split("_")[0]
+#                f.write("arSetPars('kcatratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
+#                f.write("arSetPars('KMratio_%s', 0, 1, 1, -2, 2)\n" % lysn)
+#    f.write("\n")
+#    f.write("arFit;\n")
+#
