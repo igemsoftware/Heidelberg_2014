@@ -5,8 +5,8 @@
 			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
 		</div>
 		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
-		<p class="alert alert-warning" data-bind="visible: needsReview">This supply could not be automatically adapted to a change made to its type. You need to add missing information manually to be able to reference it in future experiments.</p>
 		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this supply.</p>
+		<p class="alert alert-warning" data-bind="visible: needsReview &amp;&amp; !oldVersion">This supply could not be automatically adapted to a change made to its type. You need to add missing information manually to be able to reference it in future experiments.</p>
 		<table class="hierarchical">
 			<tr>
 				<th><h3>Type</h3></th>

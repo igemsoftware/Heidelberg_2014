@@ -35,6 +35,7 @@
 					<h4 class="list-group-item-heading">
 						<span data-bind="text: protocol.name()"></span>
 						<small data-bind="text: performer"></small>
+						<span class="label label-warning" data-bind="visible: needsReview">needs review</span>
 						<small class="pull-right" data-bind="text: ko.computed(formatDate.bind(null, finishDate(), true))"></small>
 					</h4>
 					<div class="list-group-item-text">
@@ -43,7 +44,7 @@
 								<li>
 									<dl class="list-inline nowrap">
 										<dt data-bind="text: name"></dt>
-										<dd data-bind="text: ko.computed($parent.productText.bind($parent, $data))"></dd>
+										<dd data-bind="text: $parent.products()[name()].text"></dd>
 									</dl>
 								</li>
 							</ul>

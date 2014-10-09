@@ -19,6 +19,9 @@ Template.navItems.helpers({
 	protocolsForReview: function () {
 		return Protocols.find({ needsReview: true }).count();
 	},
+	experimentsForReview: function () {
+		return Experiments.find({ needsReview: true }).count();
+	},
 });
 
 Accounts.ui.config({passwordSignupFields: 'USERNAME_AND_EMAIL'});

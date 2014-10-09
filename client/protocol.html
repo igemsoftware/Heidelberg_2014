@@ -8,6 +8,7 @@
 		</div>
 		<h1 id="protocolName"><span data-bind="visible: !$root.editMode(), text: name"></span><input class="form-control" type="text" data-bind="visible: $root.editMode, value: name" placeholder="Enter the name of the new protocol here" /></h1>
 		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this protocol.</p>
+		<p class="alert alert-warning" data-bind="visible: needsReview &amp;&amp; !oldVersion">This protocol could not be automatically adapted to a change made to its parameter or product types. You need to add missing information manually to be able to reference it in future experiments.</p>
 		<div class="panel panel-default">
 			<div class="panel-heading">	
 				<h3 class="panel-title">Parameters&nbsp;&nbsp;<span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addParam.bind($data)"></span></h3>
@@ -81,12 +82,23 @@
 						<span class="glyphicon glyphicon-trash input-group-addon clickable" data-bind="click: $parent.removeProduct.bind($parent)"></span>
 					</h4>
 					The product will have the following properties:
-					<table class="form-table" style="width: 100%" data-bind="foreach: propertyBindings">
+					<table class="form-table" data-bind="foreach: propertyBindings">
 						<tr>
 							<th><span data-bind="text: property.name"></span> of type <span data-bind="text: property.from.name"></span> (<span data-bind="text: property.type().name"></span>)</th>
 							<td>
-								<span data-bind="visible: !$root.editMode(), text: source() &amp;&amp; source().text"></span>
-								<select class="form-control" data-bind="visible: $root.editMode, value: source, options: possibleSources, optionsText: 'text'"></select>
+								<span data-bind="ifnot: $root.editMode">
+									<span data-bind="if: sourceType() == 'ask'">Will be asked when this protocol is performed</span>
+									<span data-bind="visible: sourceType() != 'ask', text: source().text"></span>
+								</span>
+								<div data-bind="if: $root.editMode">
+									<select class="form-control" data-bind="value: sourceType">
+										<option value="ask">Ask for the value when performing this protocol</option>
+										<option value="input">Use the value of an input field</option>
+										<option value="paramProperty">Use the value of a property of one of the parameters</option>
+									</select>
+									<span data-bind="if: sourceType() == 'input'"><select class="form-control" data-bind="value: source, options: possibleSourceInputs, optionsText: 'text'"></select></span>
+									<span data-bind="if: sourceType() == 'paramProperty'"><select class="form-control" data-bind="value: source, options: possibleSourceParamProperties, optionsText: 'text'"></select></span>
+								</div>
 							</td>
 						</tr>
 					</table>

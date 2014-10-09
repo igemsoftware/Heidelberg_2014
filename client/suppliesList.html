@@ -34,8 +34,8 @@
 				<a class="list-group-item" data-bind="attr: { href: href }">
 					<h4 class="list-group-item-heading">
 						<span data-bind="text: text"></span>
-						<span class="label label-warning" data-bind="visible: needsReview">needs review</span>
 						<small data-bind="text: typeNames"></small>
+						<span class="label label-warning" data-bind="visible: needsReview">needs review</span>
 						<small class="pull-right" data-bind="text: ko.computed(function () { return formatDate(date(), true) })"></small>
 					</h4>
 					<div class="list-group-item-text">

@@ -84,7 +84,7 @@
 }
 
 .hierarchical th {
-	white-space: nowrap;
+	width: 25%;
 	padding: 2px;
 }
 
@@ -159,10 +159,6 @@
 	display: inline-table;
 }
 
-.input-group .form-control {
-	float: initial;
-}
-
 .datetime {
 	display: inline-table;
 	width: 100%;
@@ -180,6 +176,10 @@
 
 .datetime-time {
 	min-width: 110px;
+}
+
+.datetime .input-group .form-control {
+	float: initial;
 }
 
 .list-inline {

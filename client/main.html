@@ -61,7 +61,14 @@
 				<li><span><span class="pull-right"><a href="{{pathFor 'newProtocol'}}" class="glyphicon glyphicon-plus"></a></span><a href="{{pathFor 'protocolList'}}">Browse all protocols</a></span></li>
 			</ul>
 		</li>
-		<li class="{{activeIfInPath 'x'}}"><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
+		<li class="{{activeIfInPath 'x'}}">
+			<a href="{{pathFor 'experimentList'}}">
+				Experiments
+				{{#if experimentsForReview}}
+					<span class="label label-warning">{{experimentsForReview}} need review</span>
+				{{/if}}
+			</a>
+		</li>
 	</ul>
 	<ul class="nav navbar-nav navbar-right">
 		{{> loginButtons}}

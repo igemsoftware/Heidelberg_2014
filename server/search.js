@@ -22,11 +22,13 @@ function search(type, query, filter) {
 			},
 		};
 	}
-	var result = HTTP.post('http://localhost:9200/md_devel/' + type + '/_search', {
+
+	var result = HTTP.post(Meteor.settings.elasticIndexURL + '/' + type + '/_search', {
 		data: {
 			query: query,
 		},
 	});
+
 	if (result.statusCode === 200) {
 		return JSON.parse(result.content).hits.hits;
 	} else {
@@ -36,28 +38,6 @@ function search(type, query, filter) {
 
 Meteor.methods({
 	searchSupplies: function (query, typeId) {
-		/*
-		if (!query) return;
-		var future = new Future();
-		MongoInternals.defaultRemoteCollectionDriver().mongo.db.command({
-			text: Supplies._name,
-			search: query,
-			project: {
-				_id: 1 // Only take the ids
-			}
-		}, function(error, resultsDoc) {
-			if (error) throw error;
-			if (resultsDoc.ok === 1) {
-				future.return(_.map(resultsDoc.results, function (result) {
-					return result.obj._id;
-				}));
-			} else {
-				future.return([]);
-			}
-		});
-		return future.wait();
-		*/
-
 		return _.pluck(search('supplies', query, {
 			nested: {
 				path: 'allTypes',
@@ -68,7 +48,7 @@ Meteor.methods({
 						},
 						filter: {
 							term: {
-								'allTypes._id': typeId
+								'allTypes._id': typeId,
 							},
 						},
 					},
@@ -76,16 +56,27 @@ Meteor.methods({
 			},
 		}), '_id');
 	},
-	searchExperiments: function (query, protocolIds) {
+	searchExperiments: function (query, typeId) {
 		return _.map(search('experiment-products', query, {
-			terms: {
-				'protocol_id': protocolIds
+			nested: {
+				path: 'allTypes',
+				query: {
+					filtered: {
+						query: {
+							match_all: { },
+						},
+						filter: {
+							term: {
+								'allTypes._id': typeId,
+							},
+						},
+					},
+				},
 			},
 		}), function (experimentProduct) {
 			return {
 				experiment_id: experimentProduct._source.experiment_id,
 				productMD5: experimentProduct._source.productMD5,
-				texts: experimentProduct._source.texts,
 			};
 		});
 	},

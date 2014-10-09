@@ -9,6 +9,7 @@ function ExperimentsVM(dataContainer) {
 	self.DBData = data.experiment;
 	self.version = data.experiment && (typeof dataContainer.version() == 'undefined' ? data.experiment.v.length - 1 : dataContainer.version());
 	self.oldVersion = data.experiment && typeof dataContainer.version() != 'undefined' && dataContainer.version() != data.experiment.v.length - 1;
+	self.needsReview = data.experiment && data.experiment.needsReview;
 	self.performer = ko.observable(data.experiment && data.experiment.v[self.version].performer);
 
 	var experiment = new ExperimentVM(self, data, self.version);
@@ -85,9 +86,13 @@ ExperimentVM.prototype.constructor = ExperimentVM;
 
 ExperimentVM.prototype.getParam = function (param) {
 	if (!this.params()[param.name()]) {
-		this.params()[param.name()] = param.multi() ? ko.observableArray() : ko.observable(new ExperimentParamSourceNull());
+		this.params()[param.name()] = param.multi() ? ko.observableArray() : ko.observable(new ExperimentParamSourceText());
 	}
 	return this.params()[param.name()];
+};
+
+ExperimentVM.prototype.edit = function (param) {
+	param(new ExperimentParamSourceText(param().text));
 };
 
 ExperimentVM.prototype.querySourceSupplies = function (param, query, callback) {
@@ -109,7 +114,7 @@ ExperimentVM.prototype.querySourceSupplies = function (param, query, callback) {
 ExperimentVM.prototype.querySourceExperiments = function (param, query, callback) {
 	var self = this;
 	var currentCount = ++self.searchExperimentsCount;
-	Meteor.call('searchExperiments', query, _.pluck(Protocols.find({ 'products.allTypes._id': param.type()._id() }).fetch(), '_id'), function (error, experimentProducts) {
+	Meteor.call('searchExperiments', query, param.type()._id(), function (error, experimentProducts) {
 		if (!error) {
 			if (currentCount !== self.searchExperimentsCount) return;
 			if (self.searchExperimentsComputation) self.searchExperimentsComputation.stop();
@@ -117,7 +122,7 @@ ExperimentVM.prototype.querySourceExperiments = function (param, query, callback
 				callback(_.map(experimentProducts, function (experimentProduct) {
 					var experiment = self.rootVM.manager.getExperiment(experimentProduct.experiment_id);
 					return new ExperimentParamSourceExperiment(experiment, _.find(experiment.protocol.products(), function (protocolProduct) {
-						return CryptoJS.MD5(protocolProduct.name()).toString() == experimentProduct.productMD5;
+						return CryptoJS.MD5(protocolProduct.name()).toString() == experimentProduct.productMD5; // TODO
 					}));
 				}));
 			});
@@ -160,14 +165,12 @@ Template.experiment.rendered = function () {
 		return new ExperimentsVM(self.data);
 	});
 
-	self.nodesToClean = [self.find('#knockoutContainer')];
-	ko.applyBindings(self.vm, self.nodesToClean[0]);
+	self.container = self.find('#experiment');
+	ko.applyBindings(self.vm, self.container);
 };
 
 Template.experiment.destroyed = function () {
-	_.each(this.nodesToClean, function (node) {
-		ko.cleanNode(node);
-	});
+	ko.cleanNode(this.container);
 	this.vm().cleanup();
 	this.vm.dispose();
 };

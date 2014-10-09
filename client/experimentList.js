@@ -38,10 +38,10 @@ function ExperimentsListVM() {
 ExperimentsListVM.prototype.constructor = ExperimentsListVM;
 
 ExperimentsListVM.prototype.cleanup = function () {
-	self.allExperimentsComputation.stop();
-	self.allExperimentsComputedObservable.dispose();
-	self.allProtocolsComputation.stop();
-	self.allProtocolsComputedObservable.dispose();
+	this.allExperimentsComputation.stop();
+	this.allExperimentsComputedObservable.dispose();
+	this.allProtocolsComputation.stop();
+	this.allProtocolsComputedObservable.dispose();
 };
 
 Template.experimentList.rendered = function () {
