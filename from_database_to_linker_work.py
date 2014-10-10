@@ -109,7 +109,7 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 		for nr in range(1,4):
 			if nr == 3:
 				if not shortpath:
-					for slicing in range(300):
+					for slicing in range(500):
 						uniqueforwu = pdbname + "_" + subunit + "_"  + "linker" +"_" + extein + "_" + str(nr) + "_" + str(slicing) +"_"+ str(slicing + 1)
 
 						f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
@@ -136,19 +136,19 @@ for folder in glob.glob(databasefolder + "*/")[:1]:
 					database.connect()
 					setWuByName(uniqueforwu, igemdb.INIT)
 
-			else:
-				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + "_" + str(nr) +"_"+ "0_1"
-
-				f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-				f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "0")
-				f.close()
-				subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
-				database.close()
-				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
-				"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
-				"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
-				database.connect()
-				setWuByName(uniqueforwu, igemdb.INIT)
+#			else:
+#				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + "_" + str(nr) +"_"+ "0_1"
+#
+#				f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
+#				f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "0")
+#				f.close()
+#				subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
+#				database.close()
+#				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
+#				"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
+#				"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
+#				database.connect()
+#				setWuByName(uniqueforwu, igemdb.INIT)
 
 	proteinjob.setWus('linker', wus)
 	proteinjob.commit()
