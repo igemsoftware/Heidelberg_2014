@@ -1,8 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
 import subprocess
 import glob
 from Boinc.setup_project import *
@@ -10,12 +5,15 @@ from Boinc import database
 import igemathome_database as igemdb
 import time
 import zipfile as zip
+import md5
+
 
 
 boinc_path = "/var/boinc/igemathome"
-databasefolder = os.path.join(boinc_path, "import_files")
+databasefolder = os.path.join(boinc_path, "database")
 modeller_results = os.path.join(databasefolder, "finished_circ_modeller")
-tmpfolder = os.path.join(boinc_path, "tmp-boinc")
+staged_for_linker_eval = os.path.join(databasefolder, "staged_for_linker_evaluator")
+tmpfolder = os.path.join(boinc_path, "tmp_boinc")
 allpdbs = os.path.join(boinc_path, "allpdbs")
 database.connect()
 #igemdb.connect()
@@ -24,33 +22,6 @@ database.connect()
 
 
 for pdbfolder in glob.glob(modeller_results + os.sep + "*" + os.sep)[:1]:
-	pdbname = os.path.basename(os.path.normpath(pdbfolder))
-	zipfile = zip.ZipFile(tmpfolder + os.sep + pdbname+".zip", "w")
-	if(os.path.isfile(pdbfolder+"/"+pdbname+".pdb")):
-		zipfile.write(pdbfolder+"/"+pdbname+".pdb")
-	else:
-		zipfile.write(allpdbs + os.sep + pdbname + os.sep + pdbname + ".pdb", "master.pdb")
-	for resultfile in glob.glob(pdbfolder + "results" + os.sep + "*.pdb"):
-		zipfile.write(resultfile, os.path.basename(os.path.normpath(pdbfolder)))
-
-	zipfile.close()
-
-	'''
-	pdbfname = pdbname + ".pdb"
-	subunit = folder[-2]
-
-	print "folder: %s, pdbname: %s, pdbfname: %s, subunit: %s" % (folder, pdbname, pdbfname, subunit)
-
-	shortpath = return_shortpath(folder + pdbfname, subunit)
-
-	#stage the PDB
-	subprocess.call(["bin/stage_file", "--copy", "--gzip", folder + pdbfname])
-
-	proteinjob = igemdb.Job(protein=pdbname, mailaddress="placeholder@igemathome.org")
-	proteinjob.commit()
-	jobid = proteinjob.id
-	wus = dict()
-
 	def setWuByName(wuname, state):
 		attempts = 0
 		done = False
@@ -66,52 +37,56 @@ for pdbfolder in glob.glob(modeller_results + os.sep + "*" + os.sep)[:1]:
 		if not attempts < 8:
 			raise Exception("Mysql", "Unable to get workunit with name: %s" % wuname)
 
-	#create instructions
-	for extein in exteinlist:
-		for nr in range(1,4):
-			if nr == 3:
-				if not shortpath:
-					for slicing in range(300):
-						uniqueforwu = pdbname + "_" + subunit + "_"  + "linker" +"_" + extein + "_" + str(nr) + "_" + str(slicing) +"_"+ str(slicing + 1)
+	pdbname = os.path.basename(os.path.normpath(pdbfolder))
+	zipfile_path = tmpfolder + os.sep + pdbname + ".zip"
+	zipfile = zip.ZipFile(zipfile_path, "w")
 
-						f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-						f.write(subunit +"," + uniqueforwu + "," + str(nr) + "," + str(slicing) +","+ str(slicing + 1) + "," + extein + "," "0")
-						f.close()
-						subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
-						database.close()
-						subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
-						"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
-						"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
-						database.connect()
-						setWuByName(uniqueforwu, igemdb.INIT)
-				else:
-					uniqueforwu = pdbname + "_" + subunit + "_" + "linker" +"_" + extein + "_" + str(nr) + "_" + "shortpath"
+	m = md5.new()
 
-					f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-					f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "1")
-					f.close()
-					subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
-					database.close()
-					subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
-					"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
-					"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
-					database.connect()
-					setWuByName(uniqueforwu, igemdb.INIT)
+	if(os.path.isfile(pdbfolder+"/"+pdbname+".pdb")):
+		zipfile.write(pdbfolder+"/"+pdbname+".pdb")
+	else:
+		zipfile.write(allpdbs + os.sep + pdbname + os.sep + pdbname.split('_')[0] + ".pdb", "master.pdb")
 
-			else:
-				uniqueforwu = pdbname + "_" + subunit + "linker" + "_" + "_" + extein + "_" + str(nr) +"_"+ "0_1"
+	m.update("master.pdb")
 
-				f = open(folder +"instructions" + "_" + uniqueforwu + ".csv", "w")
-				f.write(subunit +"," + uniqueforwu + "," + str(nr) + ",0,300" + "," + extein + "," + "0")
-				f.close()
-				subprocess.call(["bin/stage_file", "--gzip", folder + "instructions" + "_" + uniqueforwu + ".csv"])
-				database.close()
-				subprocess.call(["bin/create_work", "--appname", "linker_generator", "--wu_template",
-				"templates/linker_gen.input-template", "--result_template", "templates/linker_gen.result-template", "--batch", str(jobid),
-				"--wu_name", uniqueforwu , "instructions" + "_" + uniqueforwu + ".csv", pdbfname])
-				database.connect()
-				setWuByName(uniqueforwu, igemdb.INIT)
+	for resultfile in glob.glob(pdbfolder + "results" + os.sep + "*.pdb")[:200]:
+		zipfile.write(resultfile, os.path.basename(os.path.normpath(resultfile)))
+		m.update(os.path.basename(os.path.normpath(resultfile)))
 
-	proteinjob.setWus('linker', wus)
+	zipfile.close()
+
+	md5hash = m.hexdigest()
+
+	zipfile_path_new = os.path.splitext(zipfile_path)[0] + "_" + md5hash[:5] + os.path.splitext(zipfile_path)[1]
+
+	shutil.move(zipfile_path, zipfile_path_new)
+
+	zipfile_path = zipfile_path_new
+
+	proteinjob = igemdb.Job(protein=pdbname, mailaddress="placeholder@igemathome.org")
 	proteinjob.commit()
-	'''
+	jobid = proteinjob.id
+	try:
+		wus = proteinjob.getWus("evaluator")
+	except:
+		wus = dict()
+
+	subprocess.call(["bin/stage_file", zipfile_path])
+
+	database.close()
+	subprocess.call(["bin/create_work", "--appname", "linker_evaluator", "--wu_template",
+						"templates/linker_evaluator.input-template", "--result_template", "templates/linker_evaluator.result-template", "--batch", str(jobid),
+						"--wu_name", os.path.splitext(os.path.basename(zipfile_path))[0], os.path.basename(zipfile_path)])
+
+	if not os.path.isdir(staged_for_linker_eval):
+		os.mkdir(staged_for_linker_eval)
+
+	shutil.move(pdbfolder, staged_for_linker_eval)
+
+	database.connect()
+
+	setWuByName(os.path.splitext(os.path.basename(zipfile_path))[0], igemdb.INIT)
+
+	proteinjob.commit()
+
