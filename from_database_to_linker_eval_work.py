@@ -21,7 +21,7 @@ database.connect()
 ####Hier kann man einfach hinter glob.glob() ein [:10] setzen, um das erstmal auf wengier laufen zu lassen und zu testen
 
 
-for pdbfolder in glob.glob(modeller_results + os.sep + "*" + os.sep)[:1]:
+for pdbfolder in glob.glob(modeller_results + os.sep + "*" + os.sep)[:10]:
 	def setWuByName(wuname, state):
 		attempts = 0
 		done = False
@@ -50,7 +50,7 @@ for pdbfolder in glob.glob(modeller_results + os.sep + "*" + os.sep)[:1]:
 
 	m.update("master.pdb")
 
-	for resultfile in glob.glob(pdbfolder + "results" + os.sep + "*.pdb")[:200]:
+	for resultfile in glob.glob(pdbfolder + "results" + os.sep + "*_0.pdb"):
 		zipfile.write(resultfile, os.path.basename(os.path.normpath(resultfile)))
 		m.update(os.path.basename(os.path.normpath(resultfile)))
 
