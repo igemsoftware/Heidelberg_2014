@@ -1233,10 +1233,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                 "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA",
                                 "AEAAAKEAAAKEAAAKEAAAKA",
                                 "AEAAAKEAAAKEAAAKEAAAKEAAAKA"])
-    linkerlaengenAS = []
 
-    for i in range(len(linkerdatenbank)):
-        linkerlaengenAS.append(len(linkerdatenbank[i]))
+    linkerlaengenAS = [8.7, 10, 10.8, 15.6, 16.8, 24.8, 32.3]
 
     linkerlaengenAS = np.array(linkerlaengenAS)
     linkerlaengenME = linkerlaengenAS * 150 + 2*LengthOfAngle   # in pm
@@ -1381,7 +1379,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
 
         returns MakeSmall and teiler
         '''
-
+        loader.log("MakeSmall started")
 
         bytespergig = 1073741824
         AvailableRAM = float(RAM) * bytespergig #in BytesWaBytesWarning
@@ -1393,8 +1391,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                 except:
                     inramsize += array * 2 #assumes, that it is the size of the array, and this is float 16
         # print "inramsize" + str(inramsize / 1073741824.)  +"in GB"
-                loader.log("1394: arraysize: " + str(np.shape(array)))
-                loader.log("1394: size in RAM: " + str(inramsize /
+                loader.log("1396: arraysize: " + str(np.shape(array)))
+                loader.log("1397: size in RAM: " + str(inramsize /
                                                        float(bytespergig)))
         try:
             PointSize = PointArray.nbytes
@@ -1682,7 +1680,7 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             sequence = sequence + addscarsarray
             if firstrig is not None:
                 if firstflex is not None:
-                    return sequence , retweight,                np.concatenate((firstflex, firstrig), axis=0),                 np.concatenate((secondflex, secondrig), axis=0),                np.concatenate((thirdflex, thirdrig), axis=0)
+                    return sequence , retweight,                np.concatenate((firstflex, firstrig), axis=0),     np.concatenate((secondflex, secondrig), axis=0),                np.concatenate((thirdflex, thirdrig), axis=0)
                 else:
                     return sequence, retweight, firstrig, secondrig, thirdrig
             elif firstflex is not None:
@@ -3048,56 +3046,28 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                       endpunkt, linkerdatenbank, linkerlaengenKO,
                                       angletosequence, angleseparators, weightflex,
                                       weightrig)
-
-
-
         if sequences is None:
             loader.log("no paths could be translated")
             return 0
         loader.log("3037: finished translation, writing file")
-
-            # In[295]:
-
-        sequencepool = np.unique(sequences)
-        sequenceweightings = []
-        sequenceweightingsstd = []
-        for sequenceiter in sequencepool:
-            sequenceweightings.append(np.mean(weightingsall[0][sequences == sequenceiter]))
-            sequenceweightingsstd.append(np.std(weightingsall[0][sequences == sequenceiter]))
-        sequenceweightings = np.array(sequenceweightings)
-        sequenceweightingsstd = np.array(sequenceweightingsstd)
-
-
-        # In[297]:
-
-    #    bestsequenceindex = np.argmin(sequenceweightings)
-    #
-    #    print sequencepool[bestsequenceindex]
-
-
-
-        sortarray = np.argsort(sequenceweightings)
-
-
-        sequenceweightings = sequenceweightings[sortarray]
-        sequenceweightingsstd = sequenceweightingsstd[sortarray]
-        sequencepool = sequencepool[sortarray]
-
+        # loader.log( str(time.time() - starttime ) + "write file"
         f = open(resultsfile, "w")
 
-        f.write("sequence,weighting\n")
-        for i in range(np.size(sequencepool)):
-            writestring = sequencepool[i]
-
-            writestring += "," + str(sequenceweightings[i])
+        f.write("sequence,erstepunkteallx,erstepunkteally,erstepunkteallz,zweitepunkteallx,zweitepunkteally,zweitepunkteallz,drittepunkteallx,drittepunkteally,drittepunkteallz,lengthofpath,weightingofangles,unpreferableplaces,distfromsurface\n")
+        for i in range(np.size(sequences)):
+            writestring = sequences[i]
+            for j in range(3):
+                writestring += "," + str(firstpointsall[i][j])
+            for j in range(3):
+                writestring += "," + str(secondpointsall[i][j])
+            for j in range(3):
+                writestring += "," + str(thirdpointsall[i][j])
+            for j in range(1,5):
+                writestring += "," + str(weightingsall[j][i])
             writestring += "\n"
 
             f.write(writestring)
 
 
         f.close()
-
-
-
-
         loader.log("resultfile written successfully, thank you")

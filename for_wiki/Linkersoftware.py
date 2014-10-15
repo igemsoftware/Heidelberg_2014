@@ -1357,10 +1357,8 @@ linkerdatenbank = np.array(["AEAAAK", "AEAAAKA", "AEAAAKAA", "AEAAAKEAAAK",
                             "AEAAAKEAAAKA", "AEAAAKEAAAKEAAAKA",
                             "AEAAAKEAAAKEAAAKEAAAKA",
                             "AEAAAKEAAAKEAAAKEAAAKEAAAKA"])
-linkerlaengenAS = []
+linkerlaengenAS = [8.7, 10, 10.8, 15.6, 16.8, 24.8, 32.3]
 
-for i in range(len(linkerdatenbank)):
-    linkerlaengenAS.append(len(linkerdatenbank[i]))
 
 linkerlaengenAS = np.array(linkerlaengenAS)
 linkerlaengenME = linkerlaengenAS * 150 + 2*LengthOfAngle   # in pm
@@ -1817,17 +1815,10 @@ for winkel in winkelarray:
     if any((moeglichewinkelende[:]==winkel).all(1)):
         enddisp = np.append(enddisp, [temp], axis=0)
 
-###############################################################################
-# Start run everything above again if an error has occurred and you want to
-# resume calculations afterwards. Then look for the right block, where it
-# the data should be loaded with the pickle.load command.
-# Ab hier kann man nach oben starten, wenn es einen Fehler gab.
-###############################################################################
 
-# We insert new possible linkers, these are either straight
-# connections between the ends with flexible parts or with
-# maximum one angle in the linker. The point is, that here the
-# flexible ends are estimated better.
+# Ab hier kann man nach oben starten, wenn es einen Fehler gab.
+
+# We insert new possible linkers, these are either straight connections between the ends with flexible parts or with maximum one angle in the linker. The point is, that here the flexible ends are estimated better.
 
 # In[36]:
 
