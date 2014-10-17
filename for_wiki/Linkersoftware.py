@@ -1261,7 +1261,8 @@ def weighing_function_rigids(StartPoint, FirstArray, SecondArray, ThirdArray,
                             distance_from_surface(SecondArray, ThirdArray,
                                                   ProteinPoints, [EndPoint]))
 
-    weighedvalue = LengthNormed
+    weighedvalue = ((1.85707748e-06 *LengthNormed) +   (0.57330412e+00 * Angles ) +
+                    (50.86235806e+06 * SiteInfluenceNormed) + DistancesFromProtein)
 
     return (weighedvalue, LengthNormed * abstand(StartPoint, EndPoint), Angles,
             SiteInfluenceNormed, DistancesFromProtein)
@@ -1303,7 +1304,8 @@ def weighing_function_flex(StartPoint, FirstArray, SecondArray, ThirdArray,
     DistancesFromProtein = distance_from_surface(FirstArray, SecondArray,
                                                  ProteinPoints)
 
-    weighedvalue = LengthNormed
+    weighedvalue = ((1.85707748e-06 *LengthNormed) +   (0.57330412e+00 * Angles ) +
+                    (50.86235806e+06 * SiteInfluenceNormed) + DistancesFromProtein)
 
     return (weighedvalue, LengthNormed * abstand(StartPoint, EndPoint), Angles,
             SiteInfluenceNormed, DistancesFromProtein)
@@ -1815,8 +1817,15 @@ for winkel in winkelarray:
     if any((moeglichewinkelende[:]==winkel).all(1)):
         enddisp = np.append(enddisp, [temp], axis=0)
 
+###############################################################################
+# If all above this part has been run, the necessary functions and definitions
+# have been loaded so that the one can resume from one of the pickle.load()
+# points. This is especially helpful, when one wants to resume calculation
+# after a break or just wants to reload the data from former calculations
+###############################################################################
 
-# Ab hier kann man nach oben starten, wenn es einen Fehler gab.
+
+
 
 # We insert new possible linkers, these are either straight connections between the ends with flexible parts or with maximum one angle in the linker. The point is, that here the flexible ends are estimated better.
 

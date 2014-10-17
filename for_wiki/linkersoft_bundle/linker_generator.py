@@ -1137,7 +1137,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
                                 distance_from_surface(SecondArray, ThirdArray,
                                                       ProteinPoints, [EndPoint]))
 
-        weighedvalue = LengthNormed
+        weighedvalue = ((1.85707748e-06 *LengthNormed) +   (0.57330412e+00 * Angles ) +
+                        (50.86235806e+06 * SiteInfluenceNormed) + DistancesFromProtein)
 
         return (weighedvalue, LengthNormed * abstand(StartPoint, EndPoint), Angles,
                 SiteInfluenceNormed, DistancesFromProtein)
@@ -1179,7 +1180,8 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
         DistancesFromProtein = distance_from_surface(FirstArray, SecondArray,
                                                      ProteinPoints)
 
-        weighedvalue = LengthNormed
+        weighedvalue = ((1.85707748e-06 *LengthNormed) +   (0.57330412e+00 * Angles ) +
+                        (50.86235806e+06 * SiteInfluenceNormed) + DistancesFromProtein)
 
         return (weighedvalue, LengthNormed * abstand(StartPoint, EndPoint), Angles,
                 SiteInfluenceNormed, DistancesFromProtein)
@@ -3051,19 +3053,32 @@ def calc(instructionsfile, pdbfile, resultsfile, RAMOFMACHINE):
             return 0
         loader.log("3037: finished translation, writing file")
         # loader.log( str(time.time() - starttime ) + "write file"
+        sequencepool = np.unique(sequences)
+        sequenceweightings = []
+        sequenceweightingsstd = []
+        for sequenceiter in sequencepool:
+            sequenceweightings.append(np.mean(weightingsall[0][sequences == sequenceiter]))
+            sequenceweightingsstd.append(np.std(weightingsall[0][sequences == sequenceiter]))
+        sequenceweightings = np.array(sequenceweightings)
+        sequenceweightingsstd = np.array(sequenceweightingsstd)
+
+
+
+
+        sortarray = np.argsort(sequenceweightings)
+
+
+        sequenceweightings = sequenceweightings[sortarray]
+        sequenceweightingsstd = sequenceweightingsstd[sortarray]
+        sequencepool = sequencepool[sortarray]
+
         f = open(resultsfile, "w")
 
-        f.write("sequence,erstepunkteallx,erstepunkteally,erstepunkteallz,zweitepunkteallx,zweitepunkteally,zweitepunkteallz,drittepunkteallx,drittepunkteally,drittepunkteallz,lengthofpath,weightingofangles,unpreferableplaces,distfromsurface\n")
-        for i in range(np.size(sequences)):
-            writestring = sequences[i]
-            for j in range(3):
-                writestring += "," + str(firstpointsall[i][j])
-            for j in range(3):
-                writestring += "," + str(secondpointsall[i][j])
-            for j in range(3):
-                writestring += "," + str(thirdpointsall[i][j])
-            for j in range(1,5):
-                writestring += "," + str(weightingsall[j][i])
+        f.write("sequence,weighting\n")
+        for i in range(np.size(sequencepool)):
+            writestring = sequencepool[i]
+
+            writestring += "," + str(sequenceweightings[i])
             writestring += "\n"
 
             f.write(writestring)
