@@ -1,0 +1,9 @@
+*.so
+*.[ao]
+*.class
+*.jar
+.*
+runtime/jre/*
+!.gitignore
+deploy/*
+!deploy/README
