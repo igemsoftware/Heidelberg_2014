@@ -1,0 +1,78 @@
+/* section 1 */
+/* section 2 */
+
+div.kasten, p.kasten, img.kasten {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	float: left;
+	max-width: 500%;
+	max-height: 500%;
+	width: 48%;
+}
+div.bild, p.bild, img.bild {
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	max-width: 500%;
+	max-height: 500%;
+	width: 48%;
+}
+
+body , body p{
+color: #141416;
+}
+#main-layout {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	color: gray;
+}
+#team-logo {
+	position: fixed;
+	bottom: 15px;
+	right: 15px;
+	width: 180px;
+}
+#implementedby, #implementedby a, #implementedby a:visited {
+	position: fixed;
+	bottom: 43px;
+	right: 215px;
+	text-decoration: none;
+	color: gray;
+	font-family: calibri;
+}
+
+
+.reveal img.bild {
+	border: none;
+	background-color: transparent;
+	border-radius: 2px;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	margin: 0px;
+}
+p.kasten-title {
+	border-bottom: 1px solid gray;
+	font-size: 35px;
+}
+p.kasten-content {
+	padding: 4px;
+	font-size: 20px;
+}
+div.kasten {
+	border: 1px solid gray;
+	background-color: #D9D9EB;
+	border-radius: 2px;
+	-webkit-box-shadow: 3px 3px 8px #888888;
+	-moz-box-shadow: 3px 3px 8px #888888;
+	box-shadow: 3px 3px 8px #888888;
+	box-shadow: 3px 3px 8px #888888;
+	padding: 15px;
+	margin: 0px;
+	color: #666666;
+	zoom: 1;
+	filter: alpha(opacity=80);
+	opacity: 0.8;
+}

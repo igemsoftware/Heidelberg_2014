@@ -1,0 +1,25 @@
+Structur:
+
+<div class="reveal">
+<div class="slides"> Struktureller Rahmen für die Slides
+
+<section> Jede Slide wir von "section" umrahmt
+
+jede section bekommt von mir nochmal ein <div class="rahmen"> um die positionierung zu vereinfachen.
+darein kann man dann entweder direkt einen Kasten über die ganze Breite setzen (Kasten wie unten) oder
+
+es gibt zwei Spalten
+
+<div class="left"> und <div class="right">
+
+in denen es jeweil einen oder mehrere Bilder oder Kästen geben kann.
+
+<div class="bild">
+
+<div class="kasten"> 
+In einem Kasten kann man noch einen
+titel <p class="kasten-title">
+von content <p class="kasten-content">
+unterscheiden
+
+Das styling müsste das css automatisch machen ...

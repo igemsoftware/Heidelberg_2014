@@ -1,0 +1,117 @@
+/* section 1 */
+/* section 2 */
+
+
+/* Slide- bzw. Section-Layout */
+.reveal section div.rahmen {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+section.left {
+	position: relative;
+	left: 0px;
+	top: 0px;
+	width: 50%
+}
+section.right {
+	position: relative;
+	right: 0px;
+	top: 0px;
+	width: 50%
+}
+
+/* Kisten, Kästen, Bilder und Schilder */
+
+.reveal div.kasten, p.kasten, img.kasten {
+	position: relative;
+	top: 0px;
+	float: left;
+	max-width: none;
+	max-height: none;
+	width: 91%;
+	border: 3px solid gray;
+	background-color: #EAEAFC;
+	border-radius: 5px;
+	-webkit-box-shadow: 3px 3px 8px #888888;
+	-moz-box-shadow: 3px 3px 8px #888888;
+	box-shadow: 3px 3px 8px #888888;
+	box-shadow: 3px 3px 8px #888888;
+	padding: 15px;
+	margin-bottom: 2.3%;
+	color: #666666;
+	zoom: 1;
+	filter: alpha(opacity=80);
+	opacity: 0.8;
+	height: 100%;
+}
+.reveal section div.gross {
+	width: 95.5%;
+}
+.reveal section div.bild, .reveal section p.bild, .reveal section img.bild {
+	position: relative;
+	top: 0px;
+	max-width: none;
+	max-height: none;
+	width: 91%;
+	border: none;
+	background-color: transparent;
+	border-radius: 3px;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	margin: none;
+	padding: none;
+}
+.reveal p.kasten-title {
+	border-bottom: 1px solid gray;
+	margin-bottom: 10px;
+	font-size: 35px;
+}
+.reveal p.kasten-content {
+	padding: 4px;
+	font-size: 20px;
+	text-align: justify;
+}
+
+/* Genereller Kram und Main Layout */
+body , body p{
+color: #141416;
+}
+.reveal p{
+margin: 0px; padding: 0px;
+}
+#main-layout {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	color: gray;
+}
+#team-logo {
+	position: fixed;
+	bottom: 15px;
+	right: 15px;
+	width: 180px;
+}
+#gear-wheel-container{
+	position: fixed;
+	left: 10px;
+	top: 10px;
+	width: 400px
+	height: 400px;
+}
+	
+#gear-wheel {
+	x: 20px;
+	y: 20px;
+	width: 40px;
+	height: 40px;
+}
+#implementedby, #implementedby a, #implementedby a:visited {
+	position: fixed;
+	bottom: 43px;
+	right: 215px;
+	text-decoration: none;
+	color: gray;
+	font-family: calibri;
+}
