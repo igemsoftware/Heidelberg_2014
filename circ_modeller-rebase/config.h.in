@@ -1,0 +1,4 @@
+#define getExecPath @CONFIG_getExecPath@
+#define createFailIfExists @CONFIG_createFailIfExists@
+#define APP_MAJOR @CONFIG_APP_MAJOR@
+#define APP_MINOR @CONFIG_APP_MINOR@
