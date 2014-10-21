@@ -1,0 +1,7 @@
+.*
+*.iml
+!.gitignore
+boinc_finish_called
+META-INF/*
+out/*
+stderr.txt
