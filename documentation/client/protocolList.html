@@ -1,0 +1,15 @@
+<template name="protocolList">
+	<a href="{{pathFor 'newProtocol'}}">Create new protocol</a>
+	<ul id="protocols">
+		{{#each protocols}}
+			<li>
+				<a href="{{pathFor 'viewProtocol' id=_id}}">
+					{{name}}
+					{{#if needsReview}}
+						<span class="label label-warning">needs review</span>
+					{{/if}}
+				</a>
+			</li>
+		{{/each}}
+	</ul>
+</template>

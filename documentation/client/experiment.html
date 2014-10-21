@@ -1,0 +1,230 @@
+<template name="experiment">
+	<div id="tmpl-viewOrEditParamSource" style="display: none;">
+		<!-- ko ifnot: $root.editMode() && value().editMode() -->
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<h4>
+						<a data-bind="text: value().text, attr: { href: value().href }"></a>
+						<!-- ko if: $root.editMode() -->
+							<a href="" data-bind="click: $parent.edit.bind($parent, value)" class="pull-right"><span class="glyphicon glyphicon-pencil"></span></a>
+						<!-- /ko -->
+					</h4>
+					<span data-bind="if: value().currentVersionHref">
+						(<a data-bind="text: value().currentVersionText, attr: { href: value().currentVersionHref }"></a>)
+					</span>
+				</div>
+			</div>
+		<!-- /ko -->
+	</div>
+
+	<div id="tmpl-inputList" style="display: none;">
+		<!-- ko foreach: getParam.bind($data)($parent) -->
+			<li>
+				<!-- ko template: { name: 'tmpl-viewOrEditParamSource', data: { value: paramValue } } --><!-- /ko -->
+				<div data-bind="if: $root.editMode() &amp;&amp; paramValue().editMode()">
+					<div class="input-group">
+						<input type="text" class="form-control" data-bind="value: paramValue().text, valueUpdate: 'input', typeahead: { value: paramValue, datasets: [{ name: 'supplies', source: $parent.querySourceSupplies.bind($parent, $parents[1]), templates: { suggestion: 'tmpl-supplySuggestion' }, displayKey: 'text' }, { name: 'experiments', source: $parent.querySourceExperiments.bind($parent, $parents[1]), templates: { suggestion: 'tmpl-experimentProductSuggestion' }, displayKey: 'text' }] }, hasfocus: true" />
+						<span class="input-group-addon glyphicon glyphicon-trash clickable" data-bind="click: $parent.removeMultiParam.bind($parent, $parents[1])"></span>
+					</div>
+				</div>
+			</li>
+		<!-- /ko -->
+		<li><button class="btn btn-xs btn-block btn-default" data-bind="visible: $root.editMode, click: addMultiParam.bind($data, $parent)"><span class="glyphicon glyphicon-plus"></span></button></li>
+	</div>
+
+	<div id="tmpl-supplySuggestion" style="display: none;">
+		<div>
+			<h4>
+				<span data-bind="text: text"></span>
+				<a data-bind="attr: { href: href }"><span class="glyphicon glyphicon-eye-open"></span></a>
+				<span class="label label-warning" data-bind="visible: supply.needsReview">needs review</span>
+				<small data-bind="text: supply.typeNames"></small>
+				<span class="pull-right">&nbsp;<small data-bind="text: formatDate(supply.date())"></small></span>
+			</h4>
+			<div>
+				<div class="list-really-inline">
+					<ul class="list-inline" data-bind="foreach: supply.properties">
+						<li>
+							<dl class="list-inline nowrap">
+								<dt data-bind="text: property.name"></dt>
+								<dd data-bind="text: value"></dd>
+							</dl>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="tmpl-experimentProductSuggestion" style="display: none;">
+		<div>
+			<h4>
+				<span data-bind="text: text"></span>
+				<a data-bind="attr: { href: href }"><span class="glyphicon glyphicon-eye-open"></span></a>
+				<span class="label label-warning" data-bind="visible: experiment.needsReview">needs review</span>
+				<small data-bind="text: experiment.products()[product.name()].type().name()"></small>
+				<span class="pull-right">&nbsp;<small data-bind="text: formatDate(experiment.finishDate())"></small></span>
+			</h4>
+			<span data-bind="text: product.name"></span> from <span data-bind="text: experiment.protocol.name"></span>
+			<div>
+				<div class="list-really-inline">
+					<ul class="list-inline" data-bind="foreach: product.propertyBindings">
+						<li>
+							<dl class="list-inline nowrap">
+								<dt data-bind="text: property.name"></dt>
+								<dd data-bind="text: $parent.experiment.products()[$parent.product.name()].getProperty(property).value()"></dd>
+							</dl>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="experiment">
+		<h2 data-bind="text: $root.editMode() ? $root.newMode() ? 'Perform a protocol' : 'Edit experiment' : 'View experiment'"></h2>
+		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
+				<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+				<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
+		</div>
+		<h1 data-bind="text: protocol.name"></h1>
+		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this experiment.</p>
+		<p class="alert alert-warning" data-bind="visible: needsReview &amp;&amp; !oldVersion">This experiment could not be automatically adapted to a change made to the type of one of its products. You need to add missing information manually to be able to reference it in future experiments.</p>
+
+		<p data-bind="ifnot: $root.editMode">Performed by <span data-bind="text: performer"></span></p>
+		<input class="form-control" data-bind="visible: $root.editMode, value: performer" placeholder="Who are you?" />
+
+		<table id="experimentsTable" class="hierarchical">
+			<tr data-bind="if: $root.editMode() &amp;&amp; $root.newMode()">
+				<td></td>
+				<!-- ko foreach: experiments -->
+					<td><button class="btn btn-block" data-bind="click: $parent.removeExperiment.bind($parent)"><span class="glyphicon glyphicon-trash"></span></button></td>
+				<!-- /ko -->
+				<td class="minWidth"><button class="btn btn-block btn-square" data-bind="click: addExperiment.bind($data)"><span class="glyphicon glyphicon-plus"></span></button></td>
+			</tr>
+			<tr><th class="section" data-bind="attr: { colspan: colspan }"><h3>Parameters</h3></th></tr>
+			<!-- ko foreach: protocol.params -->
+				<tr>
+					<th class="ul"><div class="li"><span data-bind="text: name"></span>:</div></th>
+					<!--ko foreach: $root.experiments -->
+						<td>
+							<!-- ko ifnot: $parent.multi -->
+								<!-- ko template: { name: 'tmpl-viewOrEditParamSource', data: { value: getParam($parent) } } --><!-- /ko -->
+								<!-- ko if: $root.editMode() && getParam($parent)().editMode() -->
+									<input type="text" class="form-control" data-bind="value: getParam($parent)().text, valueUpdate: 'input', typeahead: { value: getParam($parent), datasets: [{ name: 'supplies', source: querySourceSupplies.bind($data, $parent), templates: { suggestion: 'tmpl-supplySuggestion' }, displayKey: 'text' }, { name: 'experiments', source: querySourceExperiments.bind($data, $parent), templates: { suggestion: 'tmpl-experimentProductSuggestion' }, displayKey: 'text' }] }, hasfocus: true" />
+								<!-- /ko -->
+							<!-- /ko -->
+							<!-- ko if: $parent.multi -->
+								<ul class="inputList">
+									<!-- ko template: 'tmpl-inputList' --><!-- /ko -->
+								</ul>
+							<!-- /ko -->
+						</td>
+					<!-- /ko -->
+				</tr>
+			<!-- /ko -->
+			<tr><th class="section" data-bind="attr: { colspan: colspan }"><h3>Steps</h3></th></tr>
+			<!-- ko foreach: protocol.steps -->
+				<tr><th class="ol" data-bind="attr: { colspan: $parent.colspan }"><div class="li" data-bind="text: desc"></div></th></tr>
+				<!-- ko foreach: inputs -->
+					<tr>
+						<th class="ul indent1"><div class="li" data-bind="text: desc"></div></th>
+						<!-- ko foreach: $root.experiments -->
+							<td>
+								<!-- ko if: $parent.multiParam -->
+									<dl data-bind="foreach: params()[$parent.multiParam]">
+										<dt data-bind="text: paramValue().text"></dt>
+										<dd>
+											<span data-bind="visible: !$root.editMode(), text: input($parentContext.$parentContext.$parentContext.$index(), $parentContext.$parentContext.$index())"></span>
+											<input type="text" class="form-control" data-bind="visible: $root.editMode, value: input($parentContext.$parentContext.$parentContext.$index(), $parentContext.$parentContext.$index()), valueUpdate: 'input'" />
+										</dd>
+									</dl>
+								<!-- /ko -->
+								<!-- ko ifnot: $parent.multiParam -->
+									<span data-bind="visible: !$root.editMode(), text: input($parentContext.$parentContext.$index(), $parentContext.$index())"></span>
+									<input type="text" class="form-control" data-bind="visible: $root.editMode, value: input($parentContext.$parentContext.$index(), $parentContext.$index()), valueUpdate: 'input'" />
+								<!-- /ko -->
+							</td>
+						<!-- /ko -->
+					</tr>
+				<!-- /ko -->
+			<!-- /ko -->
+			<tr>
+				<th><h3>Finished on</h3></th>
+				<!-- ko foreach: $root.experiments -->
+					<td>
+						<div data-bind="visible: !$root.editMode(), text: formatDate(finishDate())"></div>
+						<div class="datetime" data-bind="if: $root.editMode">
+							<div class="datetime-date">
+								<div class="input-group date" data-bind="datepicker: { date: finishDate, options: { todayBtn: 'linked', autoclose: true, todayHighlight: true } }, event: { 'changeDate': function () { clearInterval(finishDateUpdate); } }">
+									<input class="form-control" type="text" />
+									<span class="input-group-addon">
+										<span class="glyphicon glyphicon-calendar"></span>
+									</span>
+								</div>
+							</div>
+							<div class="datetime-time">
+								<div class="input-group time" data-bind="clockpicker: finishDate, event: { 'change': function () { clearInterval(finishDateUpdate); } }">
+									<input type="text" class="form-control" />
+									<span class="input-group-addon">
+										<span class="glyphicon glyphicon-time"></span>
+									</span>
+								</div>
+							</div>
+						</div>
+					</td>
+				<!-- /ko -->
+			</tr>
+			<tr>
+				<th><h3>Notes</h3></th>
+				<!-- ko foreach: $root.experiments -->
+					<td>
+						<p class="notes" data-bind="visible: !$root.editMode(), text: notes"></p>
+						<textarea class="form-control" data-bind="visible: $root.editMode, value: notes"></textarea>
+					</td>
+				<!-- /ko -->
+			</tr>
+			<tr><th class="section" data-bind="attr: { colspan: colspan }"><h3>Products</h3></th></tr>
+			<!-- ko foreach: protocol.products -->
+				<tr>
+					<th class="ul"><div class="li" data-bind="text: name"></div></th>
+					<!-- ko foreach: $root.experiments -->
+						<td data-bind="with: products()[$parent.name()]">
+							<h4>
+								<span data-bind="text: text"></span>
+								(<span class="dropdown"><!--
+									--><a data-bind="text: type().name, attr: { href: type().href() }"></a><!--
+									--><!-- ko if:  $root.editMode() && possibleTypes().length > 1 --><!--
+										--><a class="dropdown-toggle caret" data-toggle="dropdown" href=""></a><!--
+										--><ul class="dropdown-menu" role="menu" data-bind="foreach: possibleTypes()"><!--
+											--><li role="presentation"><a role="menuitem" tabindex="-1" data-bind="text: name, click: $parent.type" href=""></a></li><!--
+										--></ul><!--
+									--><!-- /ko --><!--
+								--></span>)
+							</h4>
+							<table class="form-table" style="width: 100%" data-bind="foreach: properties">
+								<tr>
+									<th data-bind="text: property.name"></th>
+									<td>
+										<!-- ko if: !$root.editMode() || isComputed() -->
+											<span data-bind="text: value"></span>
+										<!-- /ko -->
+										<!-- ko ifnot: !$root.editMode() || isComputed() -->
+											<input type="text" class="form-control" data-bind="value: manualValue, valueUpdate: 'input'" />
+										<!-- /ko -->
+									</td>
+								</tr>
+							</table>
+						</td>
+					<!-- /ko -->
+				</tr>
+			<!-- /ko -->
+		</table>
+
+		<div class="btn-toolbar">
+			<button class="btn btn-success" data-bind="visible: $root.editMode, click: save.bind($data)">Save</button>
+			<button class="btn btn-danger" data-bind="visible: $root.editMode, click: cancel.bind($data)">Cancel</button>
+		</div>
+		{{> versionModal }}
+	</div>
+</template>

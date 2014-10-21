@@ -1,0 +1,293 @@
+/* CSS declarations go here */
+
+.dropdown-menu > li > span {
+	display: block;
+	padding: 3px 20px;
+	clear: both;
+	white-space: nowrap;
+}
+
+.dropdown-menu > li > span a {
+	display: block;
+	font-weight: normal;
+	line-height: 1.42857143;
+	color: #333;
+	text-decoration: none;
+}
+
+.dropdown-menu > li > span > a {
+	margin-left: -20px;
+	margin-right: 25px;
+	padding-left: 20px;
+	padding-right: 15px;
+}
+
+.dropdown-menu > li > span > span {
+	white-space: nowrap;
+}
+
+.dropdown-menu > li > span:hover,
+.dropdown-menu > li > span:focus {
+	color: #262626;
+	background-color: #f5f5f5;
+}
+
+.navbar-nav > li {
+	display: table;
+}
+
+.navbar-nav > li > a {
+	display: table-cell;
+	padding-left: 1px;
+	padding-right: 1px;
+}
+
+.navbar-nav > li > a:first-of-type {
+	padding-left: 15px;
+}
+
+.navbar-nav > li > a:last-of-type {
+	padding-right: 15px;
+}
+
+.nav-small > li > a {
+	padding: 3px 5px;
+	font-size: 12px;
+}
+
+.clickable:hover {
+	cursor: pointer;
+}
+
+.editor {
+	padding: 5px;
+	outline: 1px dotted #a0a0a0;
+}
+
+.editor:focus {
+	outline: 1px dashed gray;
+}
+
+.editorReference {
+	display: inline-block;
+	border: 1px solid blue;
+	white-space: nowrap;
+	background-color: lightblue;
+	padding: 2px;
+	margin: 1px;
+}
+
+.hierarchical {
+	width: 100%;
+	counter-reset: ol0;
+	margin: 1em 0;
+}
+
+.hierarchical th {
+	width: 25%;
+	padding: 2px;
+}
+
+.hierarchical td {
+	padding: 2px;
+}
+
+.hierarchical .ul {
+	list-style-type: disc;
+	padding-left: 40px;
+	text-align: left;
+}
+
+.hierarchical .ul.indent1 {
+	list-style-type: circle;
+	padding-left: 80px;
+}
+
+.hierarchical .ul.indent2 {
+	list-style-type: square;
+}
+
+.hierarchical .ol {
+	list-style: none;
+	padding-left: 40px;
+	text-align: left;
+}
+
+.hierarchical .ul.indent1, .hierarchical .ol.indent1 {
+	padding-left: 80px;
+}
+
+.hierarchical .ul.indent2, .hierarchical .ol.indent2 {
+	padding-left: 120px;
+}
+
+.hierarchical .ol .li:before {
+	position: absolute;
+	width: 2em;
+	margin-left: -2.5em;
+	text-align: right;
+}
+
+.hierarchical .ol:not(.indent1):not(.indent2) .li:before {
+	counter-increment: ol0;
+	content: counter(ol0) ".";
+	counter-reset: ol1;
+}
+
+.hierarchical .ol.indent1 .li:before {
+	counter-increment: ol1;
+	content: counter(ol1) ".";
+	position: absolute;
+	counter-reset: ol2;
+}
+
+.hierarchical .ol.indent2 .li:before {
+	counter-increment: ol2;
+	content: counter(ol2) ".";
+	position: absolute;
+}
+
+.hierarchical .li {
+	display: list-item;
+}
+
+.form-control {
+	display: inline-block;
+}
+
+.input-group {
+	display: inline-table;
+}
+
+.datetime {
+	display: inline-table;
+	width: 100%;
+	/*border-spacing: 3px;*/
+}
+
+.datetime > .datetime-date, .datetime > .datetime-time {
+	display: table-cell;
+	vertical-align: baseline;
+}
+
+.datetime-date {
+	min-width: 150px
+}
+
+.datetime-time {
+	min-width: 110px;
+}
+
+.datetime .input-group .form-control {
+	float: initial;
+}
+
+.list-inline {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.list-inline > li {
+	max-width: 100%;
+}
+
+dl.list-inline > dt {
+	display: inline;
+	padding-left: 5px;
+}
+
+dl.list-inline > dd {
+	display: inline;
+	padding-left: 3px;
+	padding-right: 5px;
+}
+
+/* Workaround for Chrome on empty dds */
+dl.list-inline > dd:before {
+	content: "\200B";
+}
+
+.list-inline .list-inline {
+	margin-left: -5px;
+	margin-right: -5px;
+}
+
+.list-really-inline {
+	display: inline-block;
+	max-width: 100%;
+}
+
+.list-really-inline .list-inline {
+	margin-bottom: 0px;
+}
+
+.scrollable-menu {
+	height: auto;
+	max-height: 200px;
+	overflow-x: hidden;
+}
+
+.form-table {
+	width: 100%;
+}
+
+.form-table th {
+	white-space: nowrap;
+	max-width: 50%;
+	padding: 2px;
+}
+
+.form-table td {
+	width: 100%;
+	padding: 2px;
+}
+
+table.hierarchical > * > th, table.hierarchical > * > td {
+	vertical-align: baseline;
+}
+
+table.hierarchical > * > td > textarea {
+	vertical-align: top;
+	margin-top: -7px; /* derived from 6px padding-top + 1px border */
+}
+
+.btn-square {
+	width: 34px;
+	padding: 6px;
+}
+
+.inputList {
+	padding-left: 0px;
+}
+
+.inputList li {
+	list-style-type: none;
+	margin-left: 0px;
+	padding: 2px 0;
+}
+
+.minWidth {
+	width: 0px;
+}
+
+.space-bottom {
+	margin-bottom: 10px;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.notes {
+	white-space: pre;
+	overflow: auto;
+}
+
+.panel-autoscroll > .panel-body {
+	max-height: 400px;
+	overflow: auto;
+}
+
+.twitter-typeahead > .form-control {
+	display: block;
+}

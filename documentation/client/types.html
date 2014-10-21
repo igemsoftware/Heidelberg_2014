@@ -1,0 +1,125 @@
+<template name="typeList">
+	<a href="{{pathFor 'newType'}}">Create new type</a>
+	<ul id="types">
+		{{#each types}}
+		<li><a href="{{pathFor 'viewType' id=_id}}">{{name}}</a></li>
+		{{/each}}
+	</ul>
+</template>
+
+<template name="type">
+	<div id="type">
+		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit type' : 'New type' : 'View type'"></h2>
+		<div class="btn-toolbar pull-right" data-bind="ifnot: editMode">
+			<button class="btn btn-warning" data-bind="click: edit.bind($data), visible: !oldVersion"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
+		</div>
+		<h1 id="typeName"><span data-bind="visible: !editMode(), text: name"></span><input type="text" data-bind="visible: editMode, value: name" placeholder="Enter the name of the new type here"/></h1>
+		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this type.</p>
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Base types (everything of this type also has these types)</h3>
+			</div>
+			<div class="panel-body">
+				<div data-bind="if: $root.editMode"><select class="" multiple="true" size="8" data-bind="options: types, optionsText: 'name', selectedOptions: baseTypes()"></select></div>
+				<div data-bind="ifnot: $root.editMode">
+					<ul data-bind="foreach: baseTypes()">
+						<li><a data-bind="text: name, attr: { href: href() }"></a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Properties&nbsp;&nbsp; <span class="glyphicon glyphicon-plus clickable" data-bind="visible: $root.editMode, click: addProperty.bind($data)"></span></h3>
+			</div>
+			<ul class="list-group" id="typeProperties" data-bind="foreach: properties">
+				<li class="list-group-item">
+					<div data-bind="ifnot: $root.editMode">
+						<span data-bind="text: name"></span> (<span data-bind="text: type().name"></span>)
+					</div>
+					<div class="input-group" data-bind="if: $root.editMode">
+						<input style="width:70%;" class="form-control" type="text" data-bind="value: name" placeholder="Enter the name of the property here" />
+						<select style="width:20%;" class="form-control" data-bind="value: type, options: types, optionsText: 'name'"></select>
+						<label class="form-control" style="width:10%;" ><input type="checkbox" data-bind="checked: required" /> required</label>
+						<span class="glyphicon glyphicon-trash clickable input-group-addon" data-bind="click: $parent.removeProperty.bind($parent)"></span>
+					</div>
+				</li>
+			</ul>
+			<div class="panel-heading">
+				<h4 class="panel-title">Inherited properties</h4>
+			</div>
+			<ul class="list-group" id="typeInheritedProperties" data-bind="foreach: inheritedProperties">
+				<li class="list-group-item">
+					<span data-bind="text: name"></span> (<span data-bind="text: type().name"></span>, from <span data-bind="text: from.name"></span>)
+				</li>
+			</ul>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Textual representation</h3>
+			</div>
+			<div class="panel-body">
+				<div id="textEditor" class="editor" data-bind="attr: { contenteditable: $root.editMode }"></div>
+				<button id="addRef" data-bind="visible: $root.editMode">Add reference to property</button>
+				<select data-bind="visible: $root.editMode, value: propertyToRef, options: allProperties, optionsText: 'name'"></select>
+			</div>
+		</div>
+		<div class="btn-toolbar" data-bind="if: $root.editMode">
+			<button class="btn btn-success" data-bind="click: save.bind($data, undefined, undefined)">Save</button>
+			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
+		</div>
+	</div>
+
+	<div id="cannotCascadeModal" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="cannotCascadeModalTitle" data-bind="if: cannotCascadeModalVM">
+		<div class="modal-dialog" data-bind="with: cannotCascadeModalVM">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 id="cannotCascadeModalTitle" class="modal-title">Supplies and protocols cannot be auto-updated</h4>
+				</div>
+				<div class="modal-body">
+					<p><span data-bind="text: sCount"></span> supplies and/or <span data-bind="text: pCount"></span> protocols depend on this type. Since you have added required input fields which previously existing data cannot be mapped to, you will need to update those entries manually. Otherwise, you may not be able to reference them (and the experiments performed according to these protocols) in future experiments!</p>
+					<p><label><input type="checkbox" data-bind="checked: confirm" /> I know what I am doing</label></p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: save.bind($data), enable: confirm">Save without updating supplies and protocols</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+	<div id="mappingsModal" class="modal fade" role="dialog" aria-hidden="true" aria-labelledby="mappingModalTitle" data-bind="if: mappingsModalVM">
+		<div class="modal-dialog" data-bind="with: mappingsModalVM">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 id="mappingModalTitle" class="modal-title">Auto-update of previous supplies and protocols</h4>
+				</div>
+				<div class="modal-body">
+					<p>
+						<span data-bind="text: sCount"></span> supplies and/or <span data-bind="text: pCount"></span> protocols depend on this type.
+					</p>
+					<dl data-bind="foreach: mappings">
+						<dt><span data-bind="text: property.name"></span></dt>
+						<dd>
+							<div data-bind="ifnot: property.required">
+								<label><input type="radio" data-bind="checked: blank, checkedValue: true" /> Leave this property blank</label>
+								<label data-bind="if: possibleMappings.length > 0"><input type="radio" data-bind="checked: blank, checkedValue: false" /> Map the values from the following previously defined property:</label>
+							</div>
+							<select class="form-control" data-bind="visible: possibleMappings.length > 0, enable: !blank(), value: source, options: possibleMappings, optionsText: 'name'"></select>
+						</dd>
+					</dl>
+				</div>
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal" data-bind="click: save.bind($data)">Save</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal">Get back into edit mode</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+	{{> versionModal}}
+</template>

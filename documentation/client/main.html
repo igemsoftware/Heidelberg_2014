@@ -1,0 +1,94 @@
+<head>
+	<title>doc</title>
+</head>
+
+<template name="masterTemplate">
+	<nav class="navbar navbar-inverse">
+		<div class="container" >
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a href="{{pathFor 'home'}}" class="navbar-brand">iGEM Heidelberg 2014</a>
+			</div>
+			<div class="collapse navbar-collapse" >
+					{{> navItems}}
+			</div>
+		</div> <!-- Container -->
+	</nav>
+	<div id="container" class="container">
+	{{#if currentUser}}
+		{{> yield}}
+	{{else}}
+		<div class="jumbotron">
+			<h1>Welcome to MidnightDoc!</h1>
+			<p>This ultra awesome peace of software will enable you to keep track of all the stuff that is going on in the lab!</p>
+			<p><button id="loginNag" class="btn btn-primary btn-lg" >Please login to proceed</button></p>
+		</div>
+	{{/if}}
+	</div>
+</template>
+
+<template name='navItems'>
+	<ul class="nav navbar-nav">
+		<li class="{{activeIfInPath 't'}}" id="typeDropdown">
+			<a href="{{pathFor 'typeList'}}">Types</a>
+		</li>
+		<li class="{{activeIfInPath 's'}}">
+			<a href="{{pathFor 'suppliesList'}}">
+				Supplies
+				{{#if suppliesForReview}}
+					<span class="label label-warning">{{suppliesForReview}} need review</span>
+				{{/if}}
+			</a>
+		</li>
+		<li class="dropdown {{activeIfInPath 'p'}}">
+			<a href="{{pathFor 'protocolList'}}">
+				Protocols
+				{{#if protocolsForReview}}
+					<span class="label label-warning">{{protocolsForReview}} need review</span>
+				{{/if}}
+			</a>
+			<a href="{{pathFor 'protocolList'}}" class="dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></a>
+			<ul class="dropdown-menu dropdown-menu">
+				{{#each featuredProtocols}}
+					<li><span><span class="pull-right"><a href="{{pathFor 'viewProtocol' id=_id}}" class="glyphicon glyphicon-eye-open"></a></span><a href="{{pathFor 'performProtocol' id=_id}}"><span class="glyphicon glyphicon-play small"></span> {{name}}</a></span></li>
+				{{/each}}
+				<li class="divider"></li>
+				<li><span><span class="pull-right"><a href="{{pathFor 'newProtocol'}}" class="glyphicon glyphicon-plus"></a></span><a href="{{pathFor 'protocolList'}}">Browse all protocols</a></span></li>
+			</ul>
+		</li>
+		<li class="{{activeIfInPath 'x'}}">
+			<a href="{{pathFor 'experimentList'}}">
+				Experiments
+				{{#if experimentsForReview}}
+					<span class="label label-warning">{{experimentsForReview}} need review</span>
+				{{/if}}
+			</a>
+		</li>
+	</ul>
+	<ul class="nav navbar-nav navbar-right">
+		{{> loginButtons}}
+		<li class="{{activeIfInPath 'options'}}"><a class="clickable" href="{{pathFor 'options'}}"><span class="glyphicon glyphicon-cog"></span>&nbsp;Options</a></li>
+	</ul>
+
+</template>
+
+<template name="home">
+	<nav>
+		<ul>
+			<li><a href="{{pathFor 'typeList'}}">Types</a></li>
+			<li><a href="{{pathFor 'suppliesList'}}">Supplies</a></li>
+			<li><a href="{{pathFor 'protocolList'}}">Protocols</a></li>
+			<li><a href="{{pathFor 'experimentList'}}">Experiments</a></li>
+			<li><a href="{{pathFor 'options'}}">Options</a></li>
+		</ul>
+	</nav>
+</template>
+
+<template name="loading">
+	Loading ...
+</template>

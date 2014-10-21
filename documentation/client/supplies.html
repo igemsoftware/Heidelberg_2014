@@ -1,0 +1,83 @@
+<template name="supply">
+	<div id="supply">
+		<div class="btn-toolbar pull-right" data-bind="if: !editMode()">
+			<button class="btn btn-warning" data-bind="visible: !oldVersion, click: edit.bind($data)"><span class="glyphicon glyphicon-pencil"></span> Edit</button>
+			<button class="btn btn-info" data-bind="click: displayVersions.bind($data)"><span class="glyphicon glyphicon-time"></span> Versions</button>
+		</div>
+		<h2 data-bind="text: $root.editMode() ? _id() ? 'Edit supply' : 'Enter supply' : 'View supply'"></h2>
+		<p class="alert alert-info" data-bind="visible: oldVersion">You are viewing an old version of this supply.</p>
+		<p class="alert alert-warning" data-bind="visible: needsReview &amp;&amp; !oldVersion">This supply could not be automatically adapted to a change made to its type. You need to add missing information manually to be able to reference it in future experiments.</p>
+		<table class="hierarchical">
+			<tr>
+				<th><h3>Type</h3></th>
+				<td>
+					<div data-bind="if: $root.editMode"><select class="form-control" data-bind="options: possibleTypes, optionsText: 'name', selectedOptions: types"></select></div>
+					<div data-bind="ifnot: $root.editMode">
+						<ul data-bind="foreach: types">
+							<li><a data-bind="text: name, attr: { href: href() }"></a></li>
+						</ul>
+					</div>
+				</td>
+			</tr>
+			<tr><th colspan="2"><h3>Properties</h3></th></tr>
+			<!-- ko foreach: properties -->
+				<tr>
+					<th class="ul">
+						<div class="li">
+							<span data-bind="text: property.name"></span> (from <span data-bind="text: property.from.name"></span>)
+						</div>
+					</th>
+					<td>
+						<span data-bind="visible: !$root.editMode(), text: value"></span>
+						<input type="text" class="form-control" data-bind="visible: $root.editMode, value: value" />
+					</td>
+				</tr>
+			<!-- /ko -->
+			<tr>
+				<th><h3>Source</h3></th>
+				<td>
+					<div data-bind="visible: !$root.editMode(), text: source"></div>
+					<input type="text" class="form-control" data-bind="visible: $root.editMode, value: source" />
+				</td>
+			</tr>
+			<tr>
+				<th><h3>Date</h3></th>
+				<td>
+					<div data-bind="visible: !$root.editMode(), text: formatDate(date())"></div>
+					<div class="form-inline datetime" data-bind="if: $root.editMode">
+						<div class="datetime-date">
+							<div class="input-group date" data-bind="datepicker: { date: date, options: { todayBtn: 'linked', autoclose: true, todayHighlight: true } }, event: { 'change': function () { clearInterval(dateUpdate); } }">
+								<input class="	form-control" type="text" />
+								<span class="input-group-addon">
+									<span class="glyphicon glyphicon-calendar"></span>
+								</span>
+							</div>
+						</div>
+						<div class="datetime-time">
+							<div class="input-group time" data-bind="clockpicker: date, event: { 'change': function () { clearInterval(dateUpdate); } }">
+								<input type="text" class="form-control" />
+								<span class="input-group-addon">
+									<span class="glyphicon glyphicon-time"></span>
+								</span>
+							</div>
+						</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<th><h3>Notes</h3></th>
+				<td>
+					<p data-bind="visible: !$root.editMode(), text: notes"></p>
+					<textarea class="form-control" data-bind="visible: $root.editMode, value: notes"></textarea>
+				</td>
+			</tr>
+		</table>
+
+		<div class="btn-toolbar" data-bind="if: $root.editMode">
+			<button class="btn btn-success" data-bind="click: save.bind($data, undefined)">Save</button>
+			<button class="btn btn-danger" data-bind="click: cancel.bind($data)">Cancel</button>
+		</div>
+	</div>
+
+	{{> versionModal}}
+</template>
