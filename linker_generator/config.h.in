@@ -1,0 +1,2 @@
+#define getExecPath @CONFIG_getExecPath@
+#define createFailIfExists @CONFIG_createFailIfExists@
