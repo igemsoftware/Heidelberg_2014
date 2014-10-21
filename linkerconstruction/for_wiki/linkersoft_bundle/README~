@@ -1,0 +1,71 @@
+This version doesn't provide the full functionality of the software. If you want to use the full functionality, please download the python code and follow the instructions from http://2014.igem.org/Team:Heidelberg/Software/Linker_Software_Docu .
+
+Mainly it is just missing adjustability in this version. Some functions that can't be used are:
+
+Weighting of different aminoacids: A function, with which aminoacids and regions can be defined that should be omitted by the linker, can't be used in this version.
+
+Checkpointing: The program has to run in total at once, it can't be stopped meanwhile the calculation, because no files are stored during computation. Calculations can take up to days also in this version.
+
+Size of linkers: As no checkpointing is enabled in this version, also the maximum angles are reduced to two angles in the linker. This shold suffice for most of the proteins, but if this doesn't produce results, please refer to the python version from the website.
+
+Circularizing only a part of the protein: Always the complete protein as included in the PDB file is circularized. In the python version the user can define the atoms from when on the protein should be circularized.
+
+Ignoring different parts of proteins: Also no additional parts of the PDB can be ignored. On the other hand all other subunits than the defined one are ignored completely.
+
+Attachmentsequences: The exchange of attachmentsequences (normally GG in the beginning of the linker) would need to be done by hand by just exchanging the GG with some other 2 aminoacid sequence.
+
+Requirments: The software runs properly on Linux PCs with at least 2 GB of RAM and debian testing operating system. But even with intel i5 @ 2.6GHz the calculations can take up to two days.
+
+
+
+Different functions:
+
+There are three different kinds of linkergeneration. For the complete description please refer to http://2014.igem.org/Team:Heidelberg/Software/Linker_Software
+
+1. Generation of straight linker, taking into account flexible ends
+
+2. Generation of linker with right angle, taking into account flexibe ends
+
+3. Generation of linker with up to 2 angles. Flexible parts are taken to go into the same direction as the attached helix.
+
+0. All three functions, first 1, then 2, then 3 one after another.
+
+INPUTS:
+
+The software needs to be provided with two files, saved in the folder of the software:
+
+1. atomfile.pdb
+
+2. instructions.txt
+
+
+atomfile.pdb needs to be a file in pdb format, containing the structure of the protein that should be circularized. It can be easily obtained from rcsb pdb database and then renamed to atomfile.pdb. Please refer to rcsb.org for the requirements on that file.
+
+instructions.txt contains all the information about the job. It contains only one line of values separated by comma.
+
+1. The protein's subunit in a capital letter. This part of the PDB file will be circularized.
+2. A name of the job for internal storage
+3. A functionnumber can be chosen between: 0, 1, 2, 3
+4. 0
+5. 300
+6. The extein sequence in capital letters
+7. 0
+
+Example:
+
+A,1X4H_A,0,0,300,RGKCWE,0
+
+
+
+OUTPUTS:
+It produces 2 files:
+
+1. stderr.txt
+
+2. results.txt
+
+In stderr.txt all the logs are saved. There one can see how it is advancing and how far it is in the current function
+
+in results.txt all the found linkers are written. They are sorted by their capability of heat-stabilizing the protein. Also the weightingvalue is saved with the linker. The lower the value, the better the linker is considered. For the way of weighting please see: http://2014.igem.org/Team:Heidelberg/Software/Linker_Software
+
+For any questions and issues please refer to klughammer@stud.uni-heidelberg.de
